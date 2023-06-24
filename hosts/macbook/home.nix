@@ -10,8 +10,4 @@
     # TODO(seh): Consider populating these.
   ];
   # TODO(seh): Adapt more of that.
-
-  # NB: Work around the following defect temporarily:
-  # https://github.com/nix-community/home-manager/issues/4142
-  manual.manpages.enable = false;
 }
