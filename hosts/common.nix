@@ -21,11 +21,10 @@
       dig
       elvish
       file
-      gopls
       gnupg
+      go-jsonnet
+      gopls
       jq
-      # TODO(seh): Figure out why this won't build.
-      #jsonnet
       kubectl
       kustomize
       nixfmt
