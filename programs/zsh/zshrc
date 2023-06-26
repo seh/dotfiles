@@ -1,0 +1,49 @@
+setopt extendedglob
+
+# fzf configuration
+export FZF_COMPLETION_TRIGGER='~~'
+
+# See:
+#   https://github.com/junegunn/fzf/issues/467#issuecomment-169695942.
+#   https://github.com/junegunn/fzf/issues/477
+#   https://github.com/junegunn/fzf/issues/2235
+#   https://github.com/junegunn/fzf/pull/1492
+# This is adapted from https://github.com/schmee/dotfiles/commit/acc7ba9eb0ea7795e9d502819cbcc36b80ae4889:
+# It accepts CTRL-e to edit the selected item before submitting it.
+fzf-conditional-history-widget() {
+  local selected num
+  setopt localoptions noglobsubst noposixbuiltins pipefail no_aliases 2> /dev/null
+  selected=( $(fc -rl 1 | perl -ne 'print if !$seen{(/^\s*[0-9]+\**\s+(.*)/, $1)}++' |
+                 FZF_DEFAULT_OPTS="--height ${FZF_TMUX_HEIGHT:-40%} $FZF_DEFAULT_OPTS -n2..,.. --tiebreak=index --bind=ctrl-r:toggle-sort --expect=ctrl-e $FZF_CTRL_R_OPTS --query=${(qqq)LBUFFER} +m" $(__fzfcmd)) )
+  local ret=$?
+  if [ -n "$selected" ]; then
+    local accept=0
+    if [[ $selected[1] = ctrl-e ]]; then
+      accept=1
+      shift selected
+    fi
+    num=$selected[1]
+    if [ -n "$num" ]; then
+      zle vi-fetch-history -n $num
+      [[ $accept = 0 ]] && zle accept-line
+    fi
+  fi
+  zle reset-prompt
+  return $ret
+}
+zle     -N   fzf-conditional-history-widget
+bindkey '^R' fzf-conditional-history-widget
+
+_fzf_comprun() {
+  local command=$1
+  shift
+
+  case "$command" in
+    cd)           fzf "$@" --preview 'tree -C {} | head -200' ;;
+    export|unset) fzf "$@" --preview "eval 'echo \$'{}" ;;
+    ssh)          fzf "$@" --preview 'ranswer=$(dig -x {} +short); if [ -n "${ranswer}" ]; then echo "${ranswer}"; else dig +noall +answer +nottlid +noclass {}; fi' ;;
+    *)            fzf "$@" ;;
+  esac
+}
+
+# TODO(seh): Consider autoloading kuc program.

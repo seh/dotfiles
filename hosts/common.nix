@@ -17,11 +17,13 @@
       bazel # TODO(seh): Sholud we install this directly?
       bazel-buildtools
       bazelisk
+      coreutils
       cue
       dig
       elvish
       file
       gnupg
+      go
       go-jsonnet
       gopls
       jq
@@ -29,6 +31,7 @@
       kustomize
       nixfmt
       openssl
+      pinentry_mac
       sbcl
       shellcheck
       sops
@@ -36,6 +39,7 @@
       tree
       unzip
       vim
+      wget
       whois
       yq-go
     ];
@@ -55,7 +59,16 @@
     enable = true;
     package = pkgs.emacs29;
   };
-  programs.fzf.enable = true;
+  programs.fzf = {
+    enable = true;
+    defaultOptions = [
+      "--info=inline"
+      "--bind=ctrl-r:toggle-sort"
+    ];
+  };
+  programs.gpg = {
+    enable = true;
+  };
   programs.k9s = {
     enable = true;
     # TODO(seh): Configure settings.
@@ -67,4 +80,15 @@
   services.emacs = {
     defaultEditor = true;
   };
+  # TODO(seh): The "gpg-agent" service is only supported on Linux for now.
+  # See:
+  #   https://github.com/nix-community/home-manager/issues/91
+  #   https://github.com/nix-community/home-manager/issues/3864
+  # services.gpg-agent = {
+  #   enable = true;
+  #   enableSshSupport = true;
+  #   defaultCacheTtl = 600;
+  #   maxCacheTtl = 7200;
+  #   pinentryFlavor = "emacs";     # TODO(seh): See https://github.com/NixOS/nixpkgs/issues/240819 for using "pinentry-mac".
+  # };
 }

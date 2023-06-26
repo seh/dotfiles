@@ -8,17 +8,9 @@
 
   environment.systemPackages = with pkgs;
     [
-      coreutils
       docker
-      fzf
-      gnupg
       home-manager
-      sqlite
-      tree
-      wget
     ];
-
-  programs.zsh.enable = true;
 
   users = {
     users.seh = {
