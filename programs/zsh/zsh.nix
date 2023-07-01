@@ -2,6 +2,9 @@
 #   https://github.com/sebastiant/dotfiles/blob/fd3f32073bce885027f7069d870ba4ea254fc348/programs/zsh/zsh.nix
 { config, lib, pkgs, ... }:
 {
+  # NB: We reference this file from the "zshrc" file.
+  home.file.".p10k.zsh".source = ./p10k.zsh;
+
   programs.zsh = {
     enable = true;
     autocd = false;
@@ -63,11 +66,9 @@
     oh-my-zsh = {
       enable = true;
       plugins = [
-        "coloredenable-man-pages"
+        "colored-man-pages"
         "direnv"
         "extract"
-        "git"
-        "nix-shell"
       ];
     };
   };
