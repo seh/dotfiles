@@ -5,6 +5,7 @@
   description = "SEH Home Manager Flake";
 
   inputs = {
+    flake-utils.url = "github:numtide/flake-utils";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     darwin = {
       url = "github:lnl7/nix-darwin/master";
@@ -16,28 +17,29 @@
     };
   };
 
-  outputs = { nixpkgs, darwin, home-manager, ... }:
-    let
-      homeManagerConfFor = config:
-        { ... }: {
-          nixpkgs.overlays = [
-            # TODO(seh): Define nixpkgs.overlays here.
-          ];
-          imports = [ config ];
-        };
-      darwinSystem = darwin.lib.darwinSystem {
-        system = "x86_64-darwin";
-        modules = [
-          ./hosts/macbook/darwin-configuration.nix
-          home-manager.darwinModules.home-manager
-          {
-            home-manager.users.seh =
-              homeManagerConfFor ./hosts/macbook/home.nix;
-          }
-        ];
-        specialArgs = { inherit nixpkgs; };
-      };
-    in {
-      defaultPackage.x86_64-darwin = darwinSystem.system;
-    };
+  outputs = { self, home-manager, ... } @ inputs:
+    let lib = import ./nix/lib { inherit inputs; }; in
+    {
+      inherit lib;
+
+      overlays = import ./nix/overlays { inherit inputs; };
+
+      homeModules.default = import ./nix/home { inherit inputs; };
+      homeConfigurations = import ./nix/home/machines { inherit inputs; };
+
+      darwinModules.default = import ./nix/darwin { inherit inputs; };
+      darwinConfigurations = import ./nix/darwin/machines { inherit inputs; };
+    } // (lib.eachSupportedSystemPkgs ({ system, pkgs }:
+      # TODO(seh): Activate more of this as the needs arise.
+      let
+        formatter = pkgs.nixpkgs-fmt;
+        #packages = import ./nix/packages { inherit inputs pkgs; };
+      in
+      {
+        inherit formatter;
+        #inherit packages formatter;
+
+        #apps = import ./nix/apps { inherit inputs pkgs system packages; };
+        #devShells = import ./nix/devshells { inherit pkgs formatter packages; };
+      }));
 }
