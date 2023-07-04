@@ -8,11 +8,19 @@ in
 {
   options.dotfiles.zsh = {
     enable = lib.mkEnableOption "zsh";
+
+    enablePowerlevel10k = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to install and activate the Powerlevel10k theme for zsh.";
+    };
   };
 
   config = lib.mkIf cfg.enable {
     # NB: We reference this file from the "zshrc" file.
-    home.file.".p10k.zsh".source = ./p10k.zsh;
+    home.file.".p10k.zsh" = lib.mkIf cfg.enablePowerlevel10k {
+      source = ./p10k.zsh;
+    };
 
     programs.zsh = {
       enable = true;
@@ -26,7 +34,7 @@ in
         extended = true;
         size = 20000; # Default is 10,000.
       };
-      initExtraFirst =
+      initExtraFirst = lib.mkIf cfg.enablePowerlevel10k
         ''
           # See https://github.com/romkatv/powerlevel10k#how-do-i-initialize-direnv-when-using-instant-prompt.
           (( ''${+commands[direnv]} )) && emulate zsh -c "''$(direnv export zsh)"
@@ -65,8 +73,9 @@ in
           # "ohmyzsh/ohmyzsh path:plugins/git"
           "zsh-users/zsh-autosuggestions"
           "zsh-users/zsh-completions"
-          # Themes
-          "romkatv/powerlevel10k"
+        ]
+        ++ lib.optional cfg.enablePowerlevel10k "romkatv/powerlevel10k"
+        ++ [
           # NB: This one needs to come last.
           "zsh-users/zsh-syntax-highlighting"
         ];
