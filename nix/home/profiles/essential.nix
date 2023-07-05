@@ -76,10 +76,6 @@ in
       enable = true;
       nix-direnv = { enable = true; };
     };
-    programs.emacs = {
-      enable = true;
-      package = if isDarwin then pkgs.emacs-macport else pkgs.emacs29;
-    };
     programs.fzf = {
       enable = true;
       defaultOptions = [
@@ -98,9 +94,6 @@ in
       enable = true;
     };
 
-    services.emacs = {
-      defaultEditor = true;
-    };
     # TODO(seh): The "gpg-agent" service is only supported on Linux for now.
     # See:
     #   https://github.com/nix-community/home-manager/issues/91
@@ -113,8 +106,13 @@ in
     #   pinentryFlavor = "emacs";     # TODO(seh): See https://github.com/NixOS/nixpkgs/issues/240819 for using "pinentry-mac".
     # };
 
-    dotfiles.zsh = {
-      enable = lib.mkDefault true;
+    dotfiles = {
+      emacs = {
+        enable = lib.mkDefault true;
+      };
+      zsh = {
+        enable = lib.mkDefault true;
+      };
     };
   };
 }

@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+set -e -u -o pipefail
+
+# See https://github.com/bazelbuild/rules_go/wiki/Editor-setup#2-launcher-script.
+exec bazel run \
+     -- \
+     @rules_go//go/tools/gopackagesdriver \
+     "${@}"

@@ -3,6 +3,7 @@
 {
   imports = [
     ./profiles
+    ./modules/emacs
     ./modules/zsh
     # TODO(seh): Include more modules here.
   ];
