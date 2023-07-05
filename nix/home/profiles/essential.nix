@@ -11,59 +11,61 @@ in
   config = mkIf config.dotfiles.profiles.essential.enable {
     home = {
       packages = with pkgs;
-      [
-        # TODO(seh): Consider moving some of these into separate files
-        # depending on which kinds of machines should include them
-        # (e.g. personal v. work.
-        _1password
-        # NB: The "_1password-gui" does not work on macOS for now; it
-        # refuses to run if it's not in the "/Applications" directory.
-        age
-        bazel # TODO(seh): Sholud we install this directly?
-        bazel-buildtools
-        bazelisk
-        coreutils
-        cue
-        dig
-        elvish
-        gnupg
-        go
-        go-jsonnet
-        go-tools
-        gofumpt
-        golangci-lint
-        gopls
-        hunspell
-        hunspellDicts.en-us
-        jless
-        jq
-        kubectl
-        kustomize
-        lsof
-        nixpkgs-fmt
-        openssl
-        pinentry_mac
-        sbcl
-        shellcheck
-        sops
-        sqlite
-        tailscale
-        tmux
-        tree
-        unzip
-        wget
-        yq-go
-        yubikey-manager
-      ] ++ optionals (!isDarwin) [
-        dnsutils
-        file
-        git
-        netcat
-        whois
-      ] ++ optionals isDarwin [
-        ssh-copy-id
-        watch
-      ];
+        [
+          # TODO(seh): Consider moving some of these into separate files
+          # depending on which kinds of machines should include them
+          # (e.g. personal v. work.
+          _1password
+          # NB: The "_1password-gui" does not work on macOS for now; it
+          # refuses to run if it's not in the "/Applications" directory.
+          age
+          bazel # TODO(seh): Sholud we install this directly?
+          bazel-buildtools
+          bazelisk
+          coreutils
+          cue
+          dig
+          elvish
+          gnupg
+          go
+          go-jsonnet
+          go-tools
+          gofumpt
+          golangci-lint
+          gopls
+          hunspell
+          hunspellDicts.en-us
+          jless
+          jq
+          kubectl
+          kustomize
+          lsof
+          nixpkgs-fmt
+          openssl
+          pinentry_mac
+          sbcl
+          shellcheck
+          sops
+          sqlite
+          tailscale
+          tmux
+          tree
+          unzip
+          wget
+          yq-go
+          yubikey-manager
+        ]
+        ++ optionals (!isDarwin) [
+          dnsutils
+          file
+          git
+          netcat
+          whois
+        ]
+        ++ optionals isDarwin [
+          ssh-copy-id
+          watch
+        ];
     };
 
     programs.bat = {
@@ -109,6 +111,19 @@ in
     dotfiles = {
       emacs = {
         enable = lib.mkDefault true;
+      };
+      git.config = {
+        branch = {
+          autoSetupMerge = "always";
+          autoSetupRebase = "local";
+        };
+        rebase = {
+          autosqaush = true;
+        };
+        rerere = {
+          enabled = 1;
+          autoupdate = 1;
+        };
       };
       zsh = {
         enable = lib.mkDefault true;

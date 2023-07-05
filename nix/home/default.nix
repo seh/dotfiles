@@ -2,10 +2,12 @@
 
 {
   imports = [
+    # TODO(seh): Include more modules here.
     ./profiles
     ./modules/emacs
+    ./modules/git.nix
     ./modules/zsh
-    # TODO(seh): Include more modules here.
+    ./modules/userinfo.nix
   ];
 
   config = {
