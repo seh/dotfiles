@@ -7,13 +7,15 @@ in
 {
   config = {
     dotfiles.git.config = {
-      commit.gpgsign = hasGPGSigningKey;
       user = {
         name = config.user.fullName;
         email = config.user.email;
       } // lib.optionalAttrs hasGPGSigningKey {
-        signingkey = config.user.ggpKey;
+        signingKey = config.user.gpgKey;
       };
+    } // lib.optionalAttrs hasGPGSigningKey {
+      commit.gpgSign = true;
+      tag.gpgSign = true;
     };
     # TODO(seh): Consider setting Emacs variables here
     # (user-full-name, user-mail-address).
