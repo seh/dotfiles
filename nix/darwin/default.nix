@@ -2,8 +2,9 @@
 
 {
   imports = [
-    ./modules/config.nix
-    ./profiles/apps.nix    
+    ./modules/nix.nix
+    ./modules/shell.nix
+    ./profiles/apps.nix
   ];
 
   # NB: This passes this flake as input to these modules via the
