@@ -9,6 +9,7 @@ in
   config = lib.mkIf config.dotfiles.profiles.desktop.enable {
     dotfiles.emacs.enable = lib.mkDefault true;
     dotfiles.profiles = {
+      fonts.enable = lib.mkDefault true;
       macos.enable = lib.mkDefault isDarwin;
       # TODO(seh): Enable other profiles here.
     };

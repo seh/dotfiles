@@ -7,6 +7,7 @@ with lib;
     ./desktop.nix
     ./development.nix
     ./essential.nix
+    ./fonts.nix
     ./macos.nix
     ./minimal.nix
   ];
