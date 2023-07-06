@@ -59,17 +59,6 @@ in
         theme = "Monokai Extended Light";
       };
     };
-    programs.direnv = {
-      enable = true;
-      nix-direnv = { enable = true; };
-    };
-    programs.fzf = {
-      enable = true;
-      defaultOptions = [
-        "--info=inline"
-        "--bind=ctrl-r:toggle-sort"
-      ];
-    };
 
     # TODO(seh): The "gpg-agent" service is only supported on Linux for now.
     # See:

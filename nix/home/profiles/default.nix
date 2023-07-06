@@ -4,11 +4,11 @@ with lib;
 
 {
   imports = [
-    # TODO(seh): Include other profile modules.
     ./desktop.nix
     ./development.nix
     ./essential.nix
     ./macos.nix
+    ./minimal.nix
   ];
 
   options.dotfiles.profiles.enableAll =
