@@ -24,7 +24,26 @@ in
       #extraConfig = ''
       #'';
       extraPackages = epkgs:
-        with epkgs; [
+        with epkgs;
+        let
+          my-cue-mode = epkgs.trivialBuild {
+            pname = "cue-mode";
+            version = "0.1";
+            src = ./packages/cue-mode.el;
+            meta = {
+              description = "Major mode for editing CUE files";
+              maintainers = [
+                {
+                  name = "Steven E. Harris";
+                  email = "seh@panix.com";
+                  github = "seh";
+                  githubID = 175841;
+                }
+              ];
+            };
+          };
+        in
+        [
           abyss-theme
           auctex
           bazel
@@ -77,6 +96,10 @@ in
           use-package
           yaml-mode
           yasnippet
+        ]
+        # Local or ad hoc packages
+        ++ [
+          my-cue-mode
         ];
     };
 
