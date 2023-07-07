@@ -8,6 +8,7 @@ in
 
   config = lib.mkIf config.dotfiles.profiles.desktop.enable {
     dotfiles.emacs.enable = lib.mkDefault true;
+    dotfiles.hammerspoon.enable = lib.mkDefault isDarwin;
     dotfiles.profiles = {
       fonts.enable = lib.mkDefault true;
       macos.enable = lib.mkDefault isDarwin;
