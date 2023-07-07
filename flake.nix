@@ -33,13 +33,12 @@
       # TODO(seh): Activate more of this as the needs arise.
       let
         formatter = pkgs.nixpkgs-fmt;
-        #packages = import ./nix/packages { inherit inputs pkgs; };
+        packages = import ./nix/packages { inherit pkgs inputs; };
       in
       {
-        inherit formatter;
-        #inherit packages formatter;
+        inherit formatter packages;
 
-        #apps = import ./nix/apps { inherit inputs pkgs system packages; };
+        apps = import ./nix/apps { inherit inputs pkgs system packages; };
         #devShells = import ./nix/devshells { inherit pkgs formatter packages; };
       }));
 }
