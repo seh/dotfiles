@@ -88,6 +88,10 @@ in
           '';
         };
       };
+      ssh = {
+        enable = lib.mkDefault true;
+        enableMultiplexing = lib.mkDefault true;
+      };
       zsh = {
         enable = lib.mkDefault true;
       };

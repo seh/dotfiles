@@ -8,6 +8,7 @@
     ./modules/gnupg
     ./modules/hammerspoon
     ./modules/linkapps.nix
+    ./modules/ssh.nix
     ./modules/userinfo.nix
     ./modules/zsh
   ];
