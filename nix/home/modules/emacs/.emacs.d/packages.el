@@ -43,6 +43,11 @@
 
 
 ;:*=======================
+;:* cue
+(use-package cue-mode)
+
+
+;:*=======================
 ;:* dired
 ;; TODO: Bind 'K' to dired-kill-subdir
 
