@@ -76,7 +76,7 @@
       footnote-style 'latin
       footnote-start-tag ""
       footnote-end-tag "")
-  :hook (message-mode . 'footnote-mode))
+  :hook (message-mode . footnote-mode))
 
 
 ;:*=======================
