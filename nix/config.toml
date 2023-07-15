@@ -5,7 +5,7 @@ name = "seh"
 fullName = "Steven E. Harris"
 homeDirectory = "/home/seh"
 email = "seh@panix.com"
-# TODO(seh): gpgKey = "..."
+gpgKey = "12CB61B144016D75"
 
 # NB: It's a good idea to override this option this per host.
 #
