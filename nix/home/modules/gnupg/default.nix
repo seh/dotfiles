@@ -3,7 +3,7 @@
 { lib, config, pkgs, dotfiles, ... }:
 
 let
-  inherit (lib) mkDefault mkEnableOption mkIf mkMerge mkOption optional;
+  inherit (lib) mkDefault mkEnableOption mkIf mkMerge mkOption optional optionalString;
   cfg = config.dotfiles.gnupg;
   # NB: Merely mentioning the "pinentry_mac" package here will make it
   # available in the Nix store. See
@@ -27,6 +27,8 @@ in
       defaultText = lib.literalExpression "pkgs.gnupg";
       description = "The GnuPG package to use.";
     };
+
+    enableSSHSupport = mkEnableOption "GnuPG SSH support";
   };
 
   config = mkIf cfg.enable (mkMerge [
@@ -54,9 +56,23 @@ in
         default-cache-ttl 600
         max-cache-ttl 7200
 
-        enable-ssh-support
-
         pinentry-program ${pinentry-mac}
+      ''
+      + optionalString cfg.enableSSHSupport ''
+
+        enable-ssh-support
+      '';
+
+      # Emulate Home Manager's "gpg-agent" service's treatment.
+      # See:
+      #   https://github.com/nix-community/home-manager/blob/f5b03feb33629cb2b6dd513935637e8cc718a5ba/modules/services/gpg-agent.nix#L240-L244
+      home.sessionVariablesExtra = optionalString cfg.enableSSHSupport ''
+        # NB: On macOS, the "com.openssh.ssh-agent" launchd service
+        # sets SSH_AUTH_SOCK to a value like the following:
+        #     /private/tmp/com.apple.launchd.ac809KiF2l/Listeners
+        if [[ -z "''${SSH_AUTH_SOCK}" ]] || [[ "''${SSH_AUTH_SOCK}" =~ '^/private/tmp/com\.apple\.launchd\.[^/]+/Listeners''$' ]]; then
+          export SSH_AUTH_SOCK="$(${cfg.package}/bin/gpgconf --list-dirs agent-ssh-socket)"
+        fi
       '';
 
       launchd.agents.gpg-agent = mkIf cfg.enablePackage {
