@@ -34,7 +34,9 @@ in
           "github.com gitlab.com bitbucket.com" = {
             user = "git";
             extraOptions = {
+              AddKeysToAgent = "yes";
               ControlMaster = "no";
+              UseKeychain = "yes";
             };
           };
         };
