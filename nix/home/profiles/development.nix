@@ -89,6 +89,7 @@ in
     dotfiles.gnupg = {
       enable = mkDefault true;
       enablePackage = mkDefault (!isNixOS);
+      enableSSHSupport = true;
     };
   };
 }
