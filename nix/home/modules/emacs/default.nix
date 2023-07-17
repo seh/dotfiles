@@ -86,6 +86,10 @@ in
           nix-modeline
           nixpkgs-fmt
           org
+          org-grep
+          org-modern
+          org-roam
+          org-roam-timestamps
           persistent-scratch
           rust-mode
           slime
