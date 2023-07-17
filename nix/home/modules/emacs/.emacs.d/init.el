@@ -80,7 +80,7 @@
 (load-user-file "tex.el")
 
 ;:*=======================
-(load-user-file "org-config.el")
+(load-user-file "org.el")
 
 ;:*=======================
 (load-user-file "fonts-basic.el")
