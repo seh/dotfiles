@@ -58,6 +58,8 @@ in
           company
           company-auctex
           dired-subtree
+          doom-modeline
+          doom-themes
           elvish-mode
           envrc
           epkgs."ido-completing-read+"
@@ -82,6 +84,7 @@ in
           magit-todos
           markdown-mode
           monokai-theme
+          nerd-icons
           nix-mode
           nix-modeline
           nixpkgs-fmt

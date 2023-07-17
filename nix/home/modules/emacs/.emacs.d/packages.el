@@ -65,6 +65,23 @@
 
 
 ;:*=======================
+;:* doom-modeline
+(use-package nerd-icons)
+
+;; Basis of inspiration: https://config.daviwil.com/emacs#doom-modeline
+(use-package doom-modeline
+  :init
+  (doom-modeline-mode 1)
+  :custom
+  (doom-modeline-height 15)
+  (doom-modeline-bar-width 6)
+  (doom-modeline-buffer-file-name-style 'truncate-upto-project)
+  (doom-modeline-minor-modes t)
+  (doom-modeline-major-mode-icon nil)
+  (doom-modeline-lsp t))
+
+
+;:*=======================
 ;:* footnote
 (use-package footnote
   :config
