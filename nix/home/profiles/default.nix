@@ -10,6 +10,7 @@ with lib;
     ./fonts.nix
     ./macos.nix
     ./minimal.nix
+    ./web.nix
   ];
 
   options.dotfiles.profiles.enableAll =
