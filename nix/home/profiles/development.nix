@@ -36,6 +36,9 @@ in
       gofumpt
       golangci-lint
       gopls
+      ngrok
+      podman
+      postman
       sbcl
       shellcheck
       terraform
