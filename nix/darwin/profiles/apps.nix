@@ -30,6 +30,10 @@
         # TODO(seh): Once the GUI becomes viable to install via Nix,
         # remove this in favor of that.
         "1password"
+        # NB: We can't make this contingent on the Home Manager
+        # configuration that enables Firefox, because we can't see
+        # that attribute from here.
+        "firefox"
         "hammerspoon"
         "slack"
       ];

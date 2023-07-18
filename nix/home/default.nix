@@ -6,6 +6,7 @@
     ./modules/emacs
     ./modules/git.nix
     ./modules/gnupg
+    ./modules/firefox.nix
     ./modules/hammerspoon
     ./modules/linkapps.nix
     ./modules/ssh.nix
