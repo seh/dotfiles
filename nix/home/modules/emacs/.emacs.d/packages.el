@@ -164,11 +164,11 @@
 ;:* persistent-scratch
 (use-package persistent-scratch
   :demand t
-  :config
-  (when (file-exists-p persistent-scratch-save-file)
-    (persistent-scratch-restore))
-  (with-current-buffer "*scratch*"
-    (persistent-scratch-mode)))
+  :hook (after-init . (lambda ()
+                        (when (file-exists-p persistent-scratch-save-file)
+                          (persistent-scratch-restore))
+                        (with-current-buffer "*scratch*"
+                          (persistent-scratch-mode)))))
 
 
 ;:*=======================
