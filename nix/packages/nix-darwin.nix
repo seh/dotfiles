@@ -1,6 +1,6 @@
 # Basis of inspiration:
 #   https://github.com/midchildan/dotfiles/blob/main/nix/packages/nix-darwin.nix
-{ lib, stdenv, runCommand, darwin, nix }:
+{ lib, stdenv, runCommand, nix-darwin, nix }:
 
 let
   # Create a nix-darwin configuration that includes almost nothing
@@ -11,7 +11,7 @@ let
     programs.bash.enable = false;
   };
 
-  tinyDarwin = darwin.lib.darwinSystem {
+  tinyDarwin = nix-darwin.lib.darwinSystem {
     inherit (stdenv.hostPlatform) system;
     modules = [ tinyConfig ];
   };

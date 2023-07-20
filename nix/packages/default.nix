@@ -15,6 +15,6 @@ in
 } // optionalAttrs isDarwin {
   nix-darwin = pkgs.callPackage ./nix-darwin.nix {
     inherit nix;
-    inherit (inputs) darwin;
+    inherit (inputs) nix-darwin;
   };
 }

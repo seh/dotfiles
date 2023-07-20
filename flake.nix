@@ -7,7 +7,7 @@
   inputs = {
     flake-utils.url = "github:numtide/flake-utils";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
-    darwin = {
+    nix-darwin = {
       url = "github:lnl7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
@@ -27,8 +27,8 @@
       homeModules.default = import ./nix/home { inherit inputs; };
       homeConfigurations = import ./nix/home/machines { inherit inputs; };
 
-      darwinModules.default = import ./nix/darwin { inherit inputs; };
-      darwinConfigurations = import ./nix/darwin/machines { inherit inputs; };
+      darwinModules.default = import ./nix/nix-darwin { inherit inputs; };
+      darwinConfigurations = import ./nix/nix-darwin/machines { inherit inputs; };
     } // (lib.eachSupportedSystemPkgs ({ system, pkgs }:
       # TODO(seh): Activate more of this as the needs arise.
       let
