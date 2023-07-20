@@ -82,6 +82,27 @@
 
 
 ;:*=======================
+;:* envrc
+(use-package envrc
+  ;; See the following discussion for why we call this as late as feasible:
+  ;; https://github.com/purcell/envrc#usage
+  :hook (after-init . envrc-global-mode))
+
+
+;:*=======================
+;:* exec-path-from-shell
+(use-package exec-path-from-shell
+  :if window-system
+  :config
+  (dolist (var '("GOPATH"
+                 "XDG_CONFIG_DIRS"
+                 ;; Within Nix, hunspel needs this variable to find its dictionaries.
+                 "XDG_DATA_DIRS"))
+    (add-to-list 'exec-path-from-shell-variables var))
+  (exec-path-from-shell-initialize))
+
+
+;:*=======================
 ;:* footnote
 (use-package footnote
   :config
