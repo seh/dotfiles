@@ -3,10 +3,10 @@
 { inputs }:
 
 let
-  inherit (inputs) self darwin flake-utils home-manager nixpkgs;
+  inherit (inputs) self nix-darwin flake-utils home-manager nixpkgs;
   inherit (home-manager.lib) homeManagerConfiguration;
   inherit (nixpkgs.lib) importTOML;
-  inherit (darwin.lib) darwinSystem;
+  inherit (nix-darwin.lib) darwinSystem;
 
   nixpkgsArgs = {
     config = import ../../files/.config/nixpkgs/config.nix;
@@ -51,7 +51,7 @@ rec {
 
   eachSupportedSystemPkgs = eachSystemPkgs supportedPlatforms;
 
-  
+
   # TODO(seh): Consider defining "mkHome" and "importHome" functions.
   mkHome =
     { system ? config.os.system
@@ -61,19 +61,19 @@ rec {
     } @ args:
     let hmArgs = builtins.removeAttrs args [ "system" ];
     in
-      homeManagerConfiguration (hmArgs // {
-        inherit pkgs;
-        modules = modules ++ [
-          self.homeModules.default
-          ({ lib, ...}: {
-            home = {
-              username = lib.mkDefault config.user.name;
-              homeDirectory = lib.mkDefault config.user.homeDirectory;
-              stateVersion = lib.mkDefault config.user.stateVersion;
-            };
-          })
-        ];
-      });
+    homeManagerConfiguration (hmArgs // {
+      inherit pkgs;
+      modules = modules ++ [
+        self.homeModules.default
+        ({ lib, ... }: {
+          home = {
+            username = lib.mkDefault config.user.name;
+            homeDirectory = lib.mkDefault config.user.homeDirectory;
+            stateVersion = lib.mkDefault config.user.stateVersion;
+          };
+        })
+      ];
+    });
 
   importHome = configPath: args:
     mkHome (args // { modules = [ (import configPath) ]; });
