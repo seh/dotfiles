@@ -14,10 +14,6 @@
 
 (add-to-list 'load-path SEH-site-lisp-dir)
 
-(when (memq window-system '(mac ns))
-  (exec-path-from-shell-initialize)
-  (exec-path-from-shell-copy-env "GOPATH"))
-
 ;; Experimental
 ;(add-to-list 'load-path (expand-file-name "gnus" SEH-site-packages-dir))
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
