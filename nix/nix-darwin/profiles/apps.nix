@@ -30,6 +30,10 @@
         # TODO(seh): Once the GUI becomes viable to install via Nix,
         # remove this in favor of that.
         "1password"
+        # NB: Use the Homebrew cask-installed application since the
+        # Nix package can't arrange for the daemon to run on macOS for
+        # now, per https://github.com/LnL7/nix-darwin/issues/112.
+        "docker"
         "dynobase"
         # NB: We can't make this contingent on the Home Manager
         # configuration that enables Firefox, because we can't see

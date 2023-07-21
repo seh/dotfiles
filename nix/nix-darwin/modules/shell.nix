@@ -11,7 +11,7 @@
 
   environment.systemPackages = with pkgs;
     [
-      docker
+      # TODO(seh): Do we need any of these?
     ];
 
   # TODO(seh): Consider adapting more of the example configuration,
