@@ -60,7 +60,7 @@ in
         '';
       initExtra = builtins.readFile ./zshrc;
       shellAliases = {
-        ls = "ls -G";
+        ls = "ls --color=auto --hyperlink=auto";
       };
 
       antidote = {
