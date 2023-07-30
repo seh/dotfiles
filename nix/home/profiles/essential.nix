@@ -26,6 +26,8 @@ in
           hunspellDicts.en-us
           jless
           jq
+          kitty
+          kitty-themes
           lsof
           nixpkgs-fmt
           openssl
