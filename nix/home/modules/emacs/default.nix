@@ -100,7 +100,10 @@ in
           slime-repl-ansi-color
           smex
           terraform-mode
-          tide
+          # NB: THis is a temporary concession until Emacs 30 makes it
+          # easier to accommodate treesitter.
+          treesit-auto
+          treesit-grammars.with-all-grammars
           use-package
           yaml-mode
           yasnippet
