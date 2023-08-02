@@ -36,6 +36,8 @@ in
       gofumpt
       golangci-lint
       gopls
+      nodePackages.typescript
+      nodePackages.typescript-language-server
       ngrok
       podman
       postman

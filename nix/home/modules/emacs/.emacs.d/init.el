@@ -56,6 +56,9 @@
 ;; TODO: gnus-funcs
 
 ;:*=======================
+(load-user-file "lsp.el")
+
+;:*=======================
 (load-user-file "c-and-java.el")
 
 ;:*=======================
