@@ -8,6 +8,7 @@
     ./modules/gnupg
     ./modules/firefox.nix
     ./modules/hammerspoon
+    ./modules/kitty
     ./modules/linkapps.nix
     ./modules/ssh.nix
     ./modules/userinfo.nix
