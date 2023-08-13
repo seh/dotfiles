@@ -26,8 +26,6 @@ in
           hunspellDicts.en-us
           jless
           jq
-          kitty
-          kitty-themes
           lsof
           nixpkgs-fmt
           openssl
@@ -89,6 +87,9 @@ in
             for-each-ref --sort='-authordate:iso8601' --format=' %(align:25)%(color:green)%(authordate:relative)%(end)%(color:bold blue)%(refname:short)' refs/heads
           '';
         };
+      };
+      kitty = {
+        enable = lib.mkDefault true;
       };
       ssh = {
         enable = lib.mkDefault true;
