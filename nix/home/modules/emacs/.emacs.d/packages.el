@@ -191,6 +191,12 @@
                         (with-current-buffer "*scratch*"
                           (persistent-scratch-mode)))))
 
+;:*=======================
+;:* prettier
+(use-package prettier
+  :hook ((js-base-mode . prettier-mode)
+         (typescript-ts-base-mode . prettier-mode)))
+
 
 ;:*=======================
 ;:* recentf

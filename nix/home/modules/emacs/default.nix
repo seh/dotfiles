@@ -94,6 +94,7 @@ in
           org-roam
           org-roam-timestamps
           persistent-scratch
+          prettier
           rust-mode
           slime
           slime-company
