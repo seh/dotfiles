@@ -36,6 +36,7 @@ in
       gofumpt
       golangci-lint
       gopls
+      nodePackages.prettier
       nodePackages.typescript
       nodePackages.typescript-language-server
       ngrok
