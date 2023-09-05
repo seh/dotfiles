@@ -26,6 +26,10 @@ in
         background_blur = 20;
         background_opacity = "0.96";
         bell_on_tab = true;
+        # The default value is -1, which ignores the case of sitting
+        # with a shell prompt and no command running.
+        #   https://sw.kovidgoyal.net/kitty/conf/#opt-kitty.confirm_os_window_close
+        confirm_os_window_close = 1;
         cursor_shape = "beam";
         # The default thickness is 1.5.
         cursor_beam_thickness = "2.5";
