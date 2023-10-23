@@ -40,6 +40,7 @@
         # that attribute from here.
         "firefox"
         "hammerspoon"
+        "notion"
         "slack"
       ];
 
