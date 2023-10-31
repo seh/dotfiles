@@ -41,7 +41,10 @@ in
       nodePackages.typescript-language-server
       ngrok
       podman
-      postman
+      # See https://github.com/NixOS/nixpkgs/issues/259147 and
+      # https://github.com/postmanlabs/postman-app-support/issues/12383
+      # for why we can't install this package for now.
+      #postman
       sbcl
       shellcheck
       terraform
