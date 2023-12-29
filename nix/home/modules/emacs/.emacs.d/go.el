@@ -9,19 +9,19 @@
          ;; ("C-c C-j" . lsp-find-definition)
          ;; ("C-c C-d" . lsp-describe-thing-at-point)
          )
-  :hook ((go-mode . (lambda ()
-                      (setq
-                       tab-width SEH-tab-width
-                       fill-column 100)
-                      (electric-pair-local-mode)
-                      (lsp-deferred)
-                      (lsp-lens-mode)
-                      (dolist (h '(lsp-format-buffer
-                                   lsp-organize-imports))
-                        (add-hook 'before-save-hook h nil t))))))
+  :hook ((go-mode go-ts-mode) . (lambda ()
+                                  (setq
+                                   tab-width SEH-tab-width
+                                   fill-column 100)
+                                  (electric-pair-local-mode)
+                                  (lsp-deferred)
+                                  (lsp-lens-mode)
+                                  (dolist (h '(lsp-format-buffer
+                                               lsp-organize-imports))
+                                    (add-hook 'before-save-hook h nil t)))))
 
 (use-package yasnippet
-  :hook (go-mode . yas-minor-mode))
+  :hook ((go-mode go-ts-mode) . yas-minor-mode))
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "Go settings initialized")
