@@ -53,6 +53,11 @@ in
       #     https://github.com/NixOS/nixpkgs/issues/103944#issuecomment-1627759940
       # wireshark
     ]
+    ++ optionals isDarwin [
+      # Without QEMU available, Podman can't work as intended atop
+      # macOS.
+      qemu
+    ]
     ++ optionals cfg.development.enableKubernetes [
       fluxcd
       k3d
