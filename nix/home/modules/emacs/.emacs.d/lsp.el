@@ -31,15 +31,13 @@
 
 (use-package lsp-ui
   :commands lsp-ui-mode
-  :config (progn
-            (setq lsp-ui-doc-header t
-                  lsp-ui-doc-include-signature t
-                  lsp-ui-doc-show-with-cursor t
-                  lsp-ui-doc-show-with-mouse t
-                  lsp-ui-sideline-show-code-actions t)))
+  :config (setq lsp-ui-doc-header t
+                lsp-ui-doc-include-signature t
+                lsp-ui-doc-show-with-cursor t
+                lsp-ui-doc-show-with-mouse t
+                lsp-ui-sideline-show-code-actions t))
 
 (use-package company
-  :config (progn
-            (setq company-idle-delay 0)
-            (setq company-minimum-prefix-length 1)
-            (setq company-tooltip-align-annotations t)))
+  :config (setq company-idle-delay 0
+                company-minimum-prefix-length 1
+                company-tooltip-align-annotations t))
