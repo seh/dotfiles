@@ -35,8 +35,8 @@
             (setq lsp-ui-doc-header t
                   lsp-ui-doc-include-signature t
                   lsp-ui-doc-show-with-cursor t
-                  lsp-ui-doc-show-with-mouse t)
-                  lsp-ui-sideline-show-code-actions t))
+                  lsp-ui-doc-show-with-mouse t
+                  lsp-ui-sideline-show-code-actions t)))
 
 (use-package company
   :config (progn
