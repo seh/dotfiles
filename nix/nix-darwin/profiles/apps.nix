@@ -23,7 +23,8 @@
       };
 
       taps = [
-        "homebrew/cask"
+        # NB: As of late 2023, it's no longer necessary to tap
+        # "homebrew/cask".
       ];
 
       casks = [
