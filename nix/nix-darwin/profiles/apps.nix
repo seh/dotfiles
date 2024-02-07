@@ -40,6 +40,7 @@
         # configuration that enables Firefox, because we can't see
         # that attribute from here.
         "firefox"
+        "linearmouse"
         "notion"
         "slack"
       ];
