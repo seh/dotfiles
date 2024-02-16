@@ -3,6 +3,7 @@
 {
   imports = [
     ./profiles
+    ./modules/bash
     ./modules/emacs
     ./modules/git.nix
     ./modules/gnupg

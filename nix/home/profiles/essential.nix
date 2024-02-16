@@ -73,6 +73,9 @@ in
     # };
 
     dotfiles = {
+      bash = {
+        enable = lib.mkDefault true;
+      };
       emacs = {
         enable = lib.mkDefault true;
       };
