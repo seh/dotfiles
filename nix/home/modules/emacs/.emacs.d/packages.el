@@ -242,6 +242,15 @@
 
 
 ;:*=======================
+;:* terraform
+(use-package terraform-mode
+  :config
+  (setq
+   terraform-format-on-save t)
+  :hook (terraform-mode . outline-minor-mode))
+
+
+;:*=======================
 ;:* text
 (use-package text-mode
   :ensure nil
