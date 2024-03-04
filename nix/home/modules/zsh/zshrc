@@ -52,7 +52,16 @@ if [ -f ~/.p10k.zsh ]; then
 fi
 
 # Other programs
-if command -v aws_completer > /dev/null 2>&1 &&
-    command -v aws > /dev/null 2>&1; then
-  complete -C aws_completer aws
+
+# Work around the zsh completion command for the "aws" tool not being
+# amenable to "autoload", per
+# https://github.com/NixOS/nixpkgs/issues/275770:
+if command -v aws > /dev/null 2>&1; then
+  for p in ${(ps. .)NIX_PROFILES}; do
+    f="${p}/share/zsh/site-functions/_aws"
+    if [ -r "${f}" ]; then
+      source "${f}"
+      break
+    fi
+  done
 fi
