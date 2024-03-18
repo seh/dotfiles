@@ -141,15 +141,19 @@
   (ido-mode)
   (ido-everywhere)
   (setq ido-use-virtual-buffers t)
+  (let ((alternate-method 'maybe-frame))
+    (dolist (v '(ido-default-buffer-method
+                 ido-default-file-method))
+      (set-variable v alternate-method)))
   :hook (ido-setup . (lambda ()
                        (let ((kmap ido-file-dir-completion-map))
                          (let ((key '(meta ?n)))
                            (define-key kmap (vector (cons 'control key))
-                             (lookup-key kmap (vector key)))
+                                       (lookup-key kmap (vector key)))
                            (define-key kmap (vector key) 'ido-next-work-file))
                          (let ((key '(meta ?p)))
                            (define-key kmap (vector (cons 'control key))
-                             (lookup-key kmap (vector key)))
+                                       (lookup-key kmap (vector key)))
                            (define-key kmap (vector key) 'ido-prev-work-file))))))
 (use-package ido-completing-read+
   :config
