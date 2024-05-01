@@ -32,4 +32,4 @@ system = "x86_64-darwin"
 stateVersion = 4
 
 [nix]
-package = "unstable" # Example alternative: "nix_2_13"
+package = "latest" # Example alternative: "nix_2_13"
