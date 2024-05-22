@@ -20,6 +20,7 @@ in
           # refuses to run if it's not in the "/Applications" directory.
           age
           coreutils
+          delta
           dig
           elvish
           hunspell
@@ -27,6 +28,7 @@ in
           jless
           jq
           lsof
+          miller
           nixpkgs-fmt
           openssl
           sops
@@ -36,7 +38,6 @@ in
           tree
           unzip
           wget
-          yubikey-manager
           yq-go
           yubikey-manager
         ]
