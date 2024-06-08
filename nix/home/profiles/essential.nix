@@ -29,7 +29,6 @@ in
           jq
           lsof
           miller
-          nixpkgs-fmt
           openssl
           sops
           sqlite
