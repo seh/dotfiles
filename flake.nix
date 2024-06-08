@@ -15,9 +15,13 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    treefmt-nix = {
+      url = "github:numtide/treefmt-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, home-manager, ... } @ inputs:
+  outputs = { self, home-manager, treefmt-nix, ... } @ inputs:
     let lib = import ./nix/lib { inherit inputs; }; in
     {
       inherit lib;
@@ -32,7 +36,29 @@
     } // (lib.eachSupportedSystemPkgs ({ system, pkgs }:
       # TODO(seh): Activate more of this as the needs arise.
       let
-        formatter = pkgs.nixpkgs-fmt;
+        # See https://github.com/numtide/treefmt-nix?tab=readme-ov-file#flakes.
+        treefmtConfigured = treefmt-nix.lib.evalModule
+          pkgs
+          {
+            projectRootFile = "flake.nix";
+            programs = {
+              nixpkgs-fmt.enable = true;
+              prettier.enable = true;
+              shellcheck.enable = true;
+            };
+            settings.formatter.shellcheck = {
+              options = [
+                "--external-sources"
+                "--source-path=SCRIPTDIR"
+              ];
+            };
+          };
+        # For "nix fmt":          
+        formatter = treefmtConfigured.config.build.wrapper;
+        # For "nix flake check":
+        checks = {
+          formatting = treefmtConfigured.config.build.check self;
+        };
         packages = import ./nix/packages { inherit pkgs inputs; };
       in
       {
