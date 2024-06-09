@@ -1,8 +1,9 @@
 # Basis of inspiration:
 #   https://github.com/midchildan/dotfiles/blob/main/nix/packages/default.nix
-{ pkgs ? import <nixpkgs> { }
-, nixos ? import <nixos> { }
-, inputs ? { }
+{
+  pkgs ? import <nixpkgs> { },
+  nixos ? import <nixos> { },
+  inputs ? { },
 }:
 
 let
@@ -12,7 +13,8 @@ let
 in
 {
   # TODO(seh): Define common attributes.
-} // optionalAttrs isDarwin {
+}
+// optionalAttrs isDarwin {
   nix-darwin = pkgs.callPackage ./nix-darwin.nix {
     inherit nix;
     inherit (inputs) nix-darwin;

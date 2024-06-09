@@ -1,6 +1,11 @@
 # Basis of inspiration:
 #   https://github.com/midchildan/dotfiles/blob/7cdd097dd01e0678b6ff56487689c78469237722/nix/home/modules/git.nix
-{ lib, pkgs, config, ... }:
+{
+  lib,
+  pkgs,
+  config,
+  ...
+}:
 
 let
   cfg = config.dotfiles.git;
@@ -35,10 +40,7 @@ in
   };
 
   config = lib.mkMerge [
-    {
-      xdg.configFile."git/home-manager-config".text = lib.generators.toGitINI cfg.config;
-    }
+    { xdg.configFile."git/home-manager-config".text = lib.generators.toGitINI cfg.config; }
     # TODO(seh): Consider including additional tools here.
   ];
 }
-

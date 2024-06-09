@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
@@ -23,7 +28,8 @@ in
       # TODO(seh): Should we add anything here?
       #extraConfig = ''
       #'';
-      extraPackages = epkgs:
+      extraPackages =
+        epkgs:
         with epkgs;
         let
           my-cue-mode = epkgs.trivialBuild {
@@ -111,9 +117,7 @@ in
           yasnippet
         ]
         # Local or ad hoc packages
-        ++ [
-          my-cue-mode
-        ];
+        ++ [ my-cue-mode ];
     };
 
     services.emacs = {
