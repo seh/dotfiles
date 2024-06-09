@@ -21,8 +21,16 @@
     };
   };
 
-  outputs = { self, home-manager, treefmt-nix, ... } @ inputs:
-    let lib = import ./nix/lib { inherit inputs; }; in
+  outputs =
+    {
+      self,
+      home-manager,
+      treefmt-nix,
+      ...
+    }@inputs:
+    let
+      lib = import ./nix/lib { inherit inputs; };
+    in
     {
       inherit lib;
 
@@ -33,26 +41,26 @@
 
       darwinModules.default = import ./nix/nix-darwin { inherit inputs; };
       darwinConfigurations = import ./nix/nix-darwin/machines { inherit inputs; };
-    } // (lib.eachSupportedSystemPkgs ({ system, pkgs }:
+    }
+    // (lib.eachSupportedSystemPkgs (
+      { system, pkgs }:
       # TODO(seh): Activate more of this as the needs arise.
       let
         # See https://github.com/numtide/treefmt-nix?tab=readme-ov-file#flakes.
-        treefmtConfigured = treefmt-nix.lib.evalModule
-          pkgs
-          {
-            projectRootFile = "flake.nix";
-            programs = {
-              nixfmt-rfc-style.enable = true;
-              prettier.enable = true;
-              shellcheck.enable = true;
-            };
-            settings.formatter.shellcheck = {
-              options = [
-                "--external-sources"
-                "--source-path=SCRIPTDIR"
-              ];
-            };
+        treefmtConfigured = treefmt-nix.lib.evalModule pkgs {
+          projectRootFile = "flake.nix";
+          programs = {
+            nixfmt-rfc-style.enable = true;
+            prettier.enable = true;
+            shellcheck.enable = true;
           };
+          settings.formatter.shellcheck = {
+            options = [
+              "--external-sources"
+              "--source-path=SCRIPTDIR"
+            ];
+          };
+        };
         # For "nix fmt":          
         formatter = treefmtConfigured.config.build.wrapper;
         # For "nix flake check":
@@ -64,7 +72,15 @@
       {
         inherit formatter packages;
 
-        apps = import ./nix/apps { inherit inputs pkgs system packages; };
+        apps = import ./nix/apps {
+          inherit
+            inputs
+            pkgs
+            system
+            packages
+            ;
+        };
         #devShells = import ./nix/devshells { inherit pkgs formatter packages; };
-      }));
+      }
+    ));
 }

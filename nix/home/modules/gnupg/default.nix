@@ -1,9 +1,23 @@
 # Basis of inspiration:
 #   https://github.com/midchildan/dotfiles/blob/1c190d0ac1d87c159b8b7d777f02261ae58a3fc5/nix/home/modules/gnupg/default.nix
-{ lib, config, pkgs, dotfiles, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  dotfiles,
+  ...
+}:
 
 let
-  inherit (lib) mkDefault mkEnableOption mkIf mkMerge mkOption optional optionalString;
+  inherit (lib)
+    mkDefault
+    mkEnableOption
+    mkIf
+    mkMerge
+    mkOption
+    optional
+    optionalString
+    ;
   cfg = config.dotfiles.gnupg;
   # NB: Merely mentioning the "pinentry_mac" package here will make it
   # available in the Nix store. See
@@ -52,16 +66,17 @@ in
     #   https://github.com/nix-community/home-manager/issues/91
     #   https://github.com/nix-community/home-manager/issues/3864
     (mkIf pkgs.stdenv.isDarwin {
-      home.file.".gnupg/gpg-agent.conf".text = ''
-        default-cache-ttl 600
-        max-cache-ttl 7200
+      home.file.".gnupg/gpg-agent.conf".text =
+        ''
+          default-cache-ttl 600
+          max-cache-ttl 7200
 
-        pinentry-program ${pinentry-mac}
-      ''
-      + optionalString cfg.enableSSHSupport ''
+          pinentry-program ${pinentry-mac}
+        ''
+        + optionalString cfg.enableSSHSupport ''
 
-        enable-ssh-support
-      '';
+          enable-ssh-support
+        '';
 
       # Emulate Home Manager's "gpg-agent" service's treatment.
       # See:

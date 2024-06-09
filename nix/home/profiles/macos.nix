@@ -1,11 +1,15 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   inherit (lib) mkDefault mkEnableOption mkIf;
 in
 {
-  options.dotfiles.profiles.macos.enable =
-    mkEnableOption "my defaults for macOS preferences";
+  options.dotfiles.profiles.macos.enable = mkEnableOption "my defaults for macOS preferences";
 
   config = mkIf config.dotfiles.profiles.macos.enable {
     targets.darwin = {

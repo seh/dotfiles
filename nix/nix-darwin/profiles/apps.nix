@@ -3,8 +3,7 @@
 { config, lib, ... }:
 
 {
-  options.dotfiles.profiles.apps.enable =
-    lib.mkEnableOption "essential apps for Macs";
+  options.dotfiles.profiles.apps.enable = lib.mkEnableOption "essential apps for Macs";
 
   config = lib.mkIf config.dotfiles.profiles.apps.enable {
     # Manage Homebrew with nix-darwin. Mainly useful for managing casks and
@@ -45,8 +44,7 @@
         "slack"
       ];
 
-      brews = [
-      ];
+      brews = [ ];
     };
   };
 }

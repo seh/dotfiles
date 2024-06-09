@@ -1,13 +1,17 @@
 # Basis of inspiration:
 #   https://github.com/midchildan/dotfiles/blob/8105b21f1a743960a8bbbf5bdcd752a7d9b60d10/nix/home/profiles/fonts.nix
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   inherit (pkgs.stdenv.hostPlatform) isLinux;
 in
 {
-  options.dotfiles.profiles.fonts.enable =
-    lib.mkEnableOption "recommended fonts";
+  options.dotfiles.profiles.fonts.enable = lib.mkEnableOption "recommended fonts";
 
   config = lib.mkIf config.dotfiles.profiles.fonts.enable {
     fonts.fontconfig.enable = lib.mkDefault isLinux;
