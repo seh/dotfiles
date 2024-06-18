@@ -38,6 +38,7 @@ in
           hunspellDicts.en-us
           jless
           jq
+          jqp
           lsof
           miller
           openssl
