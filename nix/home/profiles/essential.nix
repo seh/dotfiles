@@ -40,6 +40,7 @@ in
           jless
           jq
           jqp
+          jujutsu
           lsof
           miller
           openssl
