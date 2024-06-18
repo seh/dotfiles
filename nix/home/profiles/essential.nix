@@ -30,6 +30,7 @@ in
           # NB: The "_1password-gui" does not work on macOS for now; it
           # refuses to run if it's not in the "/Applications" directory.
           age
+          btop
           coreutils
           delta
           dig
