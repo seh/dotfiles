@@ -43,6 +43,7 @@ in
           lsof
           miller
           openssl
+          sile
           sops
           sqlite
           tailscale
