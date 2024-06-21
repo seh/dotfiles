@@ -17,12 +17,26 @@ in
         commit.gpgSign = true;
         tag.gpgSign = true;
       };
-    dotfiles.jujutsu = {
-      user = {
-        name = config.user.fullName;
-        email = config.user.email;
+    dotfiles.jujutsu.extraSettings =
+      {
+        user = {
+          name = config.user.fullName;
+          email = config.user.email;
+        };
+      }
+      // lib.optionalAttrs hasGPGSigningKey {
+        signing = {
+          sign-all = true;
+          backend = "gpg";
+          key = config.user.gpgKey;
+
+          backends = {
+            gpg = {
+              allow-expired-keys = false;
+            };
+          };
+        };
       };
-    };
     # TODO(seh): Consider setting Emacs variables here
     # (user-full-name, user-mail-address).
   };

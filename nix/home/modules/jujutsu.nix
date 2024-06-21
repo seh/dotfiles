@@ -7,19 +7,15 @@
 
 let
   cfg = config.dotfiles.jujutsu;
+  tomlFormat = pkgs.formats.toml { };
 in
 {
   options.dotfiles.jujutsu = {
     enable = lib.mkEnableOption "jujutsu";
-    user = {
-      name = lib.mkOption {
-        type = lib.types.str;
-        description = "Full common name for use in attribution";
-      };
-      email = lib.mkOption {
-        type = lib.types.str;
-        description = "Email address for use in commit attribution";
-      };
+    extraSettings = lib.mkOption {
+      type = tomlFormat.type;
+      default = { };
+      description = "Additional settings to add to jujutsu's configuration file";
     };
   };
 
@@ -27,11 +23,9 @@ in
     programs.jujutsu = {
       enable = lib.mkDefault true;
       package = lib.mkDefault pkgs.jujutsu;
-      settings = {
-        # See https://github.com/martinvonz/jj/blob/main/docs/config.md#configuration.
-        user =
-          lib.optionalAttrs (builtins.hasAttr "name" cfg.user) { name = cfg.user.name; }
-          // lib.optionalAttrs (builtins.hasAttr "email" cfg.user) { email = cfg.user.email; };
+      # See https://github.com/martinvonz/jj/blob/main/docs/config.md#configuration.
+      settings = cfg.extraSettings // {
+        # TODO(seh): Force any overriding settings into play here.
       };
     };
   };
