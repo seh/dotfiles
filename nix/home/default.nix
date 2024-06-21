@@ -6,9 +6,10 @@
     ./profiles
     ./modules/bash
     ./modules/emacs
+    ./modules/firefox.nix
     ./modules/git.nix
     ./modules/gnupg
-    ./modules/firefox.nix
+    ./modules/jujutsu.nix
     ./modules/kitty
     ./modules/linkapps.nix
     ./modules/ssh.nix

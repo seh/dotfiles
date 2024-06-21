@@ -40,7 +40,6 @@ in
           jless
           jq
           jqp
-          jujutsu
           lsof
           miller
           openssl
@@ -105,6 +104,9 @@ in
             for-each-ref --sort='-authordate:iso8601' --format=' %(align:25)%(color:green)%(authordate:relative)%(end)%(color:bold blue)%(refname:short)' refs/heads
           '';
         };
+      };
+      jujutsu = {
+        enable = lib.mkDefault true;
       };
       kitty = {
         enable = lib.mkDefault true;
