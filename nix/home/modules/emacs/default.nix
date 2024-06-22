@@ -93,7 +93,6 @@ in
           nerd-icons
           nix-mode
           nix-modeline
-          nixpkgs-fmt
           org
           org-grep
           org-modern

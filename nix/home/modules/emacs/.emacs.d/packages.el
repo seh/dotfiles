@@ -176,13 +176,10 @@
 ;:*=======================
 ;:* nix
 (use-package nix
-  :hook (nix-mode . electric-pair-mode))
-
-
-;:*=======================
-;:* nixpkgs-fmt
-(use-package nixpkgs-fmt
-  :hook (nix-mode . nixpkgs-fmt-on-save-mode))
+  :hook
+  (nix-mode . electric-pair-mode)
+  (nix-mode . (lambda ()
+                (add-hook 'before-save-hook #'nix-format-before-save 0 t))))
 
 
 ;:*=======================
