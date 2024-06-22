@@ -42,6 +42,11 @@ in
           jqp
           lsof
           miller
+          # NB: We also configure this as the flake-level tool to use
+          # with the "nix check" command, but that configuraton does
+          # not link the "nixfmt" program provided by this package
+          # from a directory on our path along with these other tools.
+          nixfmt-rfc-style
           openssl
           sile
           sops
