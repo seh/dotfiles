@@ -50,6 +50,17 @@
         treefmtConfigured = treefmt-nix.lib.evalModule pkgs {
           projectRootFile = "flake.nix";
           programs = {
+            buildifier = {
+              enable = true;
+              includes = [
+                "*.bzl"
+                "BUILD.bazel"
+                "MODULE.bazel"
+                "WORKSPACE.bazel"
+                "WORKSPACE.bzlmod"
+              ];
+            };
+            gofumpt.enable = true;
             nixfmt-rfc-style.enable = true;
             prettier.enable = true;
             shellcheck.enable = true;
