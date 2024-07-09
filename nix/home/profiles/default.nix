@@ -19,7 +19,6 @@ with lib;
     dotfiles.profiles = {
       desktop.enable = mkDefault true;
       development.enable = mkDefault true;
-      development.enableKubernetes = mkDefault true;
       essential.enable = mkDefault true;
       # TODO(seh): Activate these as we define them.
       # extras.enable = mkDefault true;
