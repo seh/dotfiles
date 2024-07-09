@@ -62,6 +62,7 @@ in
         sbcl
         shellcheck
         tenv
+        watchman
         # NB: The Wireshark application still fails, per this report:
         #     https://github.com/NixOS/nixpkgs/issues/103944#issuecomment-1627759940
         # wireshark
