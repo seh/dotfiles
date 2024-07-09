@@ -35,7 +35,7 @@ in
           # Basis of inspiration:
           #   https://github.com/martinvonz/jj/blob/main/docs/config.md#display-of-commit-and-change-ids
           #   https://v5.chriskrycho.com/essays/jj-init/#revisions-and-revsets.
-          "format_short_id(id)" = "id.shortest()";
+          "format_short_id(id)" = "id.shortest(12)";
           "format_short_signature(signature)" = "signature";
           "format_timestamp(timestamp)" = "timestamp.ago()";
         };
