@@ -25,6 +25,12 @@ in
       package = lib.mkDefault pkgs.jujutsu;
       # See https://github.com/martinvonz/jj/blob/main/docs/config.md#configuration.
       settings = cfg.extraSettings // {
+        core = {
+          fsmonitor = "watchman";
+          watchman = {
+            register_snapshot_trigger = true;
+          };
+        };
         template-aliases = {
           # Basis of inspiration:
           #   https://github.com/martinvonz/jj/blob/main/docs/config.md#display-of-commit-and-change-ids
