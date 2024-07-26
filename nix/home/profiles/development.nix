@@ -43,6 +43,7 @@ in
         bazel-buildtools
         bazelisk
         bombardier
+        bruno
         cue
         github-cli
         go-jsonnet
