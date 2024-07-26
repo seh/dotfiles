@@ -40,6 +40,7 @@ in
           "format_timestamp(timestamp)" = "timestamp.ago()";
         };
         ui = {
+          editor = "emacsclient";
           log-word-wrap = true;
         };
       };
