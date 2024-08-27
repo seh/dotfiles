@@ -85,6 +85,9 @@ in
 
     programs.go = {
       enable = true;
+      # TODO(seh): Remove this once Go version 1.23 or later is the
+      # default choice.
+      package = pkgs.go_1_23;
     };
 
     programs.k9s = mkIf cfg.development.enableKubernetes {
