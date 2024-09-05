@@ -81,7 +81,7 @@
         packages = import ./nix/packages { inherit pkgs inputs; };
       in
       {
-        inherit formatter packages;
+        inherit checks formatter packages;
 
         apps = import ./nix/apps {
           inherit
