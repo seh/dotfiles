@@ -61,7 +61,6 @@
               ];
             };
             gofumpt.enable = true;
-            nixfmt-rfc-style.enable = true;
             prettier.enable = true;
             shellcheck.enable = true;
           };
