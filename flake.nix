@@ -50,25 +50,49 @@
         treefmtConfigured = treefmt-nix.lib.evalModule pkgs {
           projectRootFile = "flake.nix";
           programs = {
-            buildifier = {
-              enable = true;
-              includes = [
-                "*.bzl"
-                "BUILD.bazel"
-                "MODULE.bazel"
-                "WORKSPACE.bazel"
-                "WORKSPACE.bzlmod"
-              ];
-            };
+            buildifier.enable = true;
             gofumpt.enable = true;
             prettier.enable = true;
             shellcheck.enable = true;
+            terraform.enable = true;
           };
-          settings.formatter.shellcheck = {
-            options = [
-              "--external-sources"
-              "--source-path=SCRIPTDIR"
-            ];
+          settings = {
+            global = {
+              excludes = [
+                "pnpm-lock.yaml"
+              ];
+            };
+            formatter = {
+              buildifier = {
+                includes = [
+                  "*/*.bzl"
+                  "*/BUILD.bazel"
+                  "BUILD.bazel"
+                  "MODULE.bazel"
+                  "REPO.bazel"
+                  "WORKSPACE.bazel"
+                  "WORKSPACE.bzlmod"
+                ];
+              };
+              gofumpt = {
+                excludes = [
+                  "*.gen.go"
+                  "*/generated/*.go"
+                ];
+              };
+              shellcheck = {
+                includes = [
+                  "*.bash"
+                  "*.envrc"
+                  "*.envrc.*"
+                  "*.sh"
+                ];
+                options = [
+                  "--external-sources"
+                  "--source-path=SCRIPTDIR"
+                ];
+              };
+            };
           };
         };
         # For "nix fmt":          
