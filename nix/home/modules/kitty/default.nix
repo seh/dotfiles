@@ -60,7 +60,7 @@ in
         # Emulate "tomato" which is 255 R, 99 G, and 71 B.
         cursor = "#ff6347";
       };
-      theme = "Belafonte Day";
+      themeFile = "Belafonte_Day";
     };
   };
 }
