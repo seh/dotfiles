@@ -106,6 +106,7 @@ in
           slime-company
           slime-repl-ansi-color
           smex
+          templ-ts-mode
           terraform-mode
           # NB: THis is a temporary concession until Emacs 30 makes it
           # easier to accommodate treesitter.
