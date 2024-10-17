@@ -60,6 +60,7 @@ in
         # https://github.com/postmanlabs/postman-app-support/issues/12383
         # for why we can't install this package for now.
         #postman
+        ripgrep
         sbcl
         shellcheck
         tenv
