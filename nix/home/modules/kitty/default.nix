@@ -41,6 +41,7 @@ in
         cursor_stop_blinking_after = "2.0";
         #dynamic_background_opacity = true;
         editor = "emacsclient";
+        macos_option_as_alt = "left";
         scrollback_lines = 15000;
         scrollback_pager_history_size = 10;
         tab_bar_edge = "top";
