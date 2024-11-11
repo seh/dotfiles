@@ -26,7 +26,7 @@ in
           # TODO(seh): Consider moving some of these into separate files
           # depending on which kinds of machines should include them
           # (e.g. personal v. work.
-          _1password
+          _1password-cli
           # NB: The "_1password-gui" does not work on macOS for now; it
           # refuses to run if it's not in the "/Applications" directory.
           age
