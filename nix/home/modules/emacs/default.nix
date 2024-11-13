@@ -73,7 +73,6 @@ in
           flycheck
           flycheck-rust
           flycheck-tip
-          git-commit
           go-mode
           haskell-mode
           helpful
