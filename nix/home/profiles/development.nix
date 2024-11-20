@@ -51,10 +51,12 @@ in
         gofumpt
         golangci-lint
         gopls
+        mkcert
         nodePackages.prettier
         nodePackages.typescript
         nodePackages.typescript-language-server
         ngrok
+        nssTools # For use with mkcert
         podman
         # See https://github.com/NixOS/nixpkgs/issues/259147 and
         # https://github.com/postmanlabs/postman-app-support/issues/12383
