@@ -39,7 +39,7 @@ in
       [
         aws-vault
         awscli2
-        bazel # TODO(seh): Sholud we install this directly?
+        bazel_7 # TODO(seh): Sholud we install this directly?
         bazel-buildtools
         bazelisk
         bombardier
