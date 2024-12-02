@@ -22,11 +22,20 @@ in
       # the DejaVu family, so we'll pull them in as well.
       #
       # Excluded:
-      # - inconsolata 
+      # - inconsolata
       # - meslo-lgs-nf
       dejavu_fonts
       jetbrains-mono
-      nerdfonts
+      nerd-fonts.bitstream-vera-sans-mono
+      nerd-fonts.dejavu-sans-mono
+      nerd-fonts.droid-sans-mono
+      nerd-fonts.fira-code
+      nerd-fonts.fira-mono
+      nerd-fonts.inconsolata
+      nerd-fonts.meslo-lg
+      nerd-fonts.roboto-mono
+      nerd-fonts.symbols-only
+      nerd-fonts.terminess-ttf
       source-code-pro
     ];
   };
