@@ -50,6 +50,7 @@ in
           # from a directory on our path along with these other tools.
           nixfmt-rfc-style
           openssl
+          sile
           sops
           sqlite
           tailscale
