@@ -42,8 +42,8 @@
                  (when (fboundp sym)
                    (setq lisp-indent-function sym)))))
    (setq slime-lisp-implementations
-         '((sbcl ("/usr/local/bin/sbcl"))))
-   ))
+         ;; Usually this is "/usr/local/bin/sbcl".
+         '((sbcl ("~/.nix-profile/bin/sbcl"))))))
 
 
 (defun translate-native-to-cygwin-filename (filename)
