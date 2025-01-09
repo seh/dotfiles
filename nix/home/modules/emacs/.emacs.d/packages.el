@@ -170,6 +170,9 @@
 (use-package magit
   :config
   (setq magit-popup-use-prefix-argument 'default
+        ;; Edit jj commit messages using "git-commit-mode":
+        ;; Default value: "/\\(\\(\\(COMMIT\\|NOTES\\|PULLREQ\\|MERGEREQ\\|TAG\\)_EDIT\\|MERGE_\\|\\)MSG\\|\\(BRANCH\\|EDIT\\)_DESCRIPTION\\)\\'"
+        git-commit-filename-regexp "/\\(\\(\\(COMMIT\\|NOTES\\|PULLREQ\\|MERGEREQ\\|TAG\\)_EDIT\\|MERGE_\\|\\)MSG\\|\\(BRANCH\\|EDIT\\)_DESCRIPTION\\)\\|\\.jjdescription\\'"
         git-commit-summary-max-length 50))
 
 
@@ -197,6 +200,13 @@
 (use-package prettier
   :hook ((js-base-mode . prettier-mode)
          (typescript-ts-base-mode . prettier-mode)))
+
+
+;:*=======================
+;:* project
+(use-package project
+  :config
+  (add-to-list 'project-vc-extra-root-markers ".jj"))
 
 
 ;:*=======================
