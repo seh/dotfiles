@@ -19,5 +19,9 @@
 (delete-selection-mode 1)
 
 (setq compilation-ask-about-save nil)
+
+;; See the `ediff-toggle-show-clashes-only' function, bound to `$$' in
+;; ediff's "control buffer".
+(setq ediff-show-clashes-only t)
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "variables initialized")

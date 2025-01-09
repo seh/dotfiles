@@ -27,7 +27,7 @@
                              ;; to exclude.
                              ;;(format "/private/var/tmp/_bazel_%s/[[:xdigit:]]+/external/" (user-login-name))
                              ))
-              (add-to-list 'lsp-file-watch-ignored p t))))
+              (add-to-list 'lsp-file-watch-ignored-directories p t))))
 
 (use-package lsp-ui
   :commands lsp-ui-mode
