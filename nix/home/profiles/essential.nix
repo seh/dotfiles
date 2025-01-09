@@ -16,7 +16,8 @@ let
   inherit (pkgs.stdenv.hostPlatform) isDarwin system;
 in
 {
-  options.dotfiles.profiles.essential.enable = mkEnableOption "essential packages for servers and desktops alike";
+  options.dotfiles.profiles.essential.enable =
+    mkEnableOption "essential packages for servers and desktops alike";
 
   config = mkIf config.dotfiles.profiles.essential.enable {
     home = {
@@ -32,6 +33,7 @@ in
           age
           btop
           coreutils
+          d2
           delta
           dig
           elvish
