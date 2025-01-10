@@ -45,6 +45,7 @@ in
         bombardier
         bruno
         cue
+        fswatch
         github-cli
         go-jsonnet
         go-tools
