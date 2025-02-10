@@ -25,8 +25,11 @@ in
         };
       }
       // lib.optionalAttrs hasGPGSigningKey {
+        git = {
+          # NB: Opt for this instead of enabling "signing.sign-all".
+          sign-on-push = true;
+        };
         signing = {
-          sign-all = true;
           backend = "gpg";
           key = config.user.gpgKey;
 
