@@ -14,7 +14,6 @@ in
   config = mkIf config.dotfiles.profiles.macos.enable {
     home = {
       packages = with pkgs; [
-        raycast
       ];
     };
 
