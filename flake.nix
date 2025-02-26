@@ -95,7 +95,7 @@
             };
           };
         };
-        # For "nix fmt":          
+        # For "nix fmt":
         formatter = treefmtConfigured.config.build.wrapper;
         # For "nix flake check":
         checks = {

@@ -26,5 +26,4 @@ in
       "slack"
       "zoom"
     ];
-  services.nix-daemon.enable = lib.mkDefault true;
 }
