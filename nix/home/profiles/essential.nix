@@ -39,6 +39,7 @@ in
           elvish
           hunspell
           hunspellDicts.en-us
+          jj-fzf
           jless
           jq
           jqp
