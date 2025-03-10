@@ -35,8 +35,6 @@ in
           };
           git = {
             push-new-bookmarks = true;
-            # TODO(seh): Remove this once it's the default value.
-            subprocess = true;
           };
           revset-aliases = {
             "lagging_bookmarks" = ''
@@ -78,6 +76,12 @@ in
           ui = {
             editor = "emacsclient";
             log-word-wrap = true;
+            # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.
+            pager = "delta";
+            diff = {
+              # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.
+              format = "git";
+            };
           };
         }
       ];
