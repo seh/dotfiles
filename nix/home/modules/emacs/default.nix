@@ -63,6 +63,7 @@ in
           color-theme-sanityinc-tomorrow
           company
           company-auctex
+          csv-mode
           dired-subtree
           doom-modeline
           doom-themes
