@@ -77,9 +77,7 @@ in
 
     programs.bat = {
       enable = true;
-      config = {
-        theme = "Monokai Extended Light";
-      };
+      #config = { };
     };
 
     # TODO(seh): The "gpg-agent" service is only supported on Linux for now.
