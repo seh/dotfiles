@@ -76,6 +76,7 @@ in
           flycheck-tip
           git-modes
           go-mode
+          gruvbox-theme
           haskell-mode
           helpful
           inf-ruby
