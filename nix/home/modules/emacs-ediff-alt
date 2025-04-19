@@ -1,0 +1,28 @@
+set -e -u -o pipefail
+
+# NB: If we delete the file ahead of time,
+# ediff-merge-files-with-ancestor will write a fresh file to the same
+# path as soon as we quit the merge. Is it possible to disable that
+# behavior?
+
+# if [ -f "$4" ]; then
+#   rm -f "$4"
+# fi
+sentinel_file="$(mktemp -t ediff-merge-quit-sentinel-XXXXXX)"
+trap 'rm -f "${sentinel_file}"' EXIT
+
+read -r -d '' eval_expr <<EOF || :
+(progn
+  (setq *jj-ediff-merge-quit-sentinel-file* "${sentinel_file}")
+  (ediff-merge-files-with-ancestor "$1" "$2" "$3" nil "$4"))
+EOF
+
+emacsclient \
+  --eval "${eval_expr}"
+
+fswatch \
+  --one-event \
+  "${sentinel_file}"
+
+emacsclient \
+  --eval "(setq *jj-ediff-merge-quit-sentinel-file* nil)"
