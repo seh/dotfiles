@@ -1,7 +1,7 @@
 {
+  config,
   lib,
   pkgs,
-  config,
   ...
 }:
 
@@ -23,6 +23,7 @@ in
     programs.jujutsu = {
       enable = lib.mkDefault true;
       package = lib.mkDefault pkgs.jujutsu;
+      ediff = false; # We'll configure our own variant later.
       # See https://github.com/martinvonz/jj/blob/main/docs/config.md#configuration.
       settings = lib.mkMerge [
         cfg.extraSettings
@@ -73,17 +74,45 @@ in
                   boxquoted(diff.stat(80), "stat")))
             '';
           };
-          ui = {
-            editor = "emacsclient";
-            log-word-wrap = true;
-            # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.
-            pager = "delta";
-            diff = {
-              # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.
-              format = "git";
-            };
-          };
         }
+        (
+          let
+            mergeToolName = "ediff-alt";
+          in
+          {
+            merge-tools.${mergeToolName} =
+              let
+                programName = "emacs-ediff-alt";
+                emacsDiffProgram = pkgs.writeShellScriptBin programName (
+                  builtins.readFile (./. + "/${programName}")
+                );
+              in
+              {
+                program = lib.getExe emacsDiffProgram;
+                merge-args = [
+                  "$left"
+                  "$right"
+                  "$base"
+                  "$output"
+                ];
+                # Attempt to detect when we exit ediff-merge without
+                # resolving all the conflicts, leaving some still
+                # present in the output file.
+                merge-tool-edits-conflict-markers = true;
+              };
+            ui = {
+              diff = {
+                # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.
+                format = "git";
+              };
+              editor = "emacsclient";
+              log-word-wrap = true;
+              merge-editor = mergeToolName;
+              # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.
+              pager = "delta";
+            };
+          }
+        )
       ];
     };
   };

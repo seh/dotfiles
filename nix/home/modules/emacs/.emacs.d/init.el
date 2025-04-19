@@ -53,6 +53,9 @@
 ;:*=======================
 (load-user-file "calendar.el")
 
+;:*=======================
+(load-user-file "ediff.el")
+
 ;; TODO: gnus-funcs
 
 ;:*=======================

@@ -39,7 +39,7 @@ in
       [
         aws-vault
         awscli2
-        bazel_7 # TODO(seh): Sholud we install this directly?
+        bazel_7 # TODO(seh): Upgrade this to Bazel 8 once it's available.
         bazel-buildtools
         bazelisk
         bombardier
