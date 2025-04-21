@@ -216,6 +216,13 @@
 
 
 ;:*=======================
+;:* rustic
+(use-package rustic
+  :config
+  (setq rustic-format-trigger 'on-save))
+
+
+;:*=======================
 ;:* sh-mode
 (use-package sh-script
   :config
