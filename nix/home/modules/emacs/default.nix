@@ -68,6 +68,7 @@ in
           company
           company-auctex
           csv-mode
+          dap-mode
           dired-subtree
           doom-modeline
           doom-themes
@@ -108,6 +109,7 @@ in
           prettier
           protobuf-ts-mode
           rust-mode
+          rustic
           slime
           slime-company
           slime-repl-ansi-color

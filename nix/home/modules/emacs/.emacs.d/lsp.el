@@ -9,11 +9,18 @@
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :config (progn
-            (setq lsp-prefer-flymake nil ;; Use flycheck instead of flymake.
+            (setq lsp-inlay-hint-enable t
+                  ;; Go-specific
                   lsp-go-use-gofumpt t
                   ;; NB: This only works well with Bazel-based workspaces.
-                  ;lsp-go-env `((GOPACKAGESDRIVER . ,(expand-file-name "gopackagesdriver")))
-                  )
+                  ;;lsp-go-env `((GOPACKAGESDRIVER . ,(expand-file-name "gopackagesdriver")))
+                  ;; Rust-specific
+                  ;; See https://robert.kra.hn/posts/rust-emacs-setup/#lsp-mode-and-lsp-ui-mode.
+                  lsp-rust-analyzer-cargo-watch-command "clippy"
+                  lsp-rust-analyzer-display-lifetime-elision-hints-enable "skip_trivial"
+                  lsp-rust-analyzer-display-chaining-hints t
+                  lsp-rust-analyzer-display-closure-return-type-hints t
+                  lsp-rust-analyzer-display-reborrow-hints "mutable")
             (lsp-register-custom-settings
              '(("gopls.staticcheck" t t)))
             ;; NB: I'd prefer to catch directory names more like
@@ -35,12 +42,15 @@
 
 (use-package lsp-ui
   :commands lsp-ui-mode
-  :config (setq lsp-ui-doc-header t
+  :config (setq lsp-ui-doc-delay 1.0 ; Default is 0.2.
+                lsp-ui-doc-header t
                 lsp-ui-doc-include-signature t
+                lsp-ui-doc-position 'at-point
                 lsp-ui-doc-show-with-cursor t
                 lsp-ui-doc-show-with-mouse t
-                lsp-ui-sideline-show-code-actions t))
-
+                lsp-ui-peek-always-show t
+                lsp-ui-sideline-show-code-actions t
+                lsp-ui-sideline-show-hover t))
 (use-package company
   :config (setq company-idle-delay 0
                 company-minimum-prefix-length 1

@@ -93,7 +93,10 @@ in
         kustomize
       ]
       ++ optionals cfg.development.enableRust [
-        # NB: rustup includes cargo, rust-analyzer, and rustfmt.
+        # NB: rustup includes the following:
+        # - cargo
+        # - rust-analyzer
+        # - rustfmt
         rustup
       ];
 
