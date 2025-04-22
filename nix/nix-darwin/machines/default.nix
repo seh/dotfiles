@@ -9,5 +9,5 @@ in
   # "scutil --get LocalHostName" command.
   #
   # We can use a general name here to establish the common case.
-  local = importDarwin ./basic.nix { };
+  local = importDarwin ./work.nix { };
 }
