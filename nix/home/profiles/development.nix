@@ -31,6 +31,12 @@ in
       default = false;
       description = "Whether to install Kubernetes-related development tools.";
     };
+
+    enableRust = mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Whether to install Rust-related development tools.";
+    };
   };
 
   config = mkIf cfg.development.enable {
@@ -85,6 +91,10 @@ in
         kubectl
         kubernetes-helm
         kustomize
+      ]
+      ++ optionals cfg.development.enableRust [
+        # NB: rustup includes cargo, rust-analyzer, and rustfmt.
+        rustup
       ];
 
     programs.go = {

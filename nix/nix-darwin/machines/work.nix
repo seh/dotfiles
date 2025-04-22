@@ -15,6 +15,9 @@ in
   home-manager.users.${username} = {
     dotfiles.profiles = {
       enableAll = true;
+      development = {
+        enableRust = true;
+      };
       # TODO(seh): Activate these as we define them.
       #extras.enable = false;
     };

@@ -6,11 +6,12 @@ let
   inherit (inputs.self.lib) config importHome;
 in
 rec {
+  basic = importHome ./basic.nix { };
+  development = importHome ./development.nix { };
+
   # By default, Home Manager will look for an attribute whose name
   # matches "username@hostname" in order to build its
   # configuration. If no match is found, it falls back to the current
   # username.
   ${config.user.name} = basic;
-
-  basic = importHome ./basic.nix { };
 }
