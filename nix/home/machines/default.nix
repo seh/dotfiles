@@ -13,5 +13,7 @@ rec {
   # matches "username@hostname" in order to build its
   # configuration. If no match is found, it falls back to the current
   # username.
+
+  "${config.user.name}@Spinner.local" = development;
   ${config.user.name} = basic;
 }
