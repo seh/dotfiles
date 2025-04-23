@@ -37,29 +37,34 @@ in
         extended = true;
         size = 20000; # Default is 10,000.
       };
-      initExtraFirst = lib.mkIf cfg.enablePowerlevel10k ''
-        # See https://github.com/romkatv/powerlevel10k#how-do-i-initialize-direnv-when-using-instant-prompt.
-        (( ''${+commands[direnv]} )) && emulate zsh -c "''$(direnv export zsh)"
+      # TODO(seh): This does not work yet.
+      initContent = lib.mkMerge [
+        (lib.mkIf cfg.enablePowerlevel10k (
+          lib.mkBefore ''
+            # See https://github.com/romkatv/powerlevel10k#how-do-i-initialize-direnv-when-using-instant-prompt.
+            (( ''${+commands[direnv]} )) && emulate zsh -c "''$(direnv export zsh)"
 
-        if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''$A''${(%):-%n}.zsh" ]]; then
-          source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
-        fi
+            if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''$A''${(%):-%n}.zsh" ]]; then
+              source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+            fi
 
-        (( ''${+commands[direnv]} )) && emulate zsh -c "''$(direnv hook zsh)"
-      '';
-      initExtraBeforeCompInit = ''
-        zstyle ':completion:*' completer _expand _complete _ignored _correct _approximate
-        zstyle ':completion:*' subst-globs-only true
-        zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
-        zstyle ':completion:*' matcher-list ''' 'm:{[:lower:]}={[:upper:]}' 'm:{[:lower:][:upper:]}={[:upper:][:lower:]}' 'r:|[._-]=* r:|=*'
-        zstyle ':completion:*' menu select=1
-        zstyle ':completion:*' select-prompt '%SScrolling active: current selection at %p%s'
-        # As suggested by the Bazel project: https://docs.bazel.build/versions/master/completion.html#zsh.
-        zstyle ':completion:*' use-cache on
-        zstyle ':completion:*' cache-path ~/.zsh/cache
-        zstyle :compinstall filename ~/.zshrc
-      '';
-      initExtra = builtins.readFile ./zshrc;
+            (( ''${+commands[direnv]} )) && emulate zsh -c "''$(direnv hook zsh)"
+          ''
+        ))
+        (lib.mkOrder 550 ''
+          zstyle ':completion:*' completer _expand _complete _ignored _correct _approximate
+          zstyle ':completion:*' subst-globs-only true
+          zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
+          zstyle ':completion:*' matcher-list ''' 'm:{[:lower:]}={[:upper:]}' 'm:{[:lower:][:upper:]}={[:upper:][:lower:]}' 'r:|[._-]=* r:|=*'
+          zstyle ':completion:*' menu select=1
+          zstyle ':completion:*' select-prompt '%SScrolling active: current selection at %p%s'
+          # As suggested by the Bazel project: https://docs.bazel.build/versions/master/completion.html#zsh.
+          zstyle ':completion:*' use-cache on
+          zstyle ':completion:*' cache-path ~/.zsh/cache
+          zstyle :compinstall filename ~/.zshrc
+        '')
+        (builtins.readFile ./zshrc)
+      ];
       shellAliases = {
         ls = "ls --color=auto --hyperlink=auto";
       };
