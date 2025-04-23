@@ -1,4 +1,9 @@
 setopt extendedglob
+# NB: Home Manager does not offer an analog to its
+# "programs.zsh.autocd" attribute for this, and oh-my-zsh enables this
+# by default in its "lib/directories.zsh" file:
+# https://github.com/ohmyzsh/ohmyzsh/blob/de1ca65dcaebd19f5ca6626616bb79b529362458/lib/directories.zsh#L3
+unsetopt auto_pushd
 
 # fzf configuration
 export FZF_COMPLETION_TRIGGER='~~'
