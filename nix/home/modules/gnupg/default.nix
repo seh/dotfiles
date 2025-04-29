@@ -49,13 +49,15 @@ in
     {
       home.packages = optional cfg.enablePackage cfg.package;
 
-      home.file.".gnupg/gpg.conf".source = pkgs.substituteAll {
+      home.file.".gnupg/gpg.conf".source = pkgs.replaceVarsWith {
         src = ./gpg.conf;
-        gpgKey = dotfiles.lib.config.user.gpgKey or "@removeMe@";
+        replacements = {
+          gpgKey = dotfiles.lib.config.user.gpgKey or "!!!remove!!!";
+        };
         # Remove lines in which we failed to replace the intended
         # content correctly.
         postInstall = ''
-          sed -i '/@removeMe@/d' "$target"
+          sed -i '/!!!remove!!!/d' "$target"
         '';
       };
     }

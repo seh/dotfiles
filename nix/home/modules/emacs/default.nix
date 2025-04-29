@@ -24,11 +24,7 @@ in
       # C-M-SPC key binding for "mark-sexy" gets intercepted by macOS
       # and presents the Character Viewer applet.
       #package = lib.mkDefault (if isDarwin then pkgs.emacs-macport else pkgs.emacs);
-      # TODO(seh): Revert this once issue 395169 is resolved.
-      # https://github.com/NixOS/nixpkgs/issues/395169
-      #package = lib.mkDefault pkgs.emacs;
-      # Basis of inspiration: https://github.com/NixOS/nixpkgs/issues/395169#issuecomment-2797849764
-      package = pkgs.emacs.override { withNativeCompilation = false; };
+      package = lib.mkDefault pkgs.emacs;
       # TODO(seh): Should we add anything here?
       #extraConfig = ''
       #'';
