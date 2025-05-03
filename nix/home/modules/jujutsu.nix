@@ -26,6 +26,10 @@ in
       ediff = false; # We'll configure our own variant later.
       # See https://github.com/martinvonz/jj/blob/main/docs/config.md#configuration.
       settings = lib.mkMerge [
+        {
+          # See https://jj-vcs.github.io/jj/latest/config/#json-schema-support.
+          "$schema" = "https://jj-vcs.github.io/jj/latest/config-schema.json";
+        }
         cfg.extraSettings
         {
           core = {
@@ -110,6 +114,7 @@ in
               merge-editor = mergeToolName;
               # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.
               pager = "delta";
+              show-cryptographic-signatures = true;
             };
           }
         )
