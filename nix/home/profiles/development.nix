@@ -72,6 +72,7 @@ in
         ripgrep
         sbcl
         shellcheck
+        taplo # For TOML files
         tenv
         trurl
         watchman
