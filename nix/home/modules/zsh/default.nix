@@ -37,7 +37,6 @@ in
         extended = true;
         size = 20000; # Default is 10,000.
       };
-      # TODO(seh): This does not work yet.
       initContent = lib.mkMerge [
         (lib.mkIf cfg.enablePowerlevel10k (
           lib.mkBefore ''
