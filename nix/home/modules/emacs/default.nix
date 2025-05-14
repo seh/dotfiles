@@ -68,7 +68,6 @@ in
           dired-subtree
           doom-modeline
           doom-themes
-          elvish-mode
           envrc
           epkgs."ido-completing-read+"
           exec-path-from-shell
