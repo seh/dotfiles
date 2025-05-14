@@ -36,7 +36,6 @@ in
           d2
           delta
           dig
-          elvish
           hunspell
           hunspellDicts.en-us
           jj-fzf
