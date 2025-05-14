@@ -12,6 +12,7 @@
     ./modules/jujutsu.nix
     ./modules/kitty
     ./modules/linkapps.nix
+    ./modules/nushell.nix
     ./modules/ssh.nix
     ./modules/userinfo.nix
     ./modules/zsh

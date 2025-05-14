@@ -96,6 +96,7 @@ in
           nerd-icons
           nix-mode
           nix-modeline
+          nushell-ts-mode
           org
           org-grep
           org-modern
