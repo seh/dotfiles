@@ -109,7 +109,14 @@ in
                 # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.
                 format = "git";
               };
-              editor = "emacsclient";
+              editor =
+                let
+                  programName = "emacsclient-for-jj-describe";
+                  emacsclientProgram = pkgs.writeShellScriptBin programName (
+                    builtins.readFile (./. + "/${programName}")
+                  );
+                in
+                lib.getExe emacsclientProgram;
               log-word-wrap = true;
               merge-editor = mergeToolName;
               # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.

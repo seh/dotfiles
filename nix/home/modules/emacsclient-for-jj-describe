@@ -1,0 +1,37 @@
+# See the following GitHub issues and discussions for the motivation for this program:
+# - https://github.com/jj-vcs/jj/issues/6540
+# - https://github.com/magit/magit/discussions/5372
+
+set -e -u -o pipefail
+
+function usage() {
+  printf "usage: %s [-h] description_file\n" "$(basename "${0}")" 1>&2
+  exit 2
+}
+
+function parse_args() {
+  while getopts h name
+  do
+    case "${name}" in
+      h) usage;;
+      ?) usage;;
+    esac
+  done
+}
+
+parse_args "$@"
+shift $((OPTIND - 1))
+
+if (( $# != 1 )); then
+  printf "%s: expected one argument\n" "$(basename "${0}")" 1>&2
+  exit 2
+fi
+
+target_file="$1"
+shift
+link_path="$(jj workspace root)/.jj/repo/$(basename ${target_file})"
+
+ln -s "${target_file}" "${link_path}"
+trap 'rm -rf "${link_path}"' EXIT
+
+emacsclient "${link_path}"
