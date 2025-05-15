@@ -103,7 +103,7 @@ in
           org-roam-timestamps
           persistent-scratch
           prettier
-          protobuf-ts-mode
+          protobuf-mode
           rust-mode
           rustic
           slime

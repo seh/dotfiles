@@ -32,6 +32,12 @@ in
       description = "Whether to install Kubernetes-related development tools.";
     };
 
+    enableLanguageServers = mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to install per-language servers that implement the LSP.";
+    };
+
     enableRust = mkOption {
       type = lib.types.bool;
       default = false;
@@ -45,12 +51,12 @@ in
       [
         aws-vault
         awscli2
-        bash-language-server
-        bazel_7 # TODO(seh): Upgrade this to Bazel 8 once it's available.
         bazel-buildtools
+        bazel_7 # TODO(seh): Upgrade this to Bazel 8 once it's available.
         bazelisk
         bombardier
         bruno
+        buf
         cue
         fswatch
         github-cli
@@ -58,12 +64,10 @@ in
         go-tools
         gofumpt
         golangci-lint
-        gopls
         mkcert
+        ngrok
         nodePackages.prettier
         nodePackages.typescript
-        nodePackages.typescript-language-server
-        ngrok
         nssTools # For use with mkcert
         podman
         # See https://github.com/NixOS/nixpkgs/issues/259147 and
@@ -73,7 +77,6 @@ in
         ripgrep
         sbcl
         shellcheck
-        taplo # For TOML files
         tenv
         trurl
         watchman
@@ -94,6 +97,18 @@ in
         kubectl
         kubernetes-helm
         kustomize
+      ]
+      ++ optionals cfg.development.enableLanguageServers [
+        bash-language-server
+        gopls
+        graphql-language-service-cli
+        jsonnet-language-server
+        nixd # Compare with "nil"
+        nodePackages.typescript-language-server
+        postgres-lsp # Compare with "sqls"
+        taplo # For TOML files
+        terraform-ls
+        yaml-language-server
       ]
       ++ optionals cfg.development.enableRust [
         # NB: rustup includes the following:
