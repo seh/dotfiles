@@ -45,6 +45,7 @@ in
       [
         aws-vault
         awscli2
+        bash-language-server
         bazel_7 # TODO(seh): Upgrade this to Bazel 8 once it's available.
         bazel-buildtools
         bazelisk
