@@ -47,6 +47,7 @@ in
         #dynamic_background_opacity = true;
         editor = "emacsclient";
         macos_option_as_alt = "left";
+        remember_window_position = true;
         scrollback_lines = 15000;
         scrollback_pager_history_size = 10;
         tab_bar_edge = "top";
