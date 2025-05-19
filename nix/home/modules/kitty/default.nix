@@ -23,7 +23,8 @@ in
       package = lib.mkDefault pkgs.kitty;
       keybindings = {
         "f7" = "show_last_visited_command_output";
-        "f8" = "launch --stdin-source=@last_visited_cmd_output --stdin-add-formatting --type=os-window less -R";
+        "f8" =
+          "launch --stdin-source=@last_visited_cmd_output --stdin-add-formatting --type=os-window less -R";
         "shift+f8" = "launch --stdin-source=@last_visited_cmd_output --type=clipboard";
       };
       settings = {
@@ -38,7 +39,11 @@ in
         cursor_shape = "beam";
         # The default thickness is 1.5.
         cursor_beam_thickness = "2.5";
-        cursor_stop_blinking_after = "2.0";
+        cursor_stop_blinking_after = "1.5";
+        # Minimum number of milliseconds for which the cursor must
+        # have sat in its current position before showing a trail
+        # when it moves far enough away.
+        cursor_trail = 1250;
         #dynamic_background_opacity = true;
         editor = "emacsclient";
         macos_option_as_alt = "left";
