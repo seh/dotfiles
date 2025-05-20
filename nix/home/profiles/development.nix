@@ -104,6 +104,7 @@ in
         graphql-language-service-cli
         jsonnet-language-server
         nixd # Compare with "nil"
+        nodePackages.vscode-json-languageserver
         nodePackages.typescript-language-server
         postgres-lsp # Compare with "sqls"
         taplo # For TOML files
