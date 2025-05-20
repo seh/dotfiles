@@ -74,9 +74,17 @@ in
         ];
     };
 
-    programs.bat = {
-      enable = true;
-      #config = { };
+    programs = {
+      bat = {
+        enable = true;
+        #config = { };
+      };
+      carapace = {
+        enable = true;
+        enableBashIntegration = true;
+        enableNushellIntegration = true;
+        enableZshIntegration = true;
+      };
     };
 
     # TODO(seh): The "gpg-agent" service is only supported on Linux for now.
