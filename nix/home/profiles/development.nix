@@ -49,6 +49,7 @@ in
     home.packages =
       with pkgs;
       [
+        atmos
         aws-vault
         awscli2
         bazel-buildtools
