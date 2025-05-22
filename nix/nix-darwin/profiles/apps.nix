@@ -40,7 +40,6 @@
         # that attribute from here.
         "firefox"
         "linearmouse"
-        "notion"
         "slack"
       ];
 
