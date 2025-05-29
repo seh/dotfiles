@@ -122,6 +122,12 @@ in
       enable = true;
     };
 
+    programs.granted = {
+      enable = true;
+      enableFishIntegration = true;
+      enableZshIntegration = true;
+    };
+
     programs.k9s = mkIf cfg.development.enableKubernetes {
       enable = true;
       # TODO(seh): Configure settings.
