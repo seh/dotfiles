@@ -24,6 +24,6 @@ in
       #"discord"
       "dropbox"
       "slack"
-      "zoom"
+      "zoom-us"
     ];
 }
