@@ -36,6 +36,7 @@ in
           d2
           delta
           dig
+          duckdb
           hunspell
           hunspellDicts.en-us
           jj-fzf
