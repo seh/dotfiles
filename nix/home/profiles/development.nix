@@ -64,6 +64,7 @@ in
         go-tools
         gofumpt
         golangci-lint
+        google-cloud-sdk
         mkcert
         ngrok
         nodePackages.prettier
