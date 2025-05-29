@@ -69,11 +69,10 @@ in
         nodePackages.prettier
         nodePackages.typescript
         nssTools # For use with mkcert
-        podman
-        # See https://github.com/NixOS/nixpkgs/issues/259147 and
-        # https://github.com/postmanlabs/postman-app-support/issues/12383
-        # for why we can't install this package for now.
-        #postman
+        # See the following issues and patches:
+        # https://github.com/NixOS/nixpkgs/issues/408192
+        # https://github.com/NixOS/nixpkgs/pull/408599
+        #podman
         ripgrep
         sbcl
         shellcheck
