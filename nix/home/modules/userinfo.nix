@@ -6,16 +6,16 @@ let
 in
 {
   config = {
-    dotfiles.git.config =
+    programs.git =
       {
-        user = {
-          name = config.user.fullName;
-          email = config.user.email;
-        } // lib.optionalAttrs hasGPGSigningKey { signingKey = config.user.gpgKey; };
+        userName = config.user.fullName;
+        userEmail = config.user.email;
       }
       // lib.optionalAttrs hasGPGSigningKey {
-        commit.gpgSign = true;
-        tag.gpgSign = true;
+        signing = {
+          key = config.user.gpgKey;
+          signByDefault = true;
+        };
       };
     dotfiles.jujutsu.extraSettings =
       {

@@ -134,29 +134,6 @@ in
       # TODO(seh): Configure settings.
     };
 
-    dotfiles.git.config = {
-      branch = {
-        autoSetupMerge = "always";
-        autoSetupRebase = "local";
-      };
-      merge = {
-        conflictStyle = "zdiff3";
-      };
-      rebase = {
-        autosqaush = true;
-      };
-      rerere = {
-        enabled = 1;
-        autoupdate = 1;
-      };
-      # Per https://golang.org/doc/faq#git_https, for gopls against private repositories:
-      url = {
-        "ssh://git@github.com/" = {
-          insteadOf = "https://github.com/";
-        };
-      };
-    };
-
     dotfiles.gnupg = {
       enable = mkDefault true;
       enablePackage = mkDefault (!isNixOS);
