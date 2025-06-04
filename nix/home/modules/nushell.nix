@@ -6,7 +6,7 @@
 }:
 
 let
-  cfg = config.dotfiles.jujutsu;
+  cfg = config.dotfiles.nushell;
 in
 {
   options.dotfiles.nushell = {

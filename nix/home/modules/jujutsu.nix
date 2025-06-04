@@ -127,5 +127,9 @@ in
         )
       ];
     };
+    home.packages = with pkgs; [
+      jj-fzf
+      jjui
+    ];
   };
 }
