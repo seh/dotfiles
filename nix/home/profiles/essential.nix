@@ -39,7 +39,6 @@ in
           duckdb
           hunspell
           hunspellDicts.en-us
-          jj-fzf
           jless
           jq
           jqp
@@ -58,6 +57,7 @@ in
           tmux
           tree
           unzip
+          watchman
           wget
           yq-go
           yubikey-manager
@@ -114,6 +114,9 @@ in
         enable = lib.mkDefault true;
       };
       kitty = {
+        enable = lib.mkDefault true;
+      };
+      nushell = {
         enable = lib.mkDefault true;
       };
       ssh = {
