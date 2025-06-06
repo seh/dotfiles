@@ -105,10 +105,8 @@ in
                 merge-tool-edits-conflict-markers = true;
               };
             ui = {
-              diff = {
-                # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.
-                format = "git";
-              };
+              # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#diff-format.
+              diff-formatter = ":git";
               editor =
                 let
                   programName = "emacsclient-for-jj-describe";
