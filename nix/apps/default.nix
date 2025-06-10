@@ -8,7 +8,7 @@
 {
   home = {
     type = "app";
-    program = "${inputs.home.defaultPackage.${system}}/bin/home-manager";
+    program = "${inputs.home-manager.packages.${system}.default}/bin/home-manager";
   };
 }
 // pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
