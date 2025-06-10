@@ -29,7 +29,7 @@ system = "x86_64-darwin"
 # NB: It's a good idea to override this option this per host.
 #
 # https://daiderd.com/nix-darwin/manual/index.html#opt-system.stateVersion
-stateVersion = 6
+stateVersion = 4
 
 [nix]
 package = "latest" # Example alternative: "nix_2_13"
