@@ -21,7 +21,7 @@ system = "x86_64-linux"
 # NB: It's a good idea to override this option this per host.
 #
 # https://nix-community.github.io/home-manager/options.html#opt-home.stateVersion
-stateVersion = "23.05"
+stateVersion = "25.11"
 
 [os.darwin]
 system = "x86_64-darwin"
@@ -29,7 +29,7 @@ system = "x86_64-darwin"
 # NB: It's a good idea to override this option this per host.
 #
 # https://daiderd.com/nix-darwin/manual/index.html#opt-system.stateVersion
-stateVersion = 4
+stateVersion = 6
 
 [nix]
 package = "latest" # Example alternative: "nix_2_13"
