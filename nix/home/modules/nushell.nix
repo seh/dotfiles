@@ -19,6 +19,8 @@ in
       package = lib.mkDefault pkgs.nushell;
       plugins = with pkgs.nushellPlugins; [
         formats
+        gstat
+        hcl
         highlight
         net
         polars
