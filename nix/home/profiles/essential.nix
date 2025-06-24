@@ -61,6 +61,7 @@ in
           wget
           yq-go
           yubikey-manager
+          yubikey-personalization
         ]
         ++ optionals (!isDarwin) [
           dnsutils
