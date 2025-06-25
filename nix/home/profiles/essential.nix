@@ -61,7 +61,6 @@ in
           wget
           yq-go
           yubikey-manager
-          zoom-us
         ]
         ++ optionals (!isDarwin) [
           dnsutils
