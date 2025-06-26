@@ -16,6 +16,7 @@ in
     dotfiles.profiles = {
       enableAll = true;
       development = {
+        enableKubernetes = true;
         enableRust = true;
       };
       # TODO(seh): Activate these as we define them.
