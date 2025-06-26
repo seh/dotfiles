@@ -64,7 +64,12 @@ in
         go-tools
         gofumpt
         golangci-lint
-        google-cloud-sdk
+        (google-cloud-sdk.withExtraComponents (
+          with google-cloud-sdk.components;
+          [
+            gke-gcloud-auth-plugin
+          ]
+        ))
         mkcert
         ngrok
         nodePackages.prettier
