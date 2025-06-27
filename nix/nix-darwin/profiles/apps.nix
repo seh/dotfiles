@@ -41,7 +41,7 @@ in
         # NB: Use the Homebrew cask-installed application since the
         # Nix package can't arrange for the daemon to run on macOS for
         # now, per https://github.com/LnL7/nix-darwin/issues/112.
-        "docker"
+        "docker-desktop"
         # NB: We can't make this contingent on the Home Manager
         # configuration that enables Firefox, because we can't see
         # that attribute from here.
