@@ -6,7 +6,6 @@ let
   inherit (inputs)
     self
     nix-darwin
-    flake-utils
     home-manager
     nixpkgs
     ;
@@ -44,25 +43,6 @@ rec {
         overlays = nixpkgsArgs.overlays ++ overlays;
       }
     );
-
-  eachSystemPkgs =
-    systems: f:
-    flake-utils.lib.eachSystem systems (
-      system:
-      let
-        pkgs = mkPkgs inputs.nixpkgs { inherit system; };
-      in
-      f { inherit system pkgs; }
-    );
-
-  supportedPlatforms = [
-    "aarch64-darwin"
-    "aarch64-linux"
-    "x86_64-darwin"
-    "x86_64-linux"
-  ];
-
-  eachSupportedSystemPkgs = eachSystemPkgs supportedPlatforms;
 
   # TODO(seh): Consider defining "mkHome" and "importHome" functions.
   mkHome =
