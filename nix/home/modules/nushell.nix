@@ -22,11 +22,11 @@ in
         gstat
         hcl
         highlight
-        net
+        #net
         polars
         query
         #semver # TODO(seh): This one is not available for Darwin atop x86-64 for now.
-        units
+        #units
       ];
     };
     home.packages = with pkgs; [
