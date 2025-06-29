@@ -1,112 +1,87 @@
-# Basis of inspiration:
-#   https://github.com/midchildan/dotfiles/blob/7cdd097dd01e0678b6ff56487689c78469237722/nix/lib/default.nix
-{ inputs }:
+{ lib, ... }:
 
 let
-  inherit (inputs)
-    self
-    nix-darwin
-    home-manager
-    nixpkgs
-    ;
-  inherit (home-manager.lib) homeManagerConfiguration;
-  inherit (nixpkgs.lib) importTOML;
-  inherit (nix-darwin.lib) darwinSystem;
+  flatMapAttrs =
+    f: attrs:
+    lib.foldlAttrs (
+      acc: name: value:
+      lib.warnIf (lib.hasAttr name acc) "flatMapAttrs: conflicting definitions for attribute ${name}" acc
+      // f name value
+    ) { } attrs;
 
-  nixpkgsArgs = {
-    config = import ../../files/.config/nixpkgs/config.nix;
-    overlays = [ self.overlays.default ];
-  };
-in
-rec {
-  config = importTOML ../config.toml;
+  flattenAttrs = flatMapAttrs (
+    name: value: if lib.isDerivation value || !lib.isAttrs value then { ${name} = value; } else value
+  );
 
-  # Wrapper function for creating a Nixpkgs package set that includes
-  # the dotfiles overlays and unfree packages.
-  #
-  # Example:
-  #   mkPkgs nixpkgs { }
-  #   mkPkgs { system = "x86_64-linux"; }
-  mkPkgs =
-    pkgs:
-    {
-      system ? config.os.system,
-      config ? { },
-      overlays ? [ ],
-      ...
-    }@args:
-    import pkgs (
-      args
-      // {
-        inherit system;
-        config = nixpkgsArgs.config // config;
-        overlays = nixpkgsArgs.overlays ++ overlays;
+  filterNonDrvAttrsRecursive =
+    predicate:
+    flatMapAttrs (
+      name: value:
+      lib.optionalAttrs (predicate name value) {
+        "${name}" =
+          if (lib.isAttrs value && !lib.isDerivation value) then
+            filterNonDrvAttrsRecursive predicate value
+          else
+            value;
       }
     );
 
-  # TODO(seh): Consider defining "mkHome" and "importHome" functions.
-  mkHome =
-    {
-      system ? config.os.system,
-      pkgs ? mkPkgs nixpkgs { inherit system; },
-      modules ? [ ],
-      ...
-    }@args:
+  collectLegacyPackages =
+    attrs@{ pkgs, ... }:
+    packagesFn:
     let
-      hmArgs = builtins.removeAttrs args [ "system" ];
+      autoCalledPkgs =
+        self:
+        lib.packagesFromDirectoryRecursive (
+          { inherit (self) callPackage; } // lib.removeAttrs attrs [ "pkgs" ]
+        );
+
+      packagesFn' = self: { callPackages = lib.callPackagesWith (pkgs // self); } // packagesFn self;
+
+      overlay = lib.flip (_: packagesFn');
+
+      isAvailable =
+        drv:
+        lib.any (pred: pred drv) [
+          (lib.meta.availableOn { inherit (pkgs.stdenv.hostPlatform) system; })
+          (drv: !lib.isDerivation drv)
+        ];
+
+      allPackages = lib.makeScope pkgs.newScope (lib.extends overlay autoCalledPkgs);
     in
-    homeManagerConfiguration (
-      hmArgs
-      // {
-        inherit pkgs;
-        modules = modules ++ [
-          self.homeModules.default
-          (
-            { lib, ... }:
-            {
-              home = {
-                username = lib.mkDefault config.user.name;
-                homeDirectory = lib.mkDefault config.user.homeDirectory;
-                stateVersion = lib.mkDefault config.user.stateVersion;
-              };
-            }
-          )
-        ];
-      }
-    );
+    filterNonDrvAttrsRecursive (_: isAvailable) allPackages;
 
-  importHome = configPath: args: mkHome (args // { modules = [ (import configPath) ]; });
+  collectPackages =
+    attrs: packagesFn:
+    let
+      allPackages = collectLegacyPackages attrs packagesFn;
+    in
+    lib.filterAttrs (_: lib.isDerivation) (flattenAttrs allPackages);
 
-  mkDarwin =
-    {
-      modules ? [ ],
-      system ? config.os.darwin.system,
-      ...
-    }@args:
-    darwinSystem (
-      args
-      // {
-        inherit system;
-        modules = modules ++ [
-          self.darwinModules.default
-          home-manager.darwinModules.default
-          (
-            { lib, ... }:
-            {
-              system.stateVersion = lib.mkDefault config.os.darwin.stateVersion;
-              nixpkgs = nixpkgsArgs;
-              home-manager = {
-                useGlobalPkgs = true;
-                sharedModules = [
-                  self.homeModules.default
-                  { home.stateVersion = lib.mkDefault config.user.stateVersion; }
-                ];
-              };
-            }
-          )
-        ];
-      }
-    );
+  #importDir = dir: lib.mapAttrsToList (path: _: lib.path.append dir path) (builtins.readDir dir);
+  importDir =
+    dir:
+    let
+      nixFileNames = lib.attrsets.attrNames (
+        lib.attrsets.filterAttrs (
+          name: type: type == "directory" || (type == "regular" && lib.hasSuffix ".nix" name)
+        ) (builtins.readDir dir)
+      );
+    in
+    builtins.map (name: lib.path.append dir name) nixFileNames;
 
-  importDarwin = configPath: args: mkDarwin (args // { modules = [ (import configPath) ]; });
+  importDirs = lib.concatMap importDir;
+in
+{
+  flake.lib = {
+    inherit
+      collectLegacyPackages
+      collectPackages
+      filterNonDrvAttrsRecursive
+      flatMapAttrs
+      flattenAttrs
+      importDir
+      importDirs
+      ;
+  };
 }

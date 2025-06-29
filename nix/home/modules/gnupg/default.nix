@@ -18,6 +18,9 @@ let
     optional
     optionalString
     ;
+  inherit (config.dotfiles) flakeOptions;
+  userConfig = flakeOptions.user;
+  hasGPGSigningKey = builtins.hasAttr "gpgKey" userConfig && userConfig.gpgKey != "";
   cfg = config.dotfiles.gnupg;
   # NB: Merely mentioning the "pinentry_mac" package here will make it
   # available in the Nix store. See
@@ -52,7 +55,7 @@ in
       home.file.".gnupg/gpg.conf".source = pkgs.replaceVarsWith {
         src = ./gpg.conf;
         replacements = {
-          gpgKey = dotfiles.lib.config.user.gpgKey or "!!!remove!!!";
+          gpgKey = if hasGPGSigningKey then userConfig.gpgKey else "!!!remove!!!";
         };
         # Remove lines in which we failed to replace the intended
         # content correctly.

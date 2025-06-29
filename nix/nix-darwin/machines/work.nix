@@ -1,13 +1,10 @@
-# Basis of inspiration:
-#   https://github.com/midchildan/dotfiles/blob/9d3f1a4b8d8a9203e34e331f46cc18f844829aa3/nix/darwin/machines/ci.nix#L8
-{ dotfiles, ... }:
+{ config, ... }:
 
 let
-  username = dotfiles.lib.config.user.name;
-  homeDirectory = dotfiles.lib.config.user.darwin.homeDirectory;
+  username = config.dotfiles.flakeOptions.user.name;
 in
 {
-  users.users.${username}.home = homeDirectory;
+  users.users.${username}.home = "/Users/${username}";
 
   dotfiles.profiles.apps.enable = true;
 
@@ -22,5 +19,8 @@ in
       # TODO(seh): Activate these as we define them.
       #extras.enable = false;
     };
+    home.stateVersion = "23.11";
   };
+
+  system.stateVersion = 6;
 }

@@ -1,25 +1,27 @@
 {
-  inputs,
-  pkgs,
-  system,
-  packages,
+  lib,
+  self,
+  ...
 }:
 
 {
-  home = {
-    type = "app";
-    program = "${inputs.home-manager.packages.${system}.default}/bin/home-manager";
-  };
-}
-// pkgs.lib.optionalAttrs pkgs.stdenv.isDarwin {
-  os = {
-    type = "app";
-    program = "${packages.nix-darwin}/bin/darwin-rebuild";
-  };
-}
-// pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
-  os = {
-    type = "app";
-    program = "${packages.nixos-rebuild}/bin/nixos-rebuild";
-  };
+  perSystem =
+    {
+      pkgs,
+      inputs',
+      self',
+      ...
+    }:
+    {
+      apps =
+        {
+          home.program = "${inputs'.home-manager.packages.default}/bin/home-manager";
+        }
+        // lib.optionalAttrs pkgs.stdenv.isDarwin {
+          os.program = "${inputs'.nix-darwin.packages.default}/bin/darwin-rebuild";
+        }
+        // lib.optionalAttrs pkgs.stdenv.isLinux {
+          os.program = "${self'.packages.nixos-rebuild}/bin/nixos-rebuild";
+        };
+    };
 }
