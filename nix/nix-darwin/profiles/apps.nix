@@ -52,11 +52,5 @@ in
 
       brews = [ ];
     };
-
-    # See the following GitHub issues for what makes this necessary,
-    # perhaps only temporarily:
-    #   https://github.com/nix-darwin/nix-darwin/issues/1462
-    #   https://github.com/nix-darwin/nix-darwin/issues/1457
-    system.primaryUser = lib.mkIf config.homebrew.enable username;
   };
 }

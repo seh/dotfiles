@@ -6,6 +6,9 @@
 }:
 
 let
+  inherit (config.dotfiles) flakeOptions;
+  userConfig = flakeOptions.user;
+  hasGPGSigningKey = builtins.hasAttr "gpgKey" userConfig && userConfig.gpgKey != "";
   cfg = config.dotfiles.jujutsu;
   tomlFormat = pkgs.formats.toml { };
 in
@@ -78,7 +81,27 @@ in
                   boxquoted(diff.stat(80), "stat")))
             '';
           };
+          user = {
+            name = userConfig.fullName;
+            email = userConfig.email;
+          };
         }
+        (lib.optionalAttrs hasGPGSigningKey {
+          git = {
+            # NB: Opt for this instead of enabling "signing.sign-all".
+            sign-on-push = true;
+          };
+          signing = {
+            backend = "gpg";
+            key = userConfig.gpgKey;
+
+            backends = {
+              gpg = {
+                allow-expired-keys = false;
+              };
+            };
+          };
+        })
         (
           let
             mergeToolName = "ediff-alt";
