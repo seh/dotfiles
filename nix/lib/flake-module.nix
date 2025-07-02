@@ -56,20 +56,37 @@ let
       flakeOptionsModule =
         { lib, ... }:
         {
+          # Set up the default value for the option proxy.
           dotfiles._flakeOptions = cfg;
           home-manager = {
             useGlobalPkgs = true;
             sharedModules = cfg.home.modules ++ [
               localFlake.inputs.self.homeModules.default
-              { dotfiles._flakeOptions = cfg; }
+              {
+                # Set up the default value for the option proxy.
+                dotfiles._flakeOptions = cfg;
+              }
             ];
           };
+        };
+      machineDefaultsModule =
+        { config, ... }:
+        let
+          # Use the final values for the options.
+          currentConfig = config.dotfiles._flakeOptions;
+          username = currentConfig.user.name;
+        in
+        {
           nixpkgs.hostPlatform = hostPlatform;
           # See the following GitHub issues for what makes this
           # necessary, perhaps only temporarily:
           #   https://github.com/nix-darwin/nix-darwin/issues/1462
           #   https://github.com/nix-darwin/nix-darwin/issues/1457
-          system.primaryUser = lib.mkDefault cfg.user.name;
+          system = {
+            primaryUser = lib.mkDefault cfg.user.name;
+            stateVersion = lib.mkDefault 6;
+          };
+          users.users.${username}.home = lib.mkDefault "/Users/${username}";
         };
     in
     darwinSystem (
@@ -82,6 +99,7 @@ let
             localFlake.inputs.self.darwinModules.default
             localFlake.inputs.home-manager.darwinModules.default
             flakeOptionsModule
+            machineDefaultsModule
           ];
       }
     );
