@@ -25,7 +25,6 @@ in
         "1password-cli"
         #"discord"
         "dropbox"
-        "lens-desktop"
         # TODO(seh): We don't install this explicitly, but it's an
         # implicit dependency of some other package.
         "ngrok"

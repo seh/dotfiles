@@ -101,7 +101,6 @@ in
         kubectl
         kubernetes-helm
         kustomize
-        lens
       ]
       ++ optionals cfg.development.enableLanguageServers [
         bash-language-server
