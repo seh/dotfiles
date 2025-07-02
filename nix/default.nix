@@ -29,6 +29,7 @@ in
     ./nix-darwin
     ./overlays
     ./packages
+    ./templates
   ];
 
   flake = {
