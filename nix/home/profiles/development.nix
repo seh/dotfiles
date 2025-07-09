@@ -138,10 +138,15 @@ in
       # TODO(seh): Configure settings.
     };
 
-    dotfiles.gnupg = {
-      enable = mkDefault true;
-      enablePackage = mkDefault (!isNixOS);
-      enableSSHSupport = true;
+    dotfiles = {
+      gnupg = {
+        enable = mkDefault true;
+        enablePackage = mkDefault (!isNixOS);
+        enableSSHSupport = true;
+      };
+      helix = {
+        enable = lib.mkDefault true;
+      };
     };
   };
 }
