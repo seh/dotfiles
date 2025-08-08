@@ -59,6 +59,7 @@ in
         buf
         cue
         fswatch
+        gemini-cli
         github-cli
         go-jsonnet
         go-tools
