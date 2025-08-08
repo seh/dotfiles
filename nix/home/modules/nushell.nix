@@ -20,7 +20,7 @@ in
       plugins = with pkgs.nushellPlugins; [
         formats
         gstat
-        hcl
+        #hcl # TODO(seh): This one is not building correctly for now.
         highlight
         #net
         polars
