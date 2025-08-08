@@ -53,7 +53,7 @@ in
           sile
           sops
           sqlite
-          tailscale
+          #tailscale
           tmux
           tree
           unzip
