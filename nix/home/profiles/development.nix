@@ -57,6 +57,7 @@ in
         bombardier
         bruno
         buf
+        crush
         cue
         fswatch
         gemini-cli
