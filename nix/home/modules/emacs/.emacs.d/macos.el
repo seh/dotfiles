@@ -5,8 +5,8 @@
 ;; the system clipboard.
 ;; `osxkeys' sets this to nil by default. Force its value back.
 (setq-default select-enable-clipboard t)
-(setq mac-command-modifier 'meta
-      mac-function-modifier 'super)
+(setq ns-command-modifier 'meta  ;; Aliased by `mac-command-modifier'
+      ns-option-modifier 'super) ;; Aliased by `mac-option-modifier'
 
 ;; TODO(seh): Port aquamacs-page-down-extend-region and aquamacs-page-up-extend-region?
 ;; See: https://github.com/aquamacs-emacs/aquamacs-emacs/blob/7af9e2a42348c8bc685d504834600b1e26e29a1e/aquamacs/src/site-lisp/aquamacs-editing.el#L234-L242.
