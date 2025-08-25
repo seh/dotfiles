@@ -60,7 +60,6 @@ in
         crush
         cue
         fswatch
-        gemini-cli
         github-cli
         go-jsonnet
         go-tools
@@ -141,6 +140,9 @@ in
     };
 
     dotfiles = {
+      gemini = {
+        enable = lib.mkDefault true;
+      };
       gnupg = {
         enable = mkDefault true;
         enablePackage = mkDefault (!isNixOS);
