@@ -23,6 +23,7 @@ in
       builtins.elem (lib.getName pkg) [
         "1password"
         "1password-cli"
+        "crush"
         #"discord"
         "dropbox"
         # TODO(seh): We don't install this explicitly, but it's an
