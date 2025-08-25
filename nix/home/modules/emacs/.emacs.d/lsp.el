@@ -14,6 +14,7 @@
                   lsp-go-use-gofumpt t
                   ;; NB: This only works well with Bazel-based workspaces.
                   ;;lsp-go-env `((GOPACKAGESDRIVER . ,(expand-file-name "gopackagesdriver")))
+                  lsp-references-exclude-declaration t
                   ;; Rust-specific
                   ;; See https://robert.kra.hn/posts/rust-emacs-setup/#lsp-mode-and-lsp-ui-mode.
                   lsp-rust-analyzer-cargo-watch-command "clippy"
