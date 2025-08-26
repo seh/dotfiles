@@ -3,6 +3,7 @@
 {
   config,
   inputs,
+  lib,
   ...
 }:
 
@@ -12,14 +13,41 @@ let
   username = config.dotfiles.user.name;
 in
 {
-  flake.homeConfigurations = rec {
-    basic = importHome ./basic.nix { inherit pkgs; };
-    development = importHome ./development.nix { inherit pkgs; };
+  flake.homeConfigurations =
+    let
+      commonMkHomeArgs = {
+        inherit pkgs;
 
-    # By default, Home Manager will look for an attribute whose name
-    # matches "username@hostname" in order to build its
-    # configuration. If no match is found, it falls back to the
-    # current username.
-    ${username} = basic;
-  };
+        modules = [
+          {
+            nixpkgs.config = {
+              #allowUnfree = true;
+              allowUnfreePredicate =
+                pkg:
+                builtins.elem (lib.getName pkg) [
+                  "1password"
+                  "1password-cli"
+                  "crush"
+                  #"discord"
+                  "dropbox"
+                  # TODO(seh): We don't install this explicitly, but it's an
+                  # implicit dependency of some other package.
+                  "ngrok"
+                  "slack"
+                ];
+            };
+          }
+        ];
+      };
+    in
+    rec {
+      basic = importHome ./basic.nix commonMkHomeArgs;
+      development = importHome ./development.nix commonMkHomeArgs;
+
+      # By default, Home Manager will look for an attribute whose name
+      # matches "username@hostname" in order to build its
+      # configuration. If no match is found, it falls back to the
+      # current username.
+      ${username} = basic;
+    };
 }

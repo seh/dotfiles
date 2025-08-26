@@ -44,7 +44,34 @@ let
       }
     );
 
-  importHome = configPath: args: mkHome (args // { modules = [ (import configPath) ]; });
+  # Basis of inspiration:
+  #  https://stackoverflow.com/a/54505212
+  #  https://discourse.nixos.org/t/nix-function-to-merge-attributes-records-recursively-and-concatenate-arrays/2030
+  recursiveMerge =
+    attrList:
+    let
+      f =
+        attrPath:
+        builtins.zipAttrsWith (
+          n: values:
+          if lib.tail values == [ ] then
+            lib.head values
+          else if lib.all lib.isList values then
+            lib.unique (lib.concatLists values)
+          else if lib.all lib.isAttrs values then
+            f (attrPath ++ [ n ]) values
+          else
+            lib.last values
+        );
+    in
+    f [ ] attrList;
+
+  importHome =
+    configPath: args:
+    mkHome (recursiveMerge [
+      args
+      { modules = [ (import configPath) ]; }
+    ]);
 
   mkDarwin =
     {
@@ -54,7 +81,7 @@ let
     }@args:
     let
       flakeOptionsModule =
-        { lib, ... }:
+        { ... }:
         {
           # Set up the default value for the option proxy.
           dotfiles._flakeOptions = cfg;
@@ -104,7 +131,12 @@ let
       }
     );
 
-  importDarwin = configPath: args: mkDarwin (args // { modules = [ (import configPath) ]; });
+  importDarwin =
+    configPath: args:
+    mkDarwin (recursiveMerge [
+      args
+      { modules = [ (import configPath) ]; }
+    ]);
 
   pkgsFor = system: (getSystem system).allModuleArgs.pkgs;
 in
