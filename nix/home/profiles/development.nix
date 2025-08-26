@@ -4,7 +4,6 @@
   config,
   lib,
   pkgs,
-  dotfiles,
   ...
 }:
 
@@ -16,11 +15,10 @@ let
     mkOption
     optionals
     ;
-  inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux system;
-  isGenericLinux = (config.targets.genericLinux.enable or false);
+  inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
+  isGenericLinux = config.targets.genericLinux.enable or false;
   isNixOS = isLinux && !isGenericLinux;
   cfg = config.dotfiles.profiles;
-  myPkgs = dotfiles.packages.${system};
 in
 {
   options.dotfiles.profiles.development = {
@@ -124,19 +122,21 @@ in
         rustup
       ];
 
-    programs.go = {
-      enable = true;
-    };
+    programs = {
+      go = {
+        enable = true;
+      };
 
-    programs.granted = {
-      enable = true;
-      enableFishIntegration = true;
-      enableZshIntegration = true;
-    };
+      granted = {
+        enable = true;
+        enableFishIntegration = true;
+        enableZshIntegration = true;
+      };
 
-    programs.k9s = mkIf cfg.development.enableKubernetes {
-      enable = true;
-      # TODO(seh): Configure settings.
+      k9s = mkIf cfg.development.enableKubernetes {
+        enable = true;
+        # TODO(seh): Configure settings.
+      };
     };
 
     dotfiles = {

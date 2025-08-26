@@ -16,7 +16,7 @@ in
   options.dotfiles.jujutsu = {
     enable = lib.mkEnableOption "jujutsu";
     extraSettings = lib.mkOption {
-      type = tomlFormat.type;
+      inherit (tomlFormat) type;
       default = { };
       description = "Additional settings to add to jujutsu's configuration file";
     };
@@ -83,7 +83,7 @@ in
           };
           user = {
             name = userConfig.fullName;
-            email = userConfig.email;
+            inherit (userConfig) email;
           };
         }
         (lib.optionalAttrs hasGPGSigningKey {

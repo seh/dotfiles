@@ -1,4 +1,4 @@
-{ inputs }@localFlake:
+{ inputs }:
 {
   lib,
   flake-parts-lib,
@@ -22,7 +22,7 @@ in
       extraPackages = lib.mkOption {
         description = "Additional packages to include in the package set.";
         type = with lib.types; functionTo (lazyAttrsOf anything);
-        default = self: { };
+        default = _: { };
         defaultText = lib.literalExpression "self: {}";
         example = lib.literalExpression ''
           self: {

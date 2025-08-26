@@ -10,7 +10,6 @@
 
 let
   inherit (lib)
-    mkDefault
     mkEnableOption
     mkIf
     mkMerge
@@ -71,17 +70,16 @@ in
     #   https://github.com/nix-community/home-manager/issues/91
     #   https://github.com/nix-community/home-manager/issues/3864
     (mkIf pkgs.stdenv.isDarwin {
-      home.file.".gnupg/gpg-agent.conf".text =
-        ''
-          default-cache-ttl 600
-          max-cache-ttl 7200
+      home.file.".gnupg/gpg-agent.conf".text = ''
+        default-cache-ttl 600
+        max-cache-ttl 7200
 
-          pinentry-program ${pinentry-mac}
-        ''
-        + optionalString cfg.enableSSHSupport ''
+        pinentry-program ${pinentry-mac}
+      ''
+      + optionalString cfg.enableSSHSupport ''
 
-          enable-ssh-support
-        '';
+        enable-ssh-support
+      '';
 
       # Emulate Home Manager's "gpg-agent" service's treatment.
       # See:

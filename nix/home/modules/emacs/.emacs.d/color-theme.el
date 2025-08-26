@@ -30,7 +30,6 @@
      (add-hook 'after-enable-theme-hook #'fix-up-message-fonts)))
 
 
-
 ;; NB: This package seems to have disappeared from MELPA.
 ;(load-theme 'solarized t)
 (add-to-list 'load-path "~/src/emacs-color-theme-solarized")

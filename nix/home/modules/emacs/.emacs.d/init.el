@@ -93,7 +93,7 @@
 
 ;:*=======================
 ;(load-user-file "fonts.el")
- 
+
 ;:*=======================
 ;; TODO(seh): Reenable this after we've figured out why the "light" background mode doesn't work.
 ;(load-user-file "color-theme.el")

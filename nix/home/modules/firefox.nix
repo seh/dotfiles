@@ -59,7 +59,7 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = lib.optional (cfg.package != null) finalPackage;
 
-    dotfiles.firefox.policies.Preferences = lib.mapAttrs (name: value: {
+    dotfiles.firefox.policies.Preferences = lib.mapAttrs (_: value: {
       Value = value;
       Status = "default";
     }) cfg.preferences;
