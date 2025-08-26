@@ -2,11 +2,11 @@
 
 {
   perSystem =
-    { self', system, ... }:
+    { system, ... }:
     {
       checks =
         let
-          homeConfigurations = lib.filterAttrs (name: home: home.pkgs.system == system) (
+          homeConfigurations = lib.filterAttrs (_: home: home.pkgs.system == system) (
             inputs.self.homeConfigurations or { }
           );
           homeChecks = lib.mapAttrs' (

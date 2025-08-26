@@ -1,6 +1,7 @@
 # Overlay for the nixpkgs input to this flake
 
-final: prev:
+_: # final
+_: # prev
 
 {
 }

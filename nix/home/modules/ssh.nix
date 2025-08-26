@@ -20,40 +20,38 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    programs.ssh = (
-      lib.mkMerge [
-        {
-          enable = true;
-          forwardAgent = true;
-          extraConfig = ''
-            CanonicalizeHostname yes
-            CanonicalizeFallbackLocal yes
-          '';
-          matchBlocks = {
-            "Panix" = {
-              hostname = "shell.panix.com";
-              user = "seh";
-              extraOptions = {
-                UserKnownHostsFile = "${panixKnownHostsFile}";
-              };
-            };
-            "github.com gitlab.com bitbucket.com" = {
-              user = "git";
-              extraOptions = {
-                AddKeysToAgent = "yes";
-                ControlMaster = "no";
-                UseKeychain = "yes";
-              };
+    programs.ssh = lib.mkMerge [
+      {
+        enable = true;
+        forwardAgent = true;
+        extraConfig = ''
+          CanonicalizeHostname yes
+          CanonicalizeFallbackLocal yes
+        '';
+        matchBlocks = {
+          "Panix" = {
+            hostname = "shell.panix.com";
+            user = "seh";
+            extraOptions = {
+              UserKnownHostsFile = "${panixKnownHostsFile}";
             };
           };
-        }
-        (lib.mkIf cfg.enableMultiplexing {
-          controlMaster = "auto";
-          controlPath = "${sshControlDir}/%C.sock";
-          controlPersist = "20s"; # Default in Home Manager is ten minutes.
-        })
-      ]
-    );
+          "github.com gitlab.com bitbucket.com" = {
+            user = "git";
+            extraOptions = {
+              AddKeysToAgent = "yes";
+              ControlMaster = "no";
+              UseKeychain = "yes";
+            };
+          };
+        };
+      }
+      (lib.mkIf cfg.enableMultiplexing {
+        controlMaster = "auto";
+        controlPath = "${sshControlDir}/%C.sock";
+        controlPersist = "20s"; # Default in Home Manager is ten minutes.
+      })
+    ];
 
     home.activation = lib.mkIf cfg.enableMultiplexing {
       # Alternately, we could use a ".keep" file in this directory and

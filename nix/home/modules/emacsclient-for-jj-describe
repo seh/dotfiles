@@ -30,7 +30,7 @@ target_file="$1"
 shift
 if [ -z "${target_file}" ]; then
     printf "%s: description file must not be empty\n" "$(basename "${0}")" 1>&2
-    exit 2  
+    exit 2
 fi
 
 workspace_repo_dir="$(jj workspace root)/.jj/repo"
@@ -41,7 +41,7 @@ if [ -f "${workspace_repo_dir}" ]; then
   workspace_repo_dir="$(cat "${workspace_repo_dir}")"
 elif ! [ -e "${workspace_repo_dir}" ]; then
   echo >&2 "Jujutsu workspace repository directory ${workspace_repo_dir} does not exist."
-  exit 1  
+  exit 1
 elif ! [ -d "${workspace_repo_dir}" ]; then
   echo >&2 "Jujutsu workspace repository directory entry ${workspace_repo_dir} is not a directory."
   exit 1

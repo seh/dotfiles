@@ -1,4 +1,4 @@
-{ inputs, self, ... }:
+{ inputs, ... }:
 
 {
   flake.overlays = rec {
@@ -9,7 +9,14 @@
         # NOTE: this doesn't compare individual commits, only releases
         isSameRelease = pkgs: flake: pkgs.lib.trivial.release == flake.lib.trivial.release;
 
-        overlay = if isSameRelease prev inputs.nixpkgs then nixpkgs else final: prev: { };
+        overlay =
+          if isSameRelease prev inputs.nixpkgs then
+            nixpkgs
+          else
+            _ # final
+            : _ # prev
+            :
+            { };
       in
       overlay final prev;
 

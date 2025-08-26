@@ -7,9 +7,6 @@
   ...
 }:
 
-let
-  username = dotfiles.lib.config.user.name;
-in
 {
   options.dotfiles.profiles.apps.enable = lib.mkEnableOption "essential apps for Macs";
 

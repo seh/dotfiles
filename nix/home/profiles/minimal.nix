@@ -3,23 +3,15 @@
 {
   config,
   lib,
-  pkgs,
-  dotfiles,
   ...
 }:
 
 let
   inherit (lib)
-    mkDefault
     mkIf
     mkOption
-    optional
     types
     ;
-  inherit (pkgs.stdenv.hostPlatform) isLinux isDarwin system;
-  isGenericLinux = (config.targets.genericLinux.enable or false);
-  isNixOS = isLinux && !isGenericLinux;
-  myPkgs = dotfiles.packages.${system};
 in
 {
   options.dotfiles.profiles.minimal.enable = mkOption {
@@ -29,9 +21,10 @@ in
   };
 
   config = mkIf config.dotfiles.profiles.minimal.enable {
-    home.packages = with pkgs; [
-      # TODO(seh): Do we need to specify any here?
-    ];
+    home.packages = # with pkgs;
+      [
+        # TODO(seh): Do we need to specify any here?
+      ];
 
     programs.direnv = {
       enable = true;

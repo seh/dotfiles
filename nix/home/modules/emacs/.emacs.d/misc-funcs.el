@@ -101,7 +101,7 @@ With a prefix argument, prompt for the underline string."
                         (error "Underline string must be at least one character."))
                       ((= 1 slen)
                        (insert-char (aref str 0) len))
-                      (t 
+                      (t
                        (dotimes (i (/ len slen))
                          (insert str))
                        (nonzero-bind rem (mod len slen)

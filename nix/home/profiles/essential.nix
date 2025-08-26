@@ -13,7 +13,7 @@ let
     mkIf
     optionals
     ;
-  inherit (pkgs.stdenv.hostPlatform) isDarwin system;
+  inherit (pkgs.stdenv.hostPlatform) isDarwin;
 in
 {
   options.dotfiles.profiles.essential.enable =

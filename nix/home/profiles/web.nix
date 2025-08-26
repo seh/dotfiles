@@ -8,7 +8,7 @@
 }:
 
 let
-  inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
+  inherit (pkgs.stdenv.hostPlatform) isDarwin;
 in
 {
   options.dotfiles.profiles.web.enable = lib.mkEnableOption "opinionated defaults for Web browsers";

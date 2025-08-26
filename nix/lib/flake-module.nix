@@ -80,22 +80,20 @@ let
       ...
     }@args:
     let
-      flakeOptionsModule =
-        { ... }:
-        {
-          # Set up the default value for the option proxy.
-          dotfiles._flakeOptions = cfg;
-          home-manager = {
-            useGlobalPkgs = true;
-            sharedModules = cfg.home.modules ++ [
-              localFlake.inputs.self.homeModules.default
-              {
-                # Set up the default value for the option proxy.
-                dotfiles._flakeOptions = cfg;
-              }
-            ];
-          };
+      flakeOptionsModule = _: {
+        # Set up the default value for the option proxy.
+        dotfiles._flakeOptions = cfg;
+        home-manager = {
+          useGlobalPkgs = true;
+          sharedModules = cfg.home.modules ++ [
+            localFlake.inputs.self.homeModules.default
+            {
+              # Set up the default value for the option proxy.
+              dotfiles._flakeOptions = cfg;
+            }
+          ];
         };
+      };
       machineDefaultsModule =
         { config, ... }:
         let

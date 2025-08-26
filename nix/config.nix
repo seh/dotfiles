@@ -1,12 +1,12 @@
-{ inputs }@localFlake:
-{ lib, config, ... }@flake:
+_:
+{ lib, ... }:
 
-let
-  # TODO(seh): Use this if we need to refer to any of the current
-  # values for these options.
-  #cfg = flake.config.dotfiles;
-  #nixosRelease = localFlake.inputs.nixos.lib.trivial.release;
-in
+#let
+#  TODO(seh): Use this if we need to refer to any of the current
+#  values for these options.
+#  cfg = flake.config.dotfiles;
+#  nixosRelease = localFlake.inputs.nixos.lib.trivial.release;
+#in
 {
   options.dotfiles = {
     user = {

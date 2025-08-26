@@ -3,7 +3,6 @@
 {
   config,
   lib,
-  pkgs,
   ...
 }:
 
@@ -70,21 +69,20 @@ in
 
       antidote = {
         enable = true;
-        plugins =
-          [
-            # TODO(seh): Confirm that these work when specified directly as oh-my-zsh plugins.
-            # "ohmyzsh/ohmyzsh path:lib"
-            # "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
-            # "ohmyzsh/ohmyzsh path:plugins/extract"
-            # "ohmyzsh/ohmyzsh path:plugins/git"
-            "zsh-users/zsh-autosuggestions"
-            "zsh-users/zsh-completions"
-          ]
-          ++ lib.optional cfg.enablePowerlevel10k "romkatv/powerlevel10k"
-          ++ [
-            # NB: This one needs to come last.
-            "zsh-users/zsh-syntax-highlighting"
-          ];
+        plugins = [
+          # TODO(seh): Confirm that these work when specified directly as oh-my-zsh plugins.
+          # "ohmyzsh/ohmyzsh path:lib"
+          # "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
+          # "ohmyzsh/ohmyzsh path:plugins/extract"
+          # "ohmyzsh/ohmyzsh path:plugins/git"
+          "zsh-users/zsh-autosuggestions"
+          "zsh-users/zsh-completions"
+        ]
+        ++ lib.optional cfg.enablePowerlevel10k "romkatv/powerlevel10k"
+        ++ [
+          # NB: This one needs to come last.
+          "zsh-users/zsh-syntax-highlighting"
+        ];
         useFriendlyNames = true;
       };
       oh-my-zsh = {
