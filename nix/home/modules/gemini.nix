@@ -26,7 +26,10 @@ in
           "GEMINI.md"
         ];
         disableUpdateNag = true;
+        preferredEditor = "emacs";
         selectedAuthType = "vertex-ai";
+        showLineNumbers = true;
+        showMemoryUsage = true;
         theme = "Atom One";
       };
     };
