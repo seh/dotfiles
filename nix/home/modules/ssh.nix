@@ -23,12 +23,15 @@ in
     programs.ssh = lib.mkMerge [
       {
         enable = true;
-        forwardAgent = true;
+        enableDefaultConfig = false;
         extraConfig = ''
           CanonicalizeHostname yes
           CanonicalizeFallbackLocal yes
         '';
         matchBlocks = {
+          "*" = {
+            forwardAgent = true;
+          };
           "Panix" = {
             hostname = "shell.panix.com";
             user = "seh";
@@ -47,9 +50,13 @@ in
         };
       }
       (lib.mkIf cfg.enableMultiplexing {
-        controlMaster = "auto";
-        controlPath = "${sshControlDir}/%C.sock";
-        controlPersist = "20s"; # Default in Home Manager is ten minutes.
+        matchBlocks = {
+          "*" = {
+            controlMaster = "auto";
+            controlPath = "${sshControlDir}/%C.sock";
+            controlPersist = "30s";
+          };
+        };
       })
     ];
 
