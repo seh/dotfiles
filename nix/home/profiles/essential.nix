@@ -34,6 +34,7 @@ in
           btop
           coreutils
           d2
+          deadnix
           delta
           dig
           duckdb
@@ -53,6 +54,7 @@ in
           sile
           sops
           sqlite
+          statix
           #tailscale
           tmux
           tree
