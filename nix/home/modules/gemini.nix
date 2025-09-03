@@ -18,19 +18,30 @@ in
       enable = lib.mkDefault true;
       package = lib.mkDefault pkgs.gemini-cli;
       settings = {
-        checkpointing = {
-          enabled = true;
+        context = {
+          fileName = [
+            "AGENTS"
+            "GEMINI.md"
+          ];
         };
-        contextFileName = [
-          "AGENTS.md"
-          "GEMINI.md"
-        ];
-        disableUpdateNag = true;
-        preferredEditor = "emacs";
-        selectedAuthType = "vertex-ai";
-        showLineNumbers = true;
-        showMemoryUsage = true;
-        theme = "Atom One";
+        general = {
+          checkpointing = {
+            enabled = true;
+          };
+          disableUpdateNag = true;
+          preferredEditor = "emacs";
+        };
+        security = {
+          auth = {
+            selectedType = "vertex-ai";
+          };
+        };
+        ui = {
+          showCitations = true;
+          showMemoryUsage = true;
+          showLineNumbers = true;
+          theme = "Atom One";
+        };
       };
     };
   };
