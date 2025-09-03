@@ -69,6 +69,7 @@ in
             gke-gcloud-auth-plugin
           ]
         ))
+        goperf
         mkcert
         ngrok
         nodePackages.prettier
