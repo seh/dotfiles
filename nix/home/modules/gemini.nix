@@ -22,7 +22,7 @@ in
           enabled = true;
         };
         contextFileName = [
-          "CRUSH.md"
+          "AGENTS.md"
           "GEMINI.md"
         ];
         disableUpdateNag = true;
