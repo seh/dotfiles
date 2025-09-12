@@ -2,7 +2,6 @@
 #  https://github.com/midchildan/dotfiles/blob/7cdd097dd01e0678b6ff56487689c78469237722/nix/darwin/profiles/apps.nix
 {
   config,
-  dotfiles,
   lib,
   ...
 }:
