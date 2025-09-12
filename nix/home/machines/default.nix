@@ -27,6 +27,7 @@ in
                 builtins.elem (lib.getName pkg) [
                   "1password"
                   "1password-cli"
+                  "claude-code"
                   "crush"
                   #"discord"
                   "dropbox"
