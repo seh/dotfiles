@@ -2,13 +2,11 @@
   config,
   lib,
   pkgs,
-  dotfiles,
   ...
 }:
 
 let
   inherit (lib)
-    mkDefault
     mkEnableOption
     mkIf
     optionals

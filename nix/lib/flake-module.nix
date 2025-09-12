@@ -1,10 +1,10 @@
-{ inputs }@localFlake:
+localFlake:
 {
   lib,
   config,
   getSystem,
   ...
-}@flake:
+}:
 
 let
   inherit (localFlake.inputs.home-manager.lib) homeManagerConfiguration;
