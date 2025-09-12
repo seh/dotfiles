@@ -141,6 +141,9 @@ in
     };
 
     dotfiles = {
+      claude = {
+        enable = lib.mkDefault true;
+      };
       gemini = {
         enable = lib.mkDefault true;
       };
