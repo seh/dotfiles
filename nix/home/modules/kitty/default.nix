@@ -26,6 +26,7 @@ in
         "f8" =
           "launch --stdin-source=@last_visited_cmd_output --stdin-add-formatting --type=os-window less -R";
         "shift+f8" = "launch --stdin-source=@last_visited_cmd_output --type=clipboard";
+        "shift+f9" = "launch --stdin-source=@last_cmd_output --type=clipboard";
       };
       settings = {
         allow_remote_control = true;
