@@ -19,6 +19,7 @@ in
       package = lib.mkDefault pkgs.claude-code;
       settings = {
         includeCoAuthoredBy = false;
+        model = "opusplan";
       };
     };
   };
