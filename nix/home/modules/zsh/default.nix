@@ -66,6 +66,9 @@ in
       shellAliases = {
         ls = "ls --color=auto --hyperlink=auto";
       };
+      siteFunctions = {
+        kuc = lib.mkIf config.dotfiles.profiles.development.enableKubernetes (builtins.readFile ./kuc);
+      };
 
       antidote = {
         enable = true;

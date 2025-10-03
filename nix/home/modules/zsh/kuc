@@ -1,0 +1,35 @@
+set -o pipefail
+
+kuc() {
+  local next=
+  local query=
+  if (( $# > 1 )); then
+    echo >&2 "$0: Too many arguments"
+    return 2
+  elif (( $# == 1 )); then
+    if [ "$1" = '-' ]; then
+      if [ -z "${KUC_PREVIOUS_CONTEXT:-}" ]; then
+        echo 'No previous kubeconfig context.'
+        return 1
+      else
+        next="${KUC_PREVIOUS_CONTEXT}"
+      fi
+    else
+      local query="$1"
+    fi
+  fi
+  if [ -z "${next}" ];then
+    if ! next="$(kubectl config get-contexts --output=name | fzf ${query:+--query=${query}})"; then
+      echo >&2 "fzf exited"
+      return
+    fi
+    if [ -z "${next}" ]; then
+      return
+    fi
+  fi
+  local current="$(kubectl config current-context)"
+  kubectl config use-context "${next}"
+  export KUC_PREVIOUS_CONTEXT="${current}"
+}
+
+kuc
