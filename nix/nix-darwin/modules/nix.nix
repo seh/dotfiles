@@ -24,7 +24,6 @@ in
         "1password"
         "1password-cli"
         "claude-code"
-        "crush"
         #"discord"
         "dropbox"
         # TODO(seh): We don't install this explicitly, but it's an

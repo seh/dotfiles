@@ -55,7 +55,6 @@ in
         bombardier
         bruno
         buf
-        crush
         cue
         fswatch
         github-cli
