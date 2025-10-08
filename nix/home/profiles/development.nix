@@ -154,6 +154,9 @@ in
       helix = {
         enable = lib.mkDefault true;
       };
+      opencode = {
+        enable = lib.mkDefault true;
+      };
     };
   };
 }
