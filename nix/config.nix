@@ -68,4 +68,10 @@ _:
       '';
     };
   };
+
+  options.installer = lib.mkOption {
+    type = lib.types.attrs;
+    default = { };
+    description = "Options for configuring module installation on specific machines.";
+  };
 }
