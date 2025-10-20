@@ -280,6 +280,9 @@
 ;:* treesit-auto
 (use-package treesit-auto
   :config
+  ;; See https://github.com/renzmann/treesit-auto/pull/63/files#diff-ecbc1aa90e9ff97a00b0b2aab1551bceee0c4d21993146bdcb1af4de31c9cac6R144-R151.
+  (dolist (m '(yaml))
+    (delete m treesit-auto-langs))
   (global-treesit-auto-mode))
 
 
@@ -298,8 +301,13 @@
 
 ;:*=======================
 ;:* yaml
-(use-package yaml
+(use-package yaml-mode
   :mode "K\\(?:pt\\|rm\\)file\\'")
+
+;:*=======================
+;:* yaml-pro
+(use-package yaml-pro
+  :hook (yaml-mode . yaml-pro-ts-mode))
 
 
 ;; TODO: Migrate more of these in.
