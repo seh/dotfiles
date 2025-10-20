@@ -20,8 +20,8 @@ in
       plugins = with pkgs.nushellPlugins; [
         formats
         gstat
-        #hcl # TODO(seh): This one is not building correctly for now.
-        highlight
+        hcl
+        #highlight # TODO(seh): This one is not building correctly for now.
         #net
         polars
         query
