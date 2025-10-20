@@ -18,13 +18,13 @@
           program = "${inputs'.home-manager.packages.default}/bin/home-manager";
         };
       }
-      // lib.optionalAttrs pkgs.stdenv.isDarwin {
+      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
         os = {
           meta.description = "nix-darwin's tool to build and activate configurations";
           program = "${inputs'.nix-darwin.packages.default}/bin/darwin-rebuild";
         };
       }
-      // lib.optionalAttrs pkgs.stdenv.isLinux {
+      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         os = {
           meta.description = "NixOS's tool to build and activate configurations";
           program = "${self'.packages.nixos-rebuild}/bin/nixos-rebuild";
