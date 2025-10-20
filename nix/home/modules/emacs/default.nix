@@ -104,7 +104,8 @@ in
     };
 
     services.emacs = {
-      # NB: This service is not implemented for macOS as of now.
+      # NB: Though this service is implemented for macOS, it is
+      # difficult to get it to both create and reuse frames.
       enable = !isDarwin;
       defaultEditor = true;
     };

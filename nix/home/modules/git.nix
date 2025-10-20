@@ -21,20 +21,17 @@ in
       enable = lib.mkDefault true;
       package = lib.mkDefault pkgs.git;
 
-      userName = userConfig.fullName;
-      userEmail = userConfig.email;
-
-      aliases = {
-        # See https://ses4j.github.io/2020/04/01/git-alias-recent-branches/.
-        # (And https://ses4j.github.io/2020/04/01/git-alias-recent-branches/#comment-4863945965 for the right-aligned column.)
-        lb = ''
-          !git reflog show --pretty=format:'%gs ~ %gd' --date=relative | grep 'checkout:' | grep -oE '[^ ]+ ~ .*' | awk -F~ '!seen[''$1]++' | head -n 10 | awk -F' ~ HEAD@{' '{printf("  \033[33m%12s:\t\033[37m %s\033[0m\n", substr(''$2, 1, length(''$2)-1), ''$1)}'
-        '';
-        rb = ''
-          for-each-ref --sort='-authordate:iso8601' --format=' %(align:25)%(color:green)%(authordate:relative)%(end)%(color:bold blue)%(refname:short)' refs/heads
-        '';
-      };
-      extraConfig = {
+      settings = {
+        aliases = {
+          # See https://ses4j.github.io/2020/04/01/git-alias-recent-branches/.
+          # (And https://ses4j.github.io/2020/04/01/git-alias-recent-branches/#comment-4863945965 for the right-aligned column.)
+          lb = ''
+            !git reflog show --pretty=format:'%gs ~ %gd' --date=relative | grep 'checkout:' | grep -oE '[^ ]+ ~ .*' | awk -F~ '!seen[''$1]++' | head -n 10 | awk -F' ~ HEAD@{' '{printf("  \033[33m%12s:\t\033[37m %s\033[0m\n", substr(''$2, 1, length(''$2)-1), ''$1)}'
+          '';
+          rb = ''
+            for-each-ref --sort='-authordate:iso8601' --format=' %(align:25)%(color:green)%(authordate:relative)%(end)%(color:bold blue)%(refname:short)' refs/heads
+          '';
+        };
         branch = {
           autoSetupMerge = "always";
           autoSetupRebase = "local";
@@ -55,13 +52,17 @@ in
             insteadOf = "https://github.com/";
           };
         };
-      };
+        user = {
+          inherit (userConfig) email;
+          name = userConfig.fullName;
+        };
+      }
       # TODO(seh): Specify "includes"?
-    }
-    // lib.optionalAttrs hasGPGSigningKey {
-      signing = {
-        key = userConfig.gpgKey;
-        signByDefault = true;
+      // lib.optionalAttrs hasGPGSigningKey {
+        signing = {
+          key = userConfig.gpgKey;
+          signByDefault = true;
+        };
       };
     };
   };

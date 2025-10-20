@@ -53,7 +53,9 @@ in
         bazel_7 # TODO(seh): Upgrade this to Bazel 8 once it's available.
         bazelisk
         bombardier
-        bruno
+        # TODO(seh): Enable this again after
+        # https://github.com/NixOS/nixpkgs/pull/453796 is available.
+        #bruno
         buf
         cue
         fswatch
