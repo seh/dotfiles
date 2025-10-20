@@ -99,6 +99,7 @@ in
           treesit-grammars.with-all-grammars
           use-package
           yaml-mode
+          yaml-pro
           yasnippet
         ];
     };
