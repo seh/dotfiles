@@ -12,6 +12,9 @@
                               (bury-buffer)
                               (switch-to-buffer-other-frame server-buf))))
          (server-done . delete-frame)
-         (after-init . server-start)))
+         ;; NB: We're relying on the Nix Home Manager module to set an
+         ;; Emacs daemon running for us.
+         ;;(after-init . server-start)
+         ))
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "server settings initialized")

@@ -6,7 +6,6 @@
 }:
 
 let
-  inherit (pkgs.stdenv.hostPlatform) isDarwin;
   cfg = config.dotfiles.emacs;
 in
 {
@@ -112,10 +111,14 @@ in
     };
 
     services.emacs = {
-      # NB: Though this service is implemented for macOS, it is
-      # difficult to get it to both create and reuse frames.
-      enable = !isDarwin;
+      enable = true;
       defaultEditor = true;
+    };
+    # TODO(SEHarris): This is a hack. Consider lobbying the Home
+    # Manager maintainers to arrange for this addendum more gracefully
+    # and automatically.
+    launchd.agents.emacs.config.EnvironmentVariables = lib.mkIf config.dotfiles.kitty.enable {
+      TERMINFO = "${config.programs.kitty.package}/Applications/kitty.app/Contents/Resources/kitty/terminfo";
     };
   };
 }
