@@ -33,7 +33,6 @@ in
           coreutils
           d2
           deadnix
-          delta
           dig
           duckdb
           hunspell
@@ -102,6 +101,9 @@ in
 
     dotfiles = {
       bash = {
+        enable = lib.mkDefault true;
+      };
+      delta = {
         enable = lib.mkDefault true;
       };
       emacs = {
