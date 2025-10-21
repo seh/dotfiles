@@ -85,6 +85,7 @@ in
           persistent-scratch
           prettier
           protobuf-mode
+          rg
           rust-mode
           rustic
           slime
