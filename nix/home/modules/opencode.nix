@@ -33,8 +33,12 @@ in
           # See https://opencode.ai/docs/providers/#config.
           google-vertex = {
             models = {
-              "claude-sonnet-4-5@20250929" = { };
               "gemini-2.5-pro" = { };
+            };
+          };
+          google-vertex-anthropic = {
+            models = {
+              "claude-sonnet-4-5@20250929" = { };
             };
           };
         };
