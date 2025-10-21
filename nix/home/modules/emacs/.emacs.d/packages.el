@@ -216,6 +216,12 @@
 
 
 ;:*=======================
+;:* rg
+(use-package rg
+  :config
+  (rg-enable-menu))
+
+;:*=======================
 ;:* rustic
 (use-package rustic
   :config
