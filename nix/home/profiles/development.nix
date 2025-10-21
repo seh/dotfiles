@@ -76,17 +76,12 @@ in
         nodePackages.prettier
         nodePackages.typescript
         nssTools # For use with mkcert
-        # See the following issues and patches:
-        # https://github.com/NixOS/nixpkgs/issues/408192
-        # https://github.com/NixOS/nixpkgs/pull/408599
-        #podman
+        podman
         ripgrep
         sbcl
         shellcheck
         tenv
-        # NB: The Wireshark application still fails, per this report:
-        #     https://github.com/NixOS/nixpkgs/issues/103944#issuecomment-1627759940
-        # wireshark
+        wireshark
       ]
       ++ optionals isDarwin [
         # Without QEMU available, Podman can't work as intended atop
