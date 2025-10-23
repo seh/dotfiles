@@ -40,6 +40,9 @@
 (define-key mode-specific-map [?a] 'org-agenda)
 (define-key global-map "\C-cc" 'org-capture)
 
+(use-package org-edit-indirect
+  :hook (org-mode . org-edit-indirect-mode))
+
 (use-package org-modern
   :config
   (global-org-modern-mode))
