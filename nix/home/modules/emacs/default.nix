@@ -49,6 +49,7 @@ in
           dired-subtree
           doom-modeline
           doom-themes
+          edit-indirect
           envrc
           epkgs."ido-completing-read+"
           exec-path-from-shell
@@ -78,6 +79,7 @@ in
           nix-modeline
           nushell-ts-mode
           org
+          org-edit-indirect
           org-grep
           org-modern
           org-roam
