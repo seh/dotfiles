@@ -50,7 +50,7 @@ in
         aws-vault
         awscli2
         bazel-buildtools
-        bazel_7 # TODO(seh): Upgrade this to Bazel 8 once it's available.
+        bazel_8
         bazelisk
         bombardier
         # TODO(seh): Enable this again after
