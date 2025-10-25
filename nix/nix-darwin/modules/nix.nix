@@ -30,6 +30,7 @@ in
         # implicit dependency of some other package.
         "ngrok"
         "slack"
+        "zoom"
       ];
   };
 }
