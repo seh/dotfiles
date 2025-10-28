@@ -128,8 +128,6 @@ in
                 merge-tool-edits-conflict-markers = true;
               };
             ui = {
-              # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#diff-format.
-              diff-formatter = ":git";
               editor =
                 let
                   programName = "emacsclient-for-jj-describe";
@@ -140,8 +138,6 @@ in
                 lib.getExe emacsclientProgram;
               log-word-wrap = true;
               merge-editor = mergeToolName;
-              # See https://github.com/jj-vcs/jj/blob/main/docs/config.md#processing-contents-to-be-paged.
-              pager = "delta";
               show-cryptographic-signatures = true;
             };
           }
