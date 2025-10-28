@@ -18,6 +18,7 @@ in
       enable = lib.mkDefault true;
       package = lib.mkDefault pkgs.delta;
       enableGitIntegration = true;
+      enableJujutsuIntegration = true;
       options = {
         features = "navigate";
       };
