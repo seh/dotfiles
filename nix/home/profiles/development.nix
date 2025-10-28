@@ -107,7 +107,7 @@ in
         nixd # Compare with "nil"
         nodePackages.vscode-json-languageserver
         nodePackages.typescript-language-server
-        postgres-lsp # Compare with "sqls"
+        postgres-language-server # Compare with "sqls"
         starpls
         taplo # For TOML files
         terraform-ls
