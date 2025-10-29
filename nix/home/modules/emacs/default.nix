@@ -61,6 +61,7 @@ in
           gruvbox-theme
           haskell-mode
           helpful
+          iedit
           inf-ruby
           js2-mode
           json-mode
