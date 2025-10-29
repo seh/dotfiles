@@ -30,8 +30,8 @@
             ;;
             ;; Basis of inspiration: https://github.com/emacs-lsp/lsp-mode/discussions/4387#discussioncomment-8878188
             ;; TODO(seh): Figure out how to block use of these directories again.
-            ;(cl-pushnew (getenv "TMPDIR") (lsp-session-folders-blocklist (lsp-session))
-            ;            :test 'string=)
+            ;;  (cl-pushnew (getenv "TMPDIR") (lsp-session-folders-blocklist (lsp-session))
+            ;;              :test 'string=)
             (dolist (p (list "[/\\\\]bazel-\\w+$"
                              (format "/private/var/tmp/_bazel_%s/" (user-login-name))
                              ;; This one didn't seem to work, even
@@ -39,7 +39,24 @@
                              ;; to exclude.
                              ;;(format "/private/var/tmp/_bazel_%s/[[:xdigit:]]+/external/" (user-login-name))
                              ))
-              (add-to-list 'lsp-file-watch-ignored-directories p t))))
+              (add-to-list 'lsp-file-watch-ignored-directories p t))
+            ;; Language servers not yet integrated directly with lsp-mode
+            ;; (See https://github.com/emacs-lsp/lsp-mode/blob/master/docs/lsp-clients.json.)
+            ;;
+            ;; CUE
+            (add-to-list 'lsp-language-id-configuration '(cue-mode . "cue"))
+            (lsp-register-client (make-lsp-client
+                                  :new-connection (lsp-stdio-connection (list "cue" "lsp"))
+                                  :activation-fn (lsp-activate-on "cue")
+                                  :server-id 'cue-lsp))
+            ;; Starlark
+            (dolist (mode '(bazel-mode
+                            bazel-starlark-mode))
+              (add-to-list 'lsp-language-id-configuration (cons mode "starlark")))
+            (lsp-register-client (make-lsp-client
+                                  :new-connection (lsp-stdio-connection "starpls")
+                                  :activation-fn (lsp-activate-on "starlark")
+                                  :server-id 'starpls))))
 
 (use-package lsp-ui
   :commands lsp-ui-mode
