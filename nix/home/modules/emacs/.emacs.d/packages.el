@@ -161,6 +161,11 @@
 
 
 ;:*=======================
+;:* iedit
+(use-package iedit)
+
+
+;:*=======================
 ;:* ispell
 (use-package ispell)
 
