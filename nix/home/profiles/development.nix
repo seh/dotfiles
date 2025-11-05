@@ -81,7 +81,9 @@ in
         sbcl
         shellcheck
         tenv
-        wireshark
+        # TODO(seh): Enable this again after
+        # https://github.com/NixOS/nixpkgs/issues/458008 is fixed.
+        #wireshark
       ]
       ++ optionals isDarwin [
         # Without QEMU available, Podman can't work as intended atop
