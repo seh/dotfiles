@@ -43,6 +43,7 @@ in
           color-theme-sanityinc-tomorrow
           company
           company-auctex
+          counsel
           csv-mode
           cue-mode
           dap-mode
@@ -63,6 +64,7 @@ in
           helpful
           iedit
           inf-ruby
+          ivy
           js2-mode
           json-mode
           jsonnet-mode
@@ -95,6 +97,7 @@ in
           slime-company
           slime-repl-ansi-color
           smex
+          swiper
           templ-ts-mode
           terraform-mode
           # NB: THis is a temporary concession until Emacs 30 makes it

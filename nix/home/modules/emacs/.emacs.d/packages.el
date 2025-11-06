@@ -43,6 +43,14 @@
 
 
 ;:*=======================
+;:* counsel
+(use-package counsel
+  :after ivy
+  :config
+  (counsel-mode))
+
+
+;:*=======================
 ;:* cue
 (use-package cue-mode)
 
@@ -171,6 +179,17 @@
 
 
 ;:*=======================
+;:* ivy
+(use-package ivy
+  :config
+  ;; This same function is available via "C-M-j" as well, but that's
+  ;; harder to type. By default, "M-RET" is bound to "ivy-call", which
+  ;; isn't as useful.
+  (define-key ivy-minibuffer-map (kbd "M-RET") #'ivy-immediate-done)
+  (ivy-mode))
+
+
+;:*=======================
 ;:* magit
 (use-package magit
   :config
@@ -268,6 +287,20 @@
   :bind (("M-x" . smex)
          ("M-X" . smex-major-mode-commands)
          ("C-c C-c M-x" . execute-extended-command)))
+
+
+;:*=======================
+;:* swiper
+(use-package swiper
+  :after ivy
+  :bind (("C-r" . swiper-isearch-backward)
+         ("C-s" . swiper))
+  :config
+  (let ((binding (kbd "C-t")))
+    (dolist (km (list isearch-mode-map
+                      swiper-map
+                      swiper-isearch-map))
+      (define-key km binding 'swiper-isearch-toggle))))
 
 
 ;:*=======================
