@@ -24,6 +24,12 @@ in
   options.dotfiles.profiles.development = {
     enable = mkEnableOption "development packages";
 
+    enabledCloudProviders = {
+      aws = mkEnableOption "AWS-related development tools";
+      azure = mkEnableOption "Azure-related development tools";
+      gcp = mkEnableOption "Google Cloud Platform-related development tools";
+    };
+
     enableKubernetes = mkOption {
       type = lib.types.bool;
       default = false;
@@ -47,8 +53,6 @@ in
     home.packages =
       with pkgs;
       [
-        aws-vault
-        awscli2
         bazel-buildtools
         bazel_8
         bazelisk
@@ -64,12 +68,6 @@ in
         go-tools
         gofumpt
         golangci-lint
-        (google-cloud-sdk.withExtraComponents (
-          with google-cloud-sdk.components;
-          [
-            gke-gcloud-auth-plugin
-          ]
-        ))
         goperf
         mkcert
         ngrok
@@ -89,6 +87,21 @@ in
         # Without QEMU available, Podman can't work as intended atop
         # macOS.
         qemu
+      ]
+      ++ optionals cfg.development.enabledCloudProviders.aws [
+        aws-vault
+        awscli2
+      ]
+      ++ optionals cfg.development.enabledCloudProviders.azure [
+        azure-cli
+      ]
+      ++ optionals cfg.development.enabledCloudProviders.gcp [
+        (google-cloud-sdk.withExtraComponents (
+          with google-cloud-sdk.components;
+          [
+            gke-gcloud-auth-plugin
+          ]
+        ))
       ]
       ++ optionals cfg.development.enableKubernetes [
         fluxcd
@@ -127,13 +140,13 @@ in
       };
 
       granted = {
-        enable = true;
+        enable = cfg.development.enabledCloudProviders.aws;
         enableFishIntegration = true;
         enableZshIntegration = true;
       };
 
-      k9s = mkIf cfg.development.enableKubernetes {
-        enable = true;
+      k9s = {
+        enable = cfg.development.enableKubernetes;
         # TODO(seh): Configure settings.
       };
     };
