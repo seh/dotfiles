@@ -15,7 +15,7 @@ in
       # TODO(seh): Activate these as we define them.
       #extras.enable = false;
     };
-    home.stateVersion = "23.11";
+    home.stateVersion = "25.11";
   };
 
   system.stateVersion = 6;

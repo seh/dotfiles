@@ -18,6 +18,7 @@ in
     };
 
     targets.darwin = {
+      copyApps.enable = mkDefault false;
       defaults = {
         "com.apple.dock" = {
           # System Preferences > Mission Control > Group windows by application
