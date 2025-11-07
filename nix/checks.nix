@@ -6,7 +6,7 @@
     {
       checks =
         let
-          homeConfigurations = lib.filterAttrs (_: home: home.pkgs.system == system) (
+          homeConfigurations = lib.filterAttrs (_: home: home.pkgs.stdenv.hostPlatform.system == system) (
             inputs.self.homeConfigurations or { }
           );
           homeChecks = lib.mapAttrs' (
