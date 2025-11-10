@@ -27,6 +27,8 @@ in
           "launch --stdin-source=@last_visited_cmd_output --stdin-add-formatting --type=os-window less -R";
         "shift+f8" = "launch --stdin-source=@last_visited_cmd_output --type=clipboard";
         "shift+f9" = "launch --stdin-source=@last_cmd_output --type=clipboard";
+        "ctrl+shift+f4" =
+          "save_as_session --base-dir=\${HOME} --focus-tab --use-foreground-process \${HOME}/.config/kitty/sessions/auto.conf";
       };
       settings = {
         allow_remote_control = true;
