@@ -27,6 +27,7 @@ in
           "launch --stdin-source=@last_visited_cmd_output --stdin-add-formatting --type=os-window less -R";
         "shift+f8" = "launch --stdin-source=@last_visited_cmd_output --type=clipboard";
         "shift+f9" = "launch --stdin-source=@last_cmd_output --type=clipboard";
+        "ctrl+shift+f4" = "save_as_session --base-dir=\${HOME} --use-foreground-process .";
       };
       settings = {
         allow_remote_control = true;
@@ -51,6 +52,7 @@ in
         remember_window_position = true;
         scrollback_lines = 15000;
         scrollback_pager_history_size = 10;
+        startup_session = "sessions/startup.kitty-session";
         tab_bar_edge = "top";
         # Basis of inspiration:
         #   https://github.com/kovidgoyal/kitty/discussions/4447#discussioncomment-3912065
