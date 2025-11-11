@@ -186,6 +186,10 @@
   ;; harder to type. By default, "M-RET" is bound to "ivy-call", which
   ;; isn't as useful.
   (define-key ivy-minibuffer-map (kbd "M-RET") #'ivy-immediate-done)
+  (setq ivy-count-format "[%d/%d] "
+        ivy-height 7
+        ivy-use-virtual-buffers 'recentf
+        ivy-virtual-abbreviate 'abbreviate)
   (ivy-mode))
 
 
@@ -193,7 +197,8 @@
 ;:* magit
 (use-package magit
   :config
-  (setq magit-popup-use-prefix-argument 'default
+  (setq magit-completing-read-function #'ivy-completing-read
+        magit-popup-use-prefix-argument 'default
         ;; Edit jj commit messages using "git-commit-mode":
         ;; Default value: "/\\(\\(\\(COMMIT\\|NOTES\\|PULLREQ\\|MERGEREQ\\|TAG\\)_EDIT\\|MERGE_\\|\\)MSG\\|\\(BRANCH\\|EDIT\\)_DESCRIPTION\\)\\'"
         git-commit-filename-regexp "/\\(\\(\\(COMMIT\\|NOTES\\|PULLREQ\\|MERGEREQ\\|TAG\\)_EDIT\\|MERGE_\\|\\)MSG\\|\\(BRANCH\\|EDIT\\)_DESCRIPTION\\)\\|\\.jjdescription\\'"

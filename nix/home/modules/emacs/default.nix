@@ -68,6 +68,7 @@ in
           js2-mode
           json-mode
           jsonnet-mode
+          lsp-ivy
           lsp-mode
           lsp-ui
           lua-mode
