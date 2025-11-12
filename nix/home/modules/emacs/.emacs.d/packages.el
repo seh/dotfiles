@@ -319,8 +319,6 @@
   :hook (typescript-ts-base-mode . (lambda ()
                                      (setq js-indent-level 2)
                                      (electric-pair-local-mode)
-                                     (lsp-deferred)
-                                     (lsp-lens-mode)
                                      (dolist (h '(lsp-format-buffer
                                                   lsp-organize-imports))
                                        (add-hook 'before-save-hook h nil t)))))
