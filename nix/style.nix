@@ -15,7 +15,19 @@
         nixfmt.enable = lib.mkDefault true;
         prettier = {
           enable = lib.mkDefault true;
-          settings.proseWrap = lib.mkDefault "always";
+          settings = {
+            overrides = [
+              {
+                files = [
+                  "*.md"
+                  "*.mdx"
+                ];
+                # The default value is 80.
+                options.printWidth = 70;
+              }
+            ];
+            proseWrap = lib.mkDefault "always";
+          };
         };
         shellcheck.enable = lib.mkDefault true;
         terraform.enable = lib.mkDefault true;
