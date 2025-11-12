@@ -87,6 +87,7 @@ in
           org-modern
           org-roam
           org-roam-timestamps
+          ox-typst
           persistent-scratch
           prettier
           protobuf-mode
@@ -104,6 +105,7 @@ in
           # easier to accommodate treesitter.
           treesit-auto
           treesit-grammars.with-all-grammars
+          typst-ts-mode
           use-package
           yaml-mode
           yaml-pro
