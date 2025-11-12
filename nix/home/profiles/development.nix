@@ -123,6 +123,7 @@ in
         postgres-language-server # Compare with "sqls"
         starpls
         taplo # For TOML files
+        tinymist # For typst files
         terraform-ls
         yaml-language-server
       ]

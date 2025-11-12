@@ -187,6 +187,12 @@
 
 
 ;:*=======================
+;:* ox-typst
+(use-package ox-typst
+  :after org)
+
+
+;:*=======================
 ;:* persistent-scratch
 (use-package persistent-scratch
   :demand t
@@ -195,6 +201,7 @@
                           (persistent-scratch-restore))
                         (with-current-buffer "*scratch*"
                           (persistent-scratch-mode)))))
+
 
 ;:*=======================
 ;:* prettier
@@ -221,6 +228,7 @@
 (use-package rg
   :config
   (rg-enable-menu))
+
 
 ;:*=======================
 ;:* rustic
@@ -321,17 +329,22 @@
 
 
 ;:*=======================
+;:* typst-ts-mode
+(use-package typst-ts-mode
+  :config
+  (define-key typst-ts-mode-map (kbd "C-c C-c") #'typst-ts-tmenu))
+
+
+;:*=======================
 ;:* yaml
 (use-package yaml-mode
   :mode "K\\(?:pt\\|rm\\)file\\'")
+
 
 ;:*=======================
 ;:* yaml-pro
 (use-package yaml-pro
   :hook (yaml-mode . yaml-pro-ts-mode))
-
-
-;; TODO: Migrate more of these in.
 
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "packages initialized")
