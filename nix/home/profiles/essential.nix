@@ -48,13 +48,14 @@ in
           # from a directory on our path along with these other tools.
           nixfmt-rfc-style
           openssl
-          sile
           sops
           sqlite
           statix
           #tailscale
           tmux
           tree
+          typst
+          typstyle
           unzip
           watchman
           wget

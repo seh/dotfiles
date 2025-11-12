@@ -56,7 +56,13 @@
             (lsp-register-client (make-lsp-client
                                   :new-connection (lsp-stdio-connection "starpls")
                                   :activation-fn (lsp-activate-on "starlark")
-                                  :server-id 'starpls))))
+                                  :server-id 'starpls))
+            ;; Typst
+            (add-to-list 'lsp-language-id-configuration '(typst-ts-mode . "typ"))
+            (lsp-register-client (make-lsp-client
+                                  :new-connection (lsp-stdio-connection "tinymist")
+                                  :activation-fn (lsp-activate-on "typ")
+                                  :server-id 'typst))))
 
 (use-package lsp-ivy
   :commands (lsp-ivy-workspace-symbol
