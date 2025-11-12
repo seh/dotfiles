@@ -14,8 +14,6 @@
                                    tab-width SEH-tab-width
                                    fill-column 100)
                                   (electric-pair-local-mode)
-                                  (lsp-deferred)
-                                  (lsp-lens-mode)
                                   (dolist (h '(lsp-format-buffer
                                                lsp-organize-imports))
                                     (add-hook 'before-save-hook h nil t)))))
