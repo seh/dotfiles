@@ -62,7 +62,18 @@
             (lsp-register-client (make-lsp-client
                                   :new-connection (lsp-stdio-connection "tinymist")
                                   :activation-fn (lsp-activate-on "typ")
-                                  :server-id 'typst))))
+                                  :server-id 'typst)))
+  :hook (((bash-ts-mode
+           bazel-starlark-mode
+           cue-mode
+           nix-mode
+           typst-ts-mode) . lsp-deferred)
+         ((go-mode
+           go-ts-mode
+           rustic-mode
+           typescript-ts-base-mode) . (lambda ()
+                                        (lsp-deferred)
+                                        (lsp-lens-mode)))))
 
 (use-package lsp-ivy
   :commands (lsp-ivy-workspace-symbol
