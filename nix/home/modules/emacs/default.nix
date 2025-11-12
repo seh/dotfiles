@@ -52,7 +52,6 @@ in
           doom-themes
           edit-indirect
           envrc
-          epkgs."ido-completing-read+"
           exec-path-from-shell
           flycheck
           flycheck-rust
