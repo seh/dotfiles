@@ -21,6 +21,11 @@ in
       enable = lib.mkDefault true;
       package = lib.mkDefault pkgs.git;
 
+      ignores = [
+        "**/.claude/settings.local.json"
+        "*~"
+        ".#*"
+      ];
       settings = {
         aliases = {
           # See https://ses4j.github.io/2020/04/01/git-alias-recent-branches/.
