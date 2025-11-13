@@ -23,8 +23,7 @@
  ;;:* normal text
  '(default
    ((((class color))
-     (;:family "Menlo"
-      :family "DejaVu Sans Mono"
+     (:family "Monaspace Neon"
       ;; For the "default" face, we must use a fixed value. We cannot
       ;; compute it like this:
       ;;  (floor (face-attribute 'default :height)
