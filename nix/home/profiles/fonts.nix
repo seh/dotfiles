@@ -26,6 +26,7 @@ in
       # - meslo-lgs-nf
       dejavu_fonts
       jetbrains-mono
+      monaspace
       nerd-fonts.bitstream-vera-sans-mono
       nerd-fonts.dejavu-sans-mono
       nerd-fonts.droid-sans-mono

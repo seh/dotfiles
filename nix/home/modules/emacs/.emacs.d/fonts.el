@@ -12,8 +12,7 @@
  ;;:* normal text
  '(default
    ((((class color))
-     (;:family "Menlo"
-      :family "DejaVu Sans Mono"
+     (:family "Monaspace Neon"
       :foreground "gray90" :background "black"
       ;; For the "default" face, we must use a fixed value. We cannot
       ;; compute it like this:
