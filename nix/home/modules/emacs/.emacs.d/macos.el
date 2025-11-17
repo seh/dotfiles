@@ -12,8 +12,8 @@ With a prefix argument, bind the keys even if they're not currently
 bound as expected."
   (interactive "p")
   (let ((next-binding (cl-case ns-option-modifier
-                        ('super 'meta)
-                        ('meta 'super)
+                        (super 'meta)
+                        (meta 'super)
                         (t (when force
                              'super)))))
     (if next-binding
