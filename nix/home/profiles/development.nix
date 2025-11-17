@@ -61,6 +61,7 @@ in
         # https://github.com/NixOS/nixpkgs/pull/453796 is available.
         #bruno
         buf
+        copilot-cli
         cue
         fswatch
         github-cli
