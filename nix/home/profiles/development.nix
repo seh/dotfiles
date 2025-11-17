@@ -108,6 +108,7 @@ in
         k3d
         k9s
         kind
+        kpt
         kubectl
         kubernetes-helm
         kustomize
