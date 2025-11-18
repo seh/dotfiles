@@ -26,6 +26,7 @@ in
         "*~"
         ".#*"
       ];
+      lfs.enable = lib.mkDefault true;
       settings = {
         aliases = {
           # See https://ses4j.github.io/2020/04/01/git-alias-recent-branches/.
