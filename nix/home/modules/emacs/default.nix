@@ -64,6 +64,7 @@ in
           iedit
           inf-ruby
           ivy
+          ivy-prescient
           js2-mode
           json-mode
           jsonnet-mode
@@ -89,6 +90,7 @@ in
           org-roam-timestamps
           ox-typst
           persistent-scratch
+          prescient
           prettier
           protobuf-mode
           rg

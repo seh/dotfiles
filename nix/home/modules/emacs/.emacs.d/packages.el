@@ -166,6 +166,14 @@
 
 
 ;:*=======================
+;:* ivy-prescient
+(use-package ivy-prescient
+  :after counsel
+  :config
+  (ivy-prescient-mode))
+
+
+;:*=======================
 ;:* magit
 (use-package magit
   :config
@@ -201,6 +209,13 @@
                           (persistent-scratch-restore))
                         (with-current-buffer "*scratch*"
                           (persistent-scratch-mode)))))
+
+
+;:*=======================
+;:* prescient
+(use-package prescient
+  :config
+  (prescient-persist-mode))
 
 
 ;:*=======================
