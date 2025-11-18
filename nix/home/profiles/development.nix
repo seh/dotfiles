@@ -64,6 +64,7 @@ in
         copilot-cli
         cue
         fswatch
+        git-town
         github-cli
         go-jsonnet
         go-tools
