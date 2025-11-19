@@ -126,6 +126,12 @@
 
 
 ;:*=======================
+;:* flyspell
+(use-package flyspell
+  :hook (prog-mode . flyspell-prog-mode))
+
+
+;:*=======================
 ;:* gnus
 ;; Unless we use `custom-set-variables' here, we can't wait until
 ;; the package is loaded to set these, as other custom-based variables
