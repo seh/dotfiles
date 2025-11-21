@@ -159,6 +159,10 @@ in
       claude = {
         enable = lib.mkDefault true;
       };
+      coder = {
+        enable = lib.mkDefault true;
+        enableSSHIntegration = lib.mkDefault true;
+      };
       gemini = {
         enable = lib.mkDefault true;
       };
