@@ -12,6 +12,7 @@ let
     default = {
       imports = [
         (importApply ./config.nix { inherit inputs; })
+        (importApply ./nixpkgs-config.nix { inherit inputs; })
         (importApply ./lib/flake-module.nix { inherit inputs; })
         (importApply ./packages/flake-modules.nix { inherit inputs; })
       ];

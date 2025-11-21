@@ -76,10 +76,14 @@ let
   mkDarwin =
     {
       hostPlatform ? "aarch64-darwin",
+      pkgs ? pkgsFor hostPlatform,
       modules ? [ ],
       ...
     }@args:
     let
+      nixpkgsModule = {
+        nixpkgs.pkgs = pkgs;
+      };
       flakeOptionsModule = _: {
         # Set up the default value for the option proxy.
         dotfiles._flakeOptions = cfg;
@@ -115,12 +119,16 @@ let
         };
     in
     darwinSystem (
-      builtins.removeAttrs args [ "hostPlatform" ]
+      builtins.removeAttrs args [
+        "hostPlatform"
+        "pkgs"
+      ]
       // {
         modules =
           modules
           ++ cfg.darwin.modules
           ++ [
+            nixpkgsModule
             localFlake.inputs.self.darwinModules.default
             localFlake.inputs.home-manager.darwinModules.default
             flakeOptionsModule
