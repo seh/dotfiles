@@ -1,7 +1,7 @@
 { inputs, ... }:
 
 let
-  inherit (inputs.self.lib) importDarwin;
+  inherit (inputs.self.lib) importDarwin pkgsFor;
 in
 {
   flake.darwinConfigurations = {
@@ -10,6 +10,8 @@ in
     # "scutil --get LocalHostName" command.
     #
     # We can use a general name here to establish the common case.
-    local = importDarwin ./basic.nix { };
+    local = importDarwin ./basic.nix {
+      pkgs = pkgsFor "aarch64-darwin";
+    };
   };
 }

@@ -16,21 +16,4 @@ in
   nix.extraOptions = ''
     experimental-features = nix-command flakes
   '';
-  nixpkgs.config = {
-    #allowUnfree = true;
-    allowUnfreePredicate =
-      pkg:
-      builtins.elem (lib.getName pkg) [
-        "1password"
-        "1password-cli"
-        "claude-code"
-        #"discord"
-        "dropbox"
-        # TODO(seh): We don't install this explicitly, but it's an
-        # implicit dependency of some other package.
-        "ngrok"
-        "slack"
-        "zoom"
-      ];
-  };
 }
