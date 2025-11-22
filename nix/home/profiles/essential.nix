@@ -51,7 +51,7 @@ in
           sops
           sqlite
           statix
-          #tailscale
+          tailscale
           tmux
           tree
           typst

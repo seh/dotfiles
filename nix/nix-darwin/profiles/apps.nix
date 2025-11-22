@@ -44,6 +44,7 @@
         "firefox"
         "linearmouse"
         "slack"
+        "tailscale-app"
       ];
 
       brews = [ ];
