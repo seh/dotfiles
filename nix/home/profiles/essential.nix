@@ -120,6 +120,9 @@ in
       kitty = {
         enable = lib.mkDefault true;
       };
+      nh = {
+        enable = lib.mkDefault true;
+      };
       nushell = {
         enable = lib.mkDefault true;
       };
