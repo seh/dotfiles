@@ -47,6 +47,7 @@ in
           csv-mode
           cue-mode
           dap-mode
+          difftastic
           dired-subtree
           doom-modeline
           doom-themes
