@@ -105,7 +105,7 @@ in
       bash = {
         enable = lib.mkDefault true;
       };
-      delta = {
+      difftastic = {
         enable = lib.mkDefault true;
       };
       emacs = {

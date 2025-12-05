@@ -24,7 +24,7 @@ in
 
   config = lib.mkIf cfg.enable (
     let
-      deltaNarrowMergeToolName = "delta-unified-view";
+      difftasticMergeToolName = "difftastic-split-view";
     in
     {
       programs = {
@@ -109,32 +109,14 @@ in
             })
             (
               let
-                deltaMergeToolName = "delta-split-view";
-                # NB: Assume that "delta" is not wrapped.
-                deltaProgram = lib.mkIf config.dotfiles.delta.enable (lib.getExe config.programs.delta.package);
                 emacsMergeToolName = "ediff-alt";
               in
               {
                 merge-tools = {
-                  # Basis of inspiration: https://github.com/idursun/jjui/issues/314#issuecomment-3367379291
-                  ${deltaNarrowMergeToolName} = lib.mkIf config.dotfiles.delta.enable {
-                    program = deltaProgram;
+                  ${difftasticMergeToolName} = lib.mkIf config.dotfiles.difftastic.enable {
+                    program = lib.getExe config.programs.difftastic.package;
                     diff-args = [
-                      "--width"
-                      "$width"
-                      "--features"
-                      "non-split-view"
-                      "$left"
-                      "$right"
-                    ];
-                  };
-                  ${deltaMergeToolName} = lib.mkIf config.dotfiles.delta.enable {
-                    program = deltaProgram;
-                    diff-args = [
-                      "--width"
-                      "$width"
-                      "--features"
-                      "split-view"
+                      "--color=always"
                       "$left"
                       "$right"
                     ];
@@ -161,7 +143,7 @@ in
                     };
                 };
                 ui = {
-                  diff-formatter = deltaMergeToolName;
+                  diff-formatter = difftasticMergeToolName;
                   editor =
                     let
                       programName = "emacsclient-for-jj-describe";
@@ -190,7 +172,7 @@ in
                 "-r"
                 "$change_id"
                 "--config"
-                "ui.diff-formatter=${deltaNarrowMergeToolName}"
+                "ui.diff-formatter=${difftasticMergeToolName}"
                 "$file"
               ];
               revision_command = [
@@ -200,7 +182,7 @@ in
                 "-r"
                 "$change_id"
                 "--config"
-                "ui.diff-formatter=${deltaNarrowMergeToolName}"
+                "ui.diff-formatter=${difftasticMergeToolName}"
               ];
             };
             ui = {

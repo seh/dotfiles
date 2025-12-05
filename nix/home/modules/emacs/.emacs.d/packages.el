@@ -56,6 +56,14 @@
 
 
 ;:*=======================
+;:* difftastic
+(use-package difftastic-bindings
+  :ensure difftastic
+  :config
+  (difftastic-bindings-mode))
+
+
+;:*=======================
 ;:* dired
 ;; TODO: Bind 'K' to dired-kill-subdir
 
