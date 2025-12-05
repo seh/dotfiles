@@ -46,9 +46,6 @@ in
                   register-snapshot-trigger = true;
                 };
               };
-              git = {
-                push-new-bookmarks = true;
-              };
               revset-aliases = {
                 "lagging_bookmarks" = ''
                   ::bookmarks()
