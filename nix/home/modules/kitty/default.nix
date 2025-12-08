@@ -22,12 +22,32 @@ in
       enable = lib.mkDefault true;
       package = lib.mkDefault pkgs.kitty;
       keybindings = {
+        # kitty-related
         "f7" = "show_last_visited_command_output";
         "f8" =
           "launch --stdin-source=@last_visited_cmd_output --stdin-add-formatting --type=os-window less -R";
         "shift+f8" = "launch --stdin-source=@last_visited_cmd_output --type=clipboard";
         "shift+f9" = "launch --stdin-source=@last_cmd_output --type=clipboard";
         "ctrl+shift+f4" = "save_as_session --base-dir=\${HOME} --use-foreground-process .";
+
+        # Application-specific
+
+        # Claude Code
+        # Basis of inspiration:
+        #   https://whtwnd.com/ryeyam.bsky.social/3lrzqedh2ib2b
+        #   https://zeth.dk/making-new-line-in-claude-code-in-the-kitty-terminal
+        #
+        # NB: Matching via the "cmdline" field instead of the "title"
+        # field does not work here because the window's "cmdline"
+        # value is "/bin/zsh", compared with the
+        # "foreground_processes" field's entries that then contain a
+        # "cmdline" field including "claude". It seems that kitty
+        # matches against that outer "cmdline" field, and not the
+        # inner ones.
+        #
+        # NB: kitty does not accept parenthesized groups in regular expressions.
+        "--when-focus-on \"title:^✳\\\\x20.+ or title:^claude\\\\b\" shift+enter" =
+          "send_text normal,application \\x0a";
       };
       settings = {
         allow_remote_control = true;
