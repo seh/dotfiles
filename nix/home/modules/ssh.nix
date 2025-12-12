@@ -7,6 +7,8 @@
 
 let
   cfg = config.dotfiles.ssh;
+  inherit (pkgs.stdenv.hostPlatform) isDarwin;
+  githubKnownHostsFile = ./ssh-known-hosts-github;
   panixKnownHostsFile = pkgs.fetchurl {
     url = "https://config.panix.com/vault/sshdata/ssh.ed25519";
     sha256 = "a8a0f8f28ea66d0a3eb73c926b51ede407297fb03143e4ea2ff529b9fe542424";
@@ -39,12 +41,20 @@ in
               UserKnownHostsFile = "${panixKnownHostsFile}";
             };
           };
-          "github.com gitlab.com bitbucket.com" = {
+          "github.com" = {
             user = "git";
             extraOptions = {
+              UserKnownHostsFile = "${githubKnownHostsFile}";
               AddKeysToAgent = "yes";
-              ControlMaster = "no";
+            }
+            # NB: UseKeychain is a macOS-specific option.
+            // lib.optionalAttrs isDarwin {
               UseKeychain = "yes";
+            };
+          };
+          "github.com gitlab.com bitbucket.com" = {
+            extraOptions = {
+              ControlMaster = "no";
             };
           };
         };
