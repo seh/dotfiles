@@ -9,6 +9,7 @@ localFlake:
 let
   inherit (localFlake.inputs.home-manager.lib) homeManagerConfiguration;
   inherit (localFlake.inputs.nix-darwin.lib) darwinSystem;
+  inherit (localFlake.inputs.nixos.lib) nixosSystem;
 
   cfg = config.dotfiles;
 
@@ -144,6 +145,61 @@ let
       { modules = [ (import configPath) ]; }
     ]);
 
+  mkNixOS =
+    {
+      hostPlatform ? "aarch64-linux",
+      pkgs ? pkgsFor hostPlatform,
+      modules ? [ ],
+      ...
+    }@args:
+    let
+      nixpkgsModule = {
+        nixpkgs.pkgs = pkgs;
+      };
+      flakeOptionsModule =
+        { config, ... }:
+        let
+          currentConfig = config.dotfiles._flakeOptions;
+          username = currentConfig.user.name;
+        in
+        {
+          dotfiles._flakeOptions = cfg;
+          users.users.${username}.home = lib.mkDefault "/home/${username}";
+        };
+      machineDefaultsModule = {
+        nixpkgs.hostPlatform = hostPlatform;
+        nix.settings.experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
+      };
+    in
+    nixosSystem (
+      builtins.removeAttrs args [
+        "hostPlatform"
+        "pkgs"
+      ]
+      // {
+        modules =
+          modules
+          ++ cfg.nixos.modules
+          ++ [
+            nixpkgsModule
+            localFlake.inputs.self.nixosModules.default
+            localFlake.inputs.home-manager.nixosModules.home-manager
+            flakeOptionsModule
+            machineDefaultsModule
+          ];
+      }
+    );
+
+  importNixOS =
+    configPath: args:
+    mkNixOS (recursiveMerge [
+      args
+      { modules = [ (import configPath) ]; }
+    ]);
+
   pkgsFor = system: (getSystem system).allModuleArgs.pkgs;
 in
 {
@@ -156,8 +212,10 @@ in
     inherit
       importDarwin
       importHome
+      importNixOS
       mkDarwin
       mkHome
+      mkNixOS
       pkgsFor
       ;
   };

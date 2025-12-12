@@ -14,6 +14,7 @@
       url = "github:lnl7/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nixos.follows = "nixpkgs";
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
     pre-commit-hooks = {
       url = "github:cachix/pre-commit-hooks.nix";
