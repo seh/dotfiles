@@ -62,7 +62,6 @@ in
           yq-go
           yubikey-manager
           yubikey-personalization
-          zoom-us
         ]
         ++ optionals (!isDarwin) [
           dnsutils
