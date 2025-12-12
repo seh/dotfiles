@@ -83,6 +83,7 @@ in
         #wireshark
       ]
       ++ optionals isDarwin [
+        orbstack
         # Without QEMU available, Podman can't work as intended atop
         # macOS.
         qemu
@@ -102,16 +103,21 @@ in
           ]
         ))
       ]
-      ++ optionals cfg.development.enableKubernetes [
-        fluxcd
-        k3d
-        k9s
-        kind
-        kpt
-        kubectl
-        kubernetes-helm
-        kustomize
-      ]
+      ++ optionals cfg.development.enableKubernetes (
+        [
+          fluxcd
+          k3d
+          k9s
+          kind
+          kpt
+          kubernetes-helm
+          kustomize
+        ]
+        # NB: On Darwin, "kubectl" is provided by OrbStack.
+        ++ optionals (!isDarwin) [
+          kubectl
+        ]
+      )
       ++ optionals cfg.development.enableLanguageServers [
         bash-language-server
         gopls
