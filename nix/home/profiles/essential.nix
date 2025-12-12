@@ -11,7 +11,7 @@ let
     mkIf
     optionals
     ;
-  inherit (pkgs.stdenv.hostPlatform) isDarwin;
+  inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
 in
 {
   options.dotfiles.profiles.essential.enable =
@@ -33,7 +33,6 @@ in
           coreutils
           d2
           deadnix
-          dig
           duckdb
           hunspell
           hunspellDicts.en-us
@@ -70,7 +69,13 @@ in
           whois
         ]
         ++ optionals isDarwin [
+          # NB: On Linux, "dig" is provided by "dnsutils" above.
+          dig
+          # NB: On Linux, "ssh-copy-id" is bundled with OpenSSH.
           ssh-copy-id
+        ]
+        ++ optionals (!isLinux) [
+          # NB: On Linux, "watch" is provided by "procps-ng".
           watch
         ];
     };
