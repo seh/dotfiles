@@ -28,6 +28,7 @@ in
     ./home
     ./lib
     ./nix-darwin
+    ./nixos
     ./overlays
     ./packages
     ./templates
