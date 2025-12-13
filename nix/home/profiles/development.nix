@@ -9,15 +9,12 @@
 
 let
   inherit (lib)
-    mkDefault
     mkEnableOption
     mkIf
     mkOption
     optionals
     ;
-  inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
-  isGenericLinux = config.targets.genericLinux.enable or false;
-  isNixOS = isLinux && !isGenericLinux;
+  inherit (pkgs.stdenv.hostPlatform) isDarwin;
   cfg = config.dotfiles.profiles;
 in
 {
@@ -165,11 +162,6 @@ in
       };
       gemini = {
         enable = lib.mkDefault true;
-      };
-      gnupg = {
-        enable = mkDefault true;
-        enablePackage = mkDefault (!isNixOS);
-        enableSSHSupport = true;
       };
       helix = {
         enable = lib.mkDefault true;

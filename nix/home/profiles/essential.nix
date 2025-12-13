@@ -93,18 +93,6 @@ in
       };
     };
 
-    # TODO(seh): The "gpg-agent" service is only supported on Linux for now.
-    # See:
-    #   https://github.com/nix-community/home-manager/issues/91
-    #   https://github.com/nix-community/home-manager/issues/3864
-    # services.gpg-agent = {
-    #   enable = true;
-    #   enableSshSupport = true;
-    #   defaultCacheTtl = 600;
-    #   maxCacheTtl = 7200;
-    #   pinentryFlavor = "emacs";     # TODO(seh): See https://github.com/NixOS/nixpkgs/issues/240819 for using "pinentry-mac".
-    # };
-
     dotfiles = {
       bash = {
         enable = lib.mkDefault true;
@@ -117,6 +105,10 @@ in
       };
       git = {
         enable = lib.mkDefault true;
+      };
+      gnupg = {
+        enable = lib.mkDefault true;
+        enableSSHSupport = true;
       };
       jujutsu = {
         enable = lib.mkDefault true;
