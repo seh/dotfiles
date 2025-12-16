@@ -6,9 +6,8 @@
 }:
 
 let
-  inherit (config.dotfiles) flakeOptions;
+  inherit (config.dotfiles) flakeOptions commitSigning;
   userConfig = flakeOptions.user;
-  hasGPGSigningKey = builtins.hasAttr "gpgKey" userConfig && userConfig.gpgKey != "";
   cfg = config.dotfiles.jujutsu;
   tomlFormat = pkgs.formats.toml { };
 in
@@ -88,20 +87,26 @@ in
                 inherit (userConfig) email;
               };
             }
-            (lib.optionalAttrs hasGPGSigningKey {
+            (lib.optionalAttrs commitSigning.hasKey {
               git = {
                 # NB: Opt for this instead of enabling "signing.sign-all".
                 sign-on-push = true;
               };
               signing = {
-                backend = "gpg";
-                key = userConfig.gpgKey;
-
-                backends = {
-                  gpg = {
-                    allow-expired-keys = false;
-                  };
-                };
+                inherit (commitSigning) backend key;
+                backends =
+                  if commitSigning.hasSSHKey then
+                    {
+                      ssh = {
+                        allowed-signers = "${commitSigning.sshAllowedSignersFile}";
+                      };
+                    }
+                  else
+                    {
+                      gpg = {
+                        allow-expired-keys = false;
+                      };
+                    };
               };
             })
             (
