@@ -24,7 +24,10 @@ _:
 
       gpgKey = lib.mkOption {
         type = lib.types.str;
-        description = "The default GPG key to use throughout this flake.";
+        description = ''
+          The GPG key ID to use for commit signing throughout this flake.
+          Mutually exclusive with sshSigning.key.
+        '';
         default = "";
       };
 
@@ -32,6 +35,50 @@ _:
         type = lib.types.str;
         description = "The default username to use throughout this flake.";
         default = "seh";
+      };
+
+      sshSigning = {
+        key = lib.mkOption {
+          type = lib.types.str;
+          description = ''
+            The SSH public key to use for commit signing throughout this flake.
+            Should be the full public key string (e.g., "ssh-ed25519 AAAAC3...").
+            Mutually exclusive with gpgKey.
+          '';
+          default = "";
+        };
+
+        emailAddresses = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          description = ''
+            Email addresses to associate with the SSH signing key in the
+            allowed signers file. Defaults to [ user.email ] if not specified.
+          '';
+          default = [ ];
+        };
+      };
+
+      sshAllowedSigners = lib.mkOption {
+        type = lib.types.listOf (
+          lib.types.submodule {
+            options = {
+              email = lib.mkOption {
+                type = lib.types.str;
+                description = "Email address associated with this signer.";
+              };
+              key = lib.mkOption {
+                type = lib.types.str;
+                description = "SSH public key string for this signer.";
+              };
+            };
+          }
+        );
+        description = ''
+          Additional SSH signers to trust for commit signature verification.
+          Your own identity (using user.sshSigning.emailAddresses and
+          user.sshSigning.key) is automatically included when sshSigning.key is set.
+        '';
+        default = [ ];
       };
     };
 
