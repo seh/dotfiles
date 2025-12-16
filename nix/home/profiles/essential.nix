@@ -66,6 +66,8 @@ in
           dnsutils
           file
           netcat
+          # NB: On Darwin, /usr/bin/perl is available system-wide.
+          perl
           whois
         ]
         ++ optionals isDarwin [
