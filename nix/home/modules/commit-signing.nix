@@ -56,6 +56,14 @@ in
       description = "Whether any signing key is configured.";
     };
 
+    hasAllowedSigners = lib.mkOption {
+      type = lib.types.bool;
+      default = allowedSignersContent != "";
+      readOnly = true;
+      internal = true;
+      description = "Whether there are any SSH allowed signers configured.";
+    };
+
     backend = lib.mkOption {
       type = lib.types.nullOr (
         lib.types.enum [
@@ -64,29 +72,40 @@ in
         ]
       );
       default =
-        if hasSSHSigningKey then
-          "ssh"
+        if userConfig.commitSigningBackend != null then
+          userConfig.commitSigningBackend
         else if hasGPGSigningKey then
-          "gpg"
+          if hasSSHSigningKey then null else "gpg"
+        else if hasSSHSigningKey then
+          "ssh"
         else
           null;
-      readOnly = true;
-      internal = true;
-      description = "The signing backend to use, or null if none configured.";
+      description = ''
+        The signing backend to use for commits: "gpg" or "ssh".
+
+        Defaults to the value of dotfiles.user.commitSigningBackend if set.
+        Otherwise, when only one of gpgKey or sshSigning.key is configured,
+        this defaults to the corresponding backend. When both are configured
+        and dotfiles.user.commitSigningBackend is not set, this option must
+        be set explicitly.
+      '';
     };
 
     key = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default =
-        if hasSSHSigningKey then
-          userConfig.sshSigning.key
-        else if hasGPGSigningKey then
+        let
+          selectedBackend = config.dotfiles.commitSigning.backend;
+        in
+        if selectedBackend == "gpg" then
           userConfig.gpgKey
+        else if selectedBackend == "ssh" then
+          userConfig.sshSigning.key
         else
           null;
       readOnly = true;
       internal = true;
-      description = "The signing key to use, or null if none configured.";
+      description = "The signing key corresponding to the configured backend.";
     };
 
     sshAllowedSignersFile = lib.mkOption {
@@ -101,8 +120,17 @@ in
   config = {
     assertions = [
       {
-        assertion = !(hasGPGSigningKey && hasSSHSigningKey);
-        message = "dotfiles.user: gpgKey and sshSigning.key are mutually exclusive; specify only one";
+        assertion =
+          !(hasGPGSigningKey && hasSSHSigningKey) || config.dotfiles.commitSigning.backend != null;
+        message = "dotfiles.commitSigning.backend must be set to \"gpg\" or \"ssh\" when both gpgKey and sshSigning.key are configured";
+      }
+      {
+        assertion = userConfig.commitSigningBackend == "gpg" -> hasGPGSigningKey;
+        message = ''dotfiles.user.commitSigningBackend is "gpg" but no gpgKey is configured'';
+      }
+      {
+        assertion = userConfig.commitSigningBackend == "ssh" -> hasSSHSigningKey;
+        message = ''dotfiles.user.commitSigningBackend is "ssh" but no sshSigning.key is configured'';
       }
     ];
   };

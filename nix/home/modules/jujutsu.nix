@@ -94,19 +94,16 @@ in
               };
               signing = {
                 inherit (commitSigning) backend key;
-                backends =
-                  if commitSigning.hasSSHKey then
-                    {
-                      ssh = {
-                        allowed-signers = "${commitSigning.sshAllowedSignersFile}";
-                      };
-                    }
-                  else
-                    {
-                      gpg = {
-                        allow-expired-keys = false;
-                      };
-                    };
+                backends = {
+                  gpg = {
+                    allow-expired-keys = false;
+                  };
+                }
+                // lib.optionalAttrs commitSigning.hasAllowedSigners {
+                  ssh = {
+                    allowed-signers = "${commitSigning.sshAllowedSignersFile}";
+                  };
+                };
               };
             })
             (

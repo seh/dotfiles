@@ -30,7 +30,7 @@ in
       # Use Home Manager's native signing options.
       signing = lib.mkIf commitSigning.hasKey {
         signByDefault = true;
-        format = if commitSigning.hasSSHKey then "ssh" else null;
+        format = if commitSigning.backend == "ssh" then "ssh" else null;
         inherit (commitSigning) key;
       };
 
@@ -73,7 +73,7 @@ in
         }
         # TODO(seh): Specify "includes"?
         # SSH signing needs the allowed signers file for verification.
-        (lib.mkIf commitSigning.hasSSHKey {
+        (lib.mkIf commitSigning.hasAllowedSigners {
           gpg.ssh.allowedSignersFile = "${commitSigning.sshAllowedSignersFile}";
         })
       ];

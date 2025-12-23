@@ -24,11 +24,25 @@ _:
 
       gpgKey = lib.mkOption {
         type = lib.types.str;
-        description = ''
-          The GPG key ID to use for commit signing throughout this flake.
-          Mutually exclusive with sshSigning.key.
-        '';
+        description = "The GPG key ID to use for commit signing throughout this flake.";
         default = "";
+      };
+
+      commitSigningBackend = lib.mkOption {
+        type = lib.types.nullOr (
+          lib.types.enum [
+            "gpg"
+            "ssh"
+          ]
+        );
+        default = null;
+        description = ''
+          The signing backend to use for commits: "gpg" or "ssh".
+
+          When only one of gpgKey or sshSigning.key is configured, this
+          can be left unset and the backend will be inferred. When both
+          are configured, this option must be set explicitly.
+        '';
       };
 
       name = lib.mkOption {
@@ -43,7 +57,6 @@ _:
           description = ''
             The SSH public key to use for commit signing throughout this flake.
             Should be the full public key string (e.g., "ssh-ed25519 AAAAC3...").
-            Mutually exclusive with gpgKey.
           '';
           default = "";
         };
