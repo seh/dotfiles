@@ -21,6 +21,7 @@ in
       package = lib.mkDefault pkgs.git;
 
       ignores = [
+        "\\#*#"
         "**/.claude/settings.local.json"
         "*~"
         ".#*"
