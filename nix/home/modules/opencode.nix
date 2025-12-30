@@ -29,17 +29,9 @@ in
             extensions = [ ".go" ];
           };
         };
-        provider = {
-          # See https://opencode.ai/docs/providers/#config.
-          google-vertex = {
-            models = {
-              "gemini-2.5-pro" = { };
-            };
-          };
-          google-vertex-anthropic = {
-            models = {
-              "claude-sonnet-4-5@20250929" = { };
-            };
+        tui = {
+          scroll_acceleration = {
+            enabled = true;
           };
         };
       };
