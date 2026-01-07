@@ -16,11 +16,14 @@ let
   mkHome =
     {
       pkgs,
+      overlays ? [ ],
       modules ? [ ],
       ...
     }@args:
     let
-      userDir = if pkgs.stdenv.hostPlatform.isDarwin then "/Users" else "/home";
+      finalPkgs =
+        if overlays == [ ] then pkgs else pkgs.extend (lib.composeManyExtensions overlays);
+      userDir = if finalPkgs.stdenv.hostPlatform.isDarwin then "/Users" else "/home";
       flakeOptionsModule =
         { lib, config, ... }:
         {
@@ -32,9 +35,9 @@ let
         };
     in
     homeManagerConfiguration (
-      args
+      builtins.removeAttrs args [ "overlays" ]
       // {
-        inherit pkgs;
+        pkgs = finalPkgs;
         modules =
           modules
           ++ cfg.home.modules
@@ -78,12 +81,15 @@ let
     {
       hostPlatform ? "aarch64-darwin",
       pkgs ? pkgsFor hostPlatform,
+      overlays ? [ ],
       modules ? [ ],
       ...
     }@args:
     let
+      finalPkgs =
+        if overlays == [ ] then pkgs else pkgs.extend (lib.composeManyExtensions overlays);
       nixpkgsModule = {
-        nixpkgs.pkgs = pkgs;
+        nixpkgs.pkgs = finalPkgs;
       };
       flakeOptionsModule = _: {
         # Set up the default value for the option proxy.
@@ -122,6 +128,7 @@ let
     darwinSystem (
       builtins.removeAttrs args [
         "hostPlatform"
+        "overlays"
         "pkgs"
       ]
       // {
@@ -149,12 +156,15 @@ let
     {
       hostPlatform ? "aarch64-linux",
       pkgs ? pkgsFor hostPlatform,
+      overlays ? [ ],
       modules ? [ ],
       ...
     }@args:
     let
+      finalPkgs =
+        if overlays == [ ] then pkgs else pkgs.extend (lib.composeManyExtensions overlays);
       nixpkgsModule = {
-        nixpkgs.pkgs = pkgs;
+        nixpkgs.pkgs = finalPkgs;
       };
       flakeOptionsModule =
         { config, ... }:
@@ -177,6 +187,7 @@ let
     nixosSystem (
       builtins.removeAttrs args [
         "hostPlatform"
+        "overlays"
         "pkgs"
       ]
       // {
