@@ -45,7 +45,7 @@ in
           # with the "nix check" command, but that configuraton does
           # not link the "nixfmt" program provided by this package
           # from a directory on our path along with these other tools.
-          nixfmt-rfc-style
+          nixfmt
           openssl
           sops
           sqlite
