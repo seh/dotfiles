@@ -27,6 +27,11 @@
 
 
 ;:*=======================
+;:* agent-shell
+(use-package agent-shell)
+
+
+;:*=======================
 ;:* beacon
 (use-package beacon
   :config
