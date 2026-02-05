@@ -31,6 +31,7 @@ in
       extraPackages =
         epkgs: with epkgs; [
           abyss-theme
+          agent-shell
           auctex
           bazel
           bbdb
