@@ -50,15 +50,20 @@ in
           ''
         ))
         (lib.mkOrder 550 ''
+          zstyle ':completion:*' cache-path ~/.zsh/cache
           zstyle ':completion:*' completer _expand _complete _ignored _correct _approximate
-          zstyle ':completion:*' subst-globs-only true
+          # As suggested by the carpace project: https://carapace-sh.github.io/carapace-bin/setup.html#zsh
+          # See also: https://zsh.sourceforge.io/Guide/zshguide06.html#l158
+          zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
+          zstyle ':completion:*' group-name '''
+          zstyle ':completion:*:-command-' group-order builtins functions commands
           zstyle ':completion:*' list-colors ''${(s.:.)LS_COLORS}
           zstyle ':completion:*' matcher-list ''' 'm:{[:lower:]}={[:upper:]}' 'm:{[:lower:][:upper:]}={[:upper:][:lower:]}' 'r:|[._-]=* r:|=*'
           zstyle ':completion:*' menu select=1
           zstyle ':completion:*' select-prompt '%SScrolling active: current selection at %p%s'
+          zstyle ':completion:*' subst-globs-only true
           # As suggested by the Bazel project: https://docs.bazel.build/versions/master/completion.html#zsh.
           zstyle ':completion:*' use-cache on
-          zstyle ':completion:*' cache-path ~/.zsh/cache
           zstyle :compinstall filename ~/.zshrc
         '')
         (builtins.readFile ./zshrc)
