@@ -62,7 +62,9 @@
             (lsp-register-client (make-lsp-client
                                   :new-connection (lsp-stdio-connection "tinymist")
                                   :activation-fn (lsp-activate-on "typ")
-                                  :server-id 'typst)))
+                                  :server-id 'typst))
+            ;; Omissions
+            (add-to-list 'lsp-disabled-clients 'trunk-lsp))
   :hook (((bash-ts-mode
            bazel-starlark-mode
            cue-mode
