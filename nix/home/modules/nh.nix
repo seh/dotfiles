@@ -21,7 +21,11 @@ in
         enable = lib.mkDefault true;
         extraArgs = "--optimize";
       };
-      darwinFlake = lib.mkDefault ".#local";
+      # TODO(seh): At present, with the "NH_DARWIN_FLAKE" environment
+      # variable set, the "nh darwin build ." can't find a suitable
+      # target. Without that variable set, though, it does, likely
+      # matching by hostname instead.
+      #darwinFlake = lib.mkDefault ".#local";
     };
   };
 }
