@@ -122,6 +122,7 @@ in
         bash-language-server
         gopls
         graphql-language-service-cli
+        jq-lsp
         jsonnet-language-server
         nixd # Compare with "nil"
         nodePackages.vscode-json-languageserver
