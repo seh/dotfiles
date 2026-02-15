@@ -67,6 +67,7 @@ in
           inf-ruby
           ivy
           ivy-prescient
+          jq-ts-mode
           js2-mode
           json-mode
           jsonnet-mode
