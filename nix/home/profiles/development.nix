@@ -70,6 +70,7 @@ in
         goperf
         mkcert
         ngrok
+        nodejs-slim
         nodePackages.prettier
         nodePackages.typescript
         nssTools # For use with mkcert
