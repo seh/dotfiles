@@ -34,6 +34,7 @@ in
           d2
           deadnix
           duckdb
+          glow
           hunspell
           hunspellDicts.en-us
           jless
