@@ -8,22 +8,18 @@
       _module.args.pkgs = lib.mkForce (
         import inputs.nixpkgs {
           inherit system;
-          config = {
-            allowUnfreePredicate =
-              pkg:
-              builtins.elem (lib.getName pkg) [
-                "1password"
-                "1password-cli"
-                "claude-code"
-                "coder"
-                "dropbox"
-                "orbstack"
-                "ngrok"
-                "slack"
-                "terraform"
-                "zoom"
-              ];
-          };
+          config.allowUnfreePackages = [
+            "1password"
+            "1password-cli"
+            "claude-code"
+            "coder"
+            "dropbox"
+            "orbstack"
+            "ngrok"
+            "slack"
+            "terraform"
+            "zoom"
+          ];
         }
       );
     };
