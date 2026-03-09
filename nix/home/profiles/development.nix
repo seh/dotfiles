@@ -171,9 +171,6 @@ in
         enable = lib.mkDefault true;
         enableSSHIntegration = lib.mkDefault true;
       };
-      gemini = {
-        enable = lib.mkDefault true;
-      };
       helix = {
         enable = lib.mkDefault true;
       };
