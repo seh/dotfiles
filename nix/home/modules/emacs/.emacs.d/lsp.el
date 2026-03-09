@@ -1,5 +1,5 @@
-;:* lsp.el
-;:*=======================
+                                        ;:* lsp.el
+                                        ;:*=======================
 ;;;** Language Server Protocol-related packages
 
 ;; LSP configuration for use with Go and other languages
@@ -49,6 +49,12 @@
                                   :new-connection (lsp-stdio-connection (list "cue" "lsp"))
                                   :activation-fn (lsp-activate-on "cue")
                                   :server-id 'cue-lsp))
+            ;; Markdown
+            (add-to-list 'lsp-language-id-configuration '(markdown-mode . "markdown"))
+            (lsp-register-client (make-lsp-client
+                                  :new-connection (lsp-stdio-connection '("rumdl" "server"))
+                                  :major-modes '(markdown-mode)
+                                  :server-id 'rumdl))
             ;; Starlark
             (dolist (mode '(bazel-mode
                             bazel-starlark-mode))
@@ -74,8 +80,8 @@
            go-ts-mode
            rustic-mode
            typescript-ts-base-mode) . (lambda ()
-                                        (lsp-deferred)
-                                        (lsp-lens-mode)))))
+           (lsp-deferred)
+           (lsp-lens-mode)))))
 
 (use-package lsp-ivy
   :commands (lsp-ivy-workspace-symbol
