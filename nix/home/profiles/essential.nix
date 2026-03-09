@@ -48,6 +48,7 @@ in
           # from a directory on our path along with these other tools.
           nixfmt
           openssl
+          rumdl
           sops
           sqlite
           statix
