@@ -142,9 +142,6 @@ in {
     programs = {
       go = {
         enable = true;
-        # TODO(seh): Remove this once the "go" package advances to
-        # minor version 1.26.
-        package = pkgs.go_1_26;
       };
 
       granted = {
