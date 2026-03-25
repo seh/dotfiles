@@ -1,0 +1,4 @@
+# Reformat all Nix source files per RFC 166
+96fe89f577ddf8a8d62fc933504f52ad5b67157b
+# Reformat all Nix files with the "alejandra" tool
+971d7471e14f87719ef15a0cfb48a56cf2987060
