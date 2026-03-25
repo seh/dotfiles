@@ -1,4 +1,5 @@
-{ lib, inputs, ... }:
+{ inputs, ... }:
+{ lib, ... }:
 
 {
   imports = [

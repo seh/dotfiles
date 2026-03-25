@@ -18,7 +18,7 @@ let
       ];
     };
     checks = ./checks.nix;
-    style = ./style.nix;
+    style = importApply ./style.nix { inherit inputs; };
   };
 in
 {
