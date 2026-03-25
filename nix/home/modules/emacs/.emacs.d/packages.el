@@ -252,6 +252,10 @@
 ;:*=======================
 ;:* prettier
 (use-package prettier
+  :init
+  ;; Without this, prettier-mode has trouble finding the "prettier"
+  ;; program, even though it's already available on the path.
+  (setenv "NODE_PATH" (expand-file-name "~/.nix-profile/lib/node_modules"))
   :hook ((js-base-mode . prettier-mode)
          (typescript-ts-base-mode . prettier-mode)))
 
