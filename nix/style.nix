@@ -11,9 +11,9 @@
     treefmt = {
       projectRootFile = lib.mkDefault "flake.nix";
       programs = {
+        alejandra.enable = lib.mkDefault true;
         buildifier.enable = lib.mkDefault true;
         gofumpt.enable = lib.mkDefault true;
-        nixfmt.enable = lib.mkDefault true;
         prettier = {
           enable = lib.mkDefault true;
           settings = {
@@ -74,6 +74,7 @@
     };
 
     pre-commit.settings.hooks = {
+      alejandra.enable = lib.mkDefault true;
       check-executables-have-shebangs.enable = lib.mkDefault true;
       check-json.enable = lib.mkDefault true;
       check-merge-conflicts.enable = lib.mkDefault true;
