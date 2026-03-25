@@ -3,12 +3,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.claude;
-in
-{
+in {
   options.dotfiles.claude = {
     enable = lib.mkEnableOption "claude";
   };

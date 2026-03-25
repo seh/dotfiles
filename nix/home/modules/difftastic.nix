@@ -3,12 +3,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.difftastic;
-in
-{
+in {
   options.dotfiles.difftastic = {
     enable = lib.mkEnableOption "difftastic";
   };

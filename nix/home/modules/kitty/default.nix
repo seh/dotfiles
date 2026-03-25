@@ -3,12 +3,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.kitty;
-in
-{
+in {
   options.dotfiles.kitty.enable = lib.mkEnableOption "kitty";
 
   config = lib.mkIf cfg.enable {
@@ -24,8 +21,7 @@ in
       keybindings = {
         # kitty-related
         "f7" = "show_last_visited_command_output";
-        "f8" =
-          "launch --stdin-source=@last_visited_cmd_output --stdin-add-formatting --type=os-window less -R";
+        "f8" = "launch --stdin-source=@last_visited_cmd_output --stdin-add-formatting --type=os-window less -R";
         "shift+f8" = "launch --stdin-source=@last_visited_cmd_output --type=clipboard";
         "shift+f9" = "launch --stdin-source=@last_cmd_output --type=clipboard";
         "ctrl+shift+f4" = "save_as_session --base-dir=\${HOME} --use-foreground-process .";
@@ -46,8 +42,7 @@ in
         # inner ones.
         #
         # NB: kitty does not accept parenthesized groups in regular expressions.
-        "--when-focus-on \"title:^✳\\\\x20.+ or title:^claude\\\\b\" shift+enter" =
-          "send_text normal,application \\x0a";
+        "--when-focus-on \"title:^✳\\\\x20.+ or title:^claude\\\\b\" shift+enter" = "send_text normal,application \\x0a";
       };
       settings = {
         allow_remote_control = true;

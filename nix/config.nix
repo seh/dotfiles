@@ -1,6 +1,4 @@
-_:
-{ lib, ... }:
-
+_: {lib, ...}:
 #let
 #  TODO(seh): Use this if we need to refer to any of the current
 #  values for these options.
@@ -67,7 +65,7 @@ _:
             Email addresses to associate with the SSH signing key in the
             allowed signers file. Defaults to [ user.email ] if not specified.
           '';
-          default = [ ];
+          default = [];
         };
       };
 
@@ -91,13 +89,13 @@ _:
           Your own identity (using user.sshSigning.emailAddresses and
           user.sshSigning.key) is automatically included when sshSigning.key is set.
         '';
-        default = [ ];
+        default = [];
       };
     };
 
     darwin.modules = lib.mkOption {
       type = with lib.types; listOf deferredModule;
-      default = [ ];
+      default = [];
       description = ''
         Default list of modules to include when generating nix-darwin
         configuration with `lib.mkDarwin` and `lib.importDarwin`.
@@ -106,7 +104,7 @@ _:
 
     home.modules = lib.mkOption {
       type = with lib.types; listOf deferredModule;
-      default = [ ];
+      default = [];
       description = ''
         Default list of modules to include when generating Home Manager
         configuration with `lib.mkHome` and `lib.importHome`.
@@ -121,7 +119,7 @@ _:
 
     nixos.modules = lib.mkOption {
       type = with lib.types; listOf deferredModule;
-      default = [ ];
+      default = [];
       description = ''
         Default list of modules to include when generating NixOS configuration
         with `lib.mkNixOS` and `lib.importNixOS`.

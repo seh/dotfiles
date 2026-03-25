@@ -3,14 +3,11 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   inherit (config.dotfiles) flakeOptions commitSigning;
   userConfig = flakeOptions.user;
   cfg = config.dotfiles.git;
-in
-{
+in {
   options.dotfiles.git = {
     enable = lib.mkEnableOption "git";
   };
@@ -31,7 +28,10 @@ in
       # Use Home Manager's native signing options.
       signing = lib.mkIf commitSigning.hasKey {
         signByDefault = true;
-        format = if commitSigning.backend == "ssh" then "ssh" else null;
+        format =
+          if commitSigning.backend == "ssh"
+          then "ssh"
+          else null;
         inherit (commitSigning) key;
       };
 

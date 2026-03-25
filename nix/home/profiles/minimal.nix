@@ -4,16 +4,14 @@
   config,
   lib,
   ...
-}:
-
-let
-  inherit (lib)
+}: let
+  inherit
+    (lib)
     mkIf
     mkOption
     types
     ;
-in
-{
+in {
   options.dotfiles.profiles.minimal.enable = mkOption {
     type = types.bool;
     default = true;
@@ -21,7 +19,8 @@ in
   };
 
   config = mkIf config.dotfiles.profiles.minimal.enable {
-    home.packages = # with pkgs;
+    home.packages =
+      # with pkgs;
       [
         # TODO(seh): Do we need to specify any here?
       ];

@@ -3,24 +3,21 @@
   lib,
   pkgs,
   ...
-}:
-
-let
-  inherit (lib)
+}: let
+  inherit
+    (lib)
     mkEnableOption
     mkIf
     optionals
     ;
   inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
-in
-{
+in {
   options.dotfiles.profiles.essential.enable =
     mkEnableOption "essential packages for servers and desktops alike";
 
   config = mkIf config.dotfiles.profiles.essential.enable {
     home = {
-      packages =
-        with pkgs;
+      packages = with pkgs;
         [
           # TODO(seh): Consider moving some of these into separate files
           # depending on which kinds of machines should include them

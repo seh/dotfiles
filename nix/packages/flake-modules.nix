@@ -1,15 +1,11 @@
-{ inputs }:
-{
+{inputs}: {
   lib,
   flake-parts-lib,
   ...
-}:
-
-let
+}: let
   inherit (flake-parts-lib) mkPerSystemOption;
   inherit (inputs.self.lib) collectPackages;
-in
-{
+in {
   options.perSystem = mkPerSystemOption {
     options.dotfiles.callPackages = {
       enable = lib.mkEnableOption "imports of all packages defined in the specified directory";
@@ -22,7 +18,7 @@ in
       extraPackages = lib.mkOption {
         description = "Additional packages to include in the package set.";
         type = with lib.types; functionTo (lazyAttrsOf anything);
-        default = _: { };
+        default = _: {};
         defaultText = lib.literalExpression "self: {}";
         example = lib.literalExpression ''
           self: {
@@ -33,15 +29,19 @@ in
     };
   };
 
-  config.perSystem =
-    { config, pkgs, ... }:
-    let
-      cfg = config.dotfiles.callPackages;
-    in
+  config.perSystem = {
+    config,
+    pkgs,
+    ...
+  }: let
+    cfg = config.dotfiles.callPackages;
+  in
     lib.mkIf cfg.enable {
-      packages = collectPackages {
-        inherit pkgs;
-        inherit (cfg) directory;
-      } cfg.extraPackages;
+      packages =
+        collectPackages {
+          inherit pkgs;
+          inherit (cfg) directory;
+        }
+        cfg.extraPackages;
     };
 }

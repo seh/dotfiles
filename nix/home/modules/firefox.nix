@@ -5,15 +5,15 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   inherit (pkgs.stdenv) isDarwin;
   cfg = config.dotfiles.firefox;
-  defaultPackage = if isDarwin then null else pkgs.firefox-bin;
-  finalPackage = cfg.package.override { extraPolicies = cfg.policies; };
-in
-{
+  defaultPackage =
+    if isDarwin
+    then null
+    else pkgs.firefox-bin;
+  finalPackage = cfg.package.override {extraPolicies = cfg.policies;};
+in {
   options.dotfiles.firefox = {
     enable = lib.mkEnableOption "Firefox";
     package = lib.mkOption {
@@ -25,15 +25,14 @@ in
       '';
     };
     preferences = lib.mkOption {
-      type =
-        with lib.types;
+      type = with lib.types;
         attrsOf (oneOf [
           str
           int
           float
           bool
         ]);
-      default = { };
+      default = {};
       description = ''
         Set default preferences for Firefox.
 
@@ -43,7 +42,7 @@ in
     };
     policies = lib.mkOption {
       type = with lib.types; attrsOf anything;
-      default = { };
+      default = {};
       description = ''
         Configure Firefox enterprise policies. On platforms other than
         macOS, this option requires the <option>package</option>
@@ -59,15 +58,19 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = lib.optional (cfg.package != null) finalPackage;
 
-    dotfiles.firefox.policies.Preferences = lib.mapAttrs (_: value: {
-      Value = value;
-      Status = "default";
-    }) cfg.preferences;
+    dotfiles.firefox.policies.Preferences =
+      lib.mapAttrs (_: value: {
+        Value = value;
+        Status = "default";
+      })
+      cfg.preferences;
 
     targets.darwin.defaults = lib.mkIf (isDarwin && cfg.package == null) {
-      "org.mozilla.firefox" = cfg.policies // {
-        EnterprisePoliciesEnabled = true;
-      };
+      "org.mozilla.firefox" =
+        cfg.policies
+        // {
+          EnterprisePoliciesEnabled = true;
+        };
     };
   };
 }

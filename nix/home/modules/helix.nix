@@ -3,12 +3,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.helix;
-in
-{
+in {
   options.dotfiles.helix = {
     enable = lib.mkEnableOption "helix";
   };

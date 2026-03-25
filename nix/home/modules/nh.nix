@@ -3,12 +3,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.nh;
-in
-{
+in {
   options.dotfiles.nh = {
     enable = lib.mkEnableOption "nh";
   };

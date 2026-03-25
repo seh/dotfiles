@@ -3,12 +3,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.gemini;
-in
-{
+in {
   options.dotfiles.gemini = {
     enable = lib.mkEnableOption "gemini";
   };

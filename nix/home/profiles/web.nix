@@ -5,12 +5,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
-in
-{
+in {
   options.dotfiles.profiles.web.enable = lib.mkEnableOption "opinionated defaults for Web browsers";
 
   config = lib.mkIf config.dotfiles.profiles.web.enable {

@@ -3,19 +3,16 @@
   lib,
   pkgs,
   ...
-}:
-let
+}: let
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
-in
-{
+in {
   options.dotfiles.profiles.desktop.enable =
     lib.mkEnableOption "essential packages for desktop environemnts";
 
   config = lib.mkIf config.dotfiles.profiles.desktop.enable {
-    home.packages =
-      let
-        candidatePkg = pkgs.zoom-us;
-      in
+    home.packages = let
+      candidatePkg = pkgs.zoom-us;
+    in
       lib.optionals (lib.meta.availableOn pkgs.stdenv.hostPlatform candidatePkg) [
         candidatePkg
       ];

@@ -3,12 +3,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.nushell;
-in
-{
+in {
   options.dotfiles.nushell = {
     enable = lib.mkEnableOption "nushell";
   };

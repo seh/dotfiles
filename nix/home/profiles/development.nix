@@ -5,10 +5,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
-  inherit (lib)
+}: let
+  inherit
+    (lib)
     mkEnableOption
     mkIf
     mkOption
@@ -16,8 +15,7 @@ let
     ;
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
   cfg = config.dotfiles.profiles;
-in
-{
+in {
   options.dotfiles.profiles.development = {
     enable = mkEnableOption "development packages";
 
@@ -47,8 +45,7 @@ in
   };
 
   config = mkIf cfg.development.enable {
-    home.packages =
-      with pkgs;
+    home.packages = with pkgs;
       [
         bazel-buildtools
         bazel_8
@@ -98,8 +95,7 @@ in
       ]
       ++ optionals cfg.development.enabledCloudProviders.gcp [
         (google-cloud-sdk.withExtraComponents (
-          with google-cloud-sdk.components;
-          [
+          with google-cloud-sdk.components; [
             gke-gcloud-auth-plugin
           ]
         ))

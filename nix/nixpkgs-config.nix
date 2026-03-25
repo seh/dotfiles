@@ -1,26 +1,21 @@
-{ inputs }:
-{ lib, ... }:
-
-{
-  perSystem =
-    { system, ... }:
-    {
-      _module.args.pkgs = lib.mkForce (
-        import inputs.nixpkgs {
-          inherit system;
-          config.allowUnfreePackages = [
-            "1password"
-            "1password-cli"
-            "claude-code"
-            "coder"
-            "dropbox"
-            "orbstack"
-            "ngrok"
-            "slack"
-            "terraform"
-            "zoom"
-          ];
-        }
-      );
-    };
+{inputs}: {lib, ...}: {
+  perSystem = {system, ...}: {
+    _module.args.pkgs = lib.mkForce (
+      import inputs.nixpkgs {
+        inherit system;
+        config.allowUnfreePackages = [
+          "1password"
+          "1password-cli"
+          "claude-code"
+          "coder"
+          "dropbox"
+          "orbstack"
+          "ngrok"
+          "slack"
+          "terraform"
+          "zoom"
+        ];
+      }
+    );
+  };
 }

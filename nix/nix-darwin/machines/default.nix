@@ -1,9 +1,6 @@
-{ inputs, ... }:
-
-let
+{inputs, ...}: let
   inherit (inputs.self.lib) importDarwin pkgsFor;
-in
-{
+in {
   flake.darwinConfigurations = {
     # By default nix-darwin will look for a configuration whose name
     # matches its hostname, per the value reported by invoking the
