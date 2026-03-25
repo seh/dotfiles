@@ -1,9 +1,6 @@
-{ config, ... }:
-
-let
+{config, ...}: let
   username = config.dotfiles.flakeOptions.user.name;
-in
-{
+in {
   users.users.${username}.home = "/Users/${username}";
 
   dotfiles.profiles.apps.enable = true;

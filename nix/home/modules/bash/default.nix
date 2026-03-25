@@ -2,12 +2,9 @@
   config,
   lib,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.bash;
-in
-{
+in {
   options.dotfiles.bash = {
     enable = lib.mkEnableOption "bash";
   };

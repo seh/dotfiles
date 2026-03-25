@@ -1,6 +1,8 @@
-{ config, lib, ... }:
-
 {
+  config,
+  lib,
+  ...
+}: {
   options.dotfiles.profiles.enableAll = lib.mkEnableOption "all profiles provided by the dotfiles";
 
   config = lib.mkIf config.dotfiles.profiles.enableAll {

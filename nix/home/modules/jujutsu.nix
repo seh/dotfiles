@@ -3,20 +3,17 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   inherit (config.dotfiles) flakeOptions commitSigning;
   userConfig = flakeOptions.user;
   cfg = config.dotfiles.jujutsu;
-  tomlFormat = pkgs.formats.toml { };
-in
-{
+  tomlFormat = pkgs.formats.toml {};
+in {
   options.dotfiles.jujutsu = {
     enable = lib.mkEnableOption "jujutsu";
     extraSettings = lib.mkOption {
       inherit (tomlFormat) type;
-      default = { };
+      default = {};
       description = "Additional settings to add to jujutsu's configuration file";
     };
   };
@@ -24,8 +21,7 @@ in
   config = lib.mkIf cfg.enable (
     let
       difftasticMergeToolName = "difftastic-split-view";
-    in
-    {
+    in {
       programs = {
         jujutsu = {
           enable = lib.mkDefault true;
@@ -94,23 +90,23 @@ in
               };
               signing = {
                 inherit (commitSigning) backend key;
-                backends = {
-                  gpg = {
-                    allow-expired-keys = false;
+                backends =
+                  {
+                    gpg = {
+                      allow-expired-keys = false;
+                    };
+                  }
+                  // lib.optionalAttrs commitSigning.hasAllowedSigners {
+                    ssh = {
+                      allowed-signers = "${commitSigning.sshAllowedSignersFile}";
+                    };
                   };
-                }
-                // lib.optionalAttrs commitSigning.hasAllowedSigners {
-                  ssh = {
-                    allowed-signers = "${commitSigning.sshAllowedSignersFile}";
-                  };
-                };
               };
             })
             (
               let
                 emacsMergeToolName = "ediff-alt";
-              in
-              {
+              in {
                 merge-tools = {
                   ${difftasticMergeToolName} = lib.mkIf config.dotfiles.difftastic.enable {
                     program = lib.getExe config.programs.difftastic.package;
@@ -120,36 +116,33 @@ in
                       "$right"
                     ];
                   };
-                  ${emacsMergeToolName} =
-                    let
-                      programName = "emacs-ediff-alt";
-                      emacsDiffProgram = pkgs.writeShellScriptBin programName (
-                        builtins.readFile (./. + "/${programName}")
-                      );
-                    in
-                    {
-                      program = lib.getExe emacsDiffProgram;
-                      merge-args = [
-                        "$left"
-                        "$right"
-                        "$base"
-                        "$output"
-                      ];
-                      # Attempt to detect when we exit ediff-merge without
-                      # resolving all the conflicts, leaving some still
-                      # present in the output file.
-                      merge-tool-edits-conflict-markers = true;
-                    };
+                  ${emacsMergeToolName} = let
+                    programName = "emacs-ediff-alt";
+                    emacsDiffProgram = pkgs.writeShellScriptBin programName (
+                      builtins.readFile (./. + "/${programName}")
+                    );
+                  in {
+                    program = lib.getExe emacsDiffProgram;
+                    merge-args = [
+                      "$left"
+                      "$right"
+                      "$base"
+                      "$output"
+                    ];
+                    # Attempt to detect when we exit ediff-merge without
+                    # resolving all the conflicts, leaving some still
+                    # present in the output file.
+                    merge-tool-edits-conflict-markers = true;
+                  };
                 };
                 ui = {
                   diff-formatter = difftasticMergeToolName;
-                  editor =
-                    let
-                      programName = "emacsclient-for-jj-describe";
-                      emacsclientProgram = pkgs.writeShellScriptBin programName (
-                        builtins.readFile (./. + "/${programName}")
-                      );
-                    in
+                  editor = let
+                    programName = "emacsclient-for-jj-describe";
+                    emacsclientProgram = pkgs.writeShellScriptBin programName (
+                      builtins.readFile (./. + "/${programName}")
+                    );
+                  in
                     lib.getExe emacsclientProgram;
                   log-word-wrap = true;
                   merge-editor = emacsMergeToolName;

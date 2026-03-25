@@ -3,9 +3,7 @@
   pkgs,
   config,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.ssh;
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
   githubKnownHostsFile = ./ssh-known-hosts-github;
@@ -14,8 +12,7 @@ let
     sha256 = "a8a0f8f28ea66d0a3eb73c926b51ede407297fb03143e4ea2ff529b9fe542424";
   };
   sshControlDir = "~/.ssh/sockets";
-in
-{
+in {
   options.dotfiles.ssh = {
     enable = lib.mkEnableOption "SSH";
     enableMultiplexing = lib.mkEnableOption "SSH multiplexing";
@@ -43,14 +40,15 @@ in
           };
           "github.com" = {
             user = "git";
-            extraOptions = {
-              UserKnownHostsFile = "${githubKnownHostsFile}";
-              AddKeysToAgent = "yes";
-            }
-            # NB: UseKeychain is a macOS-specific option.
-            // lib.optionalAttrs isDarwin {
-              UseKeychain = "yes";
-            };
+            extraOptions =
+              {
+                UserKnownHostsFile = "${githubKnownHostsFile}";
+                AddKeysToAgent = "yes";
+              }
+              # NB: UseKeychain is a macOS-specific option.
+              // lib.optionalAttrs isDarwin {
+                UseKeychain = "yes";
+              };
           };
           "github.com gitlab.com bitbucket.com" = {
             extraOptions = {
@@ -73,7 +71,7 @@ in
     home.activation = lib.mkIf cfg.enableMultiplexing {
       # Alternately, we could use a ".keep" file in this directory and
       # create it via the "homo.file" attribute.
-      prepareSSHDirectory = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      prepareSSHDirectory = lib.hm.dag.entryAfter ["writeBoundary"] ''
         mkdir -p ${sshControlDir}
       '';
     };

@@ -3,12 +3,9 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.opencode;
-in
-{
+in {
   options.dotfiles.opencode = {
     enable = lib.mkEnableOption "opencode";
   };
@@ -26,7 +23,7 @@ in
               "gofumpt"
               "$FILE"
             ];
-            extensions = [ ".go" ];
+            extensions = [".go"];
           };
         };
         tui = {

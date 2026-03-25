@@ -26,13 +26,9 @@
     };
   };
 
-  outputs =
-    {
-      flake-parts,
-      ...
-    }@inputs:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      imports = [ ./nix ];
+  outputs = {flake-parts, ...} @ inputs:
+    flake-parts.lib.mkFlake {inherit inputs;} {
+      imports = [./nix];
       systems = [
         "aarch64-darwin"
         "aarch64-linux"

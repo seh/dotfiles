@@ -3,15 +3,12 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.coder;
-in
-{
+in {
   options.dotfiles.coder = {
     enable = lib.mkEnableOption "coder";
-    package = lib.mkPackageOption pkgs "coder" { };
+    package = lib.mkPackageOption pkgs "coder" {};
 
     enableSSHIntegration = lib.mkEnableOption "SSH support";
   };

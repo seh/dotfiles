@@ -3,13 +3,10 @@
   lib,
   pkgs,
   ...
-}:
-
-let
+}: let
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
   cfg = config.dotfiles.emacs;
-in
-{
+in {
   options.dotfiles.emacs.enable = lib.mkEnableOption "Emacs";
 
   config = lib.mkIf cfg.enable {
@@ -28,8 +25,8 @@ in
       # TODO(seh): Should we add anything here?
       #extraConfig = ''
       #'';
-      extraPackages =
-        epkgs: with epkgs; [
+      extraPackages = epkgs:
+        with epkgs; [
           abyss-theme
           agent-shell
           auctex

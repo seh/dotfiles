@@ -1,18 +1,12 @@
-{
-  lib,
-  ...
-}:
-
-{
-  perSystem =
-    {
-      pkgs,
-      inputs',
-      self',
-      ...
-    }:
-    {
-      apps = {
+{lib, ...}: {
+  perSystem = {
+    pkgs,
+    inputs',
+    self',
+    ...
+  }: {
+    apps =
+      {
         home = {
           meta.description = "Home Manager tool";
           program = "${inputs'.home-manager.packages.default}/bin/home-manager";
@@ -30,5 +24,5 @@
           program = "${self'.packages.nixos-rebuild}/bin/nixos-rebuild";
         };
       };
-    };
+  };
 }

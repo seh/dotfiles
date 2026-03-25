@@ -4,28 +4,23 @@
   config,
   inputs,
   ...
-}:
-
-let
+}: let
   inherit (inputs.self.lib) importHome pkgsFor;
   pkgs = pkgsFor "aarch64-darwin";
   username = config.dotfiles.user.name;
-in
-{
-  flake.homeConfigurations =
-    let
-      commonMkHomeArgs = {
-        inherit pkgs;
-      };
-    in
-    rec {
-      basic = importHome ./basic.nix commonMkHomeArgs;
-      development = importHome ./development.nix commonMkHomeArgs;
-
-      # By default, Home Manager will look for an attribute whose name
-      # matches "username@hostname" in order to build its
-      # configuration. If no match is found, it falls back to the
-      # current username.
-      ${username} = basic;
+in {
+  flake.homeConfigurations = let
+    commonMkHomeArgs = {
+      inherit pkgs;
     };
+  in rec {
+    basic = importHome ./basic.nix commonMkHomeArgs;
+    development = importHome ./development.nix commonMkHomeArgs;
+
+    # By default, Home Manager will look for an attribute whose name
+    # matches "username@hostname" in order to build its
+    # configuration. If no match is found, it falls back to the
+    # current username.
+    ${username} = basic;
+  };
 }

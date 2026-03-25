@@ -4,12 +4,9 @@
   config,
   lib,
   ...
-}:
-
-let
+}: let
   cfg = config.dotfiles.zsh;
-in
-{
+in {
   options.dotfiles.zsh = {
     enable = lib.mkEnableOption "zsh";
 
@@ -22,7 +19,7 @@ in
 
   config = lib.mkIf cfg.enable {
     # NB: We reference this file from the "zshrc" file.
-    home.file.".p10k.zsh" = lib.mkIf cfg.enablePowerlevel10k { source = ./p10k.zsh; };
+    home.file.".p10k.zsh" = lib.mkIf cfg.enablePowerlevel10k {source = ./p10k.zsh;};
 
     programs.zsh = {
       enable = true;
@@ -77,20 +74,21 @@ in
 
       antidote = {
         enable = true;
-        plugins = [
-          # TODO(seh): Confirm that these work when specified directly as oh-my-zsh plugins.
-          # "ohmyzsh/ohmyzsh path:lib"
-          # "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
-          # "ohmyzsh/ohmyzsh path:plugins/extract"
-          # "ohmyzsh/ohmyzsh path:plugins/git"
-          "zsh-users/zsh-autosuggestions"
-          "zsh-users/zsh-completions"
-        ]
-        ++ lib.optional cfg.enablePowerlevel10k "romkatv/powerlevel10k"
-        ++ [
-          # NB: This one needs to come last.
-          "zsh-users/zsh-syntax-highlighting"
-        ];
+        plugins =
+          [
+            # TODO(seh): Confirm that these work when specified directly as oh-my-zsh plugins.
+            # "ohmyzsh/ohmyzsh path:lib"
+            # "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
+            # "ohmyzsh/ohmyzsh path:plugins/extract"
+            # "ohmyzsh/ohmyzsh path:plugins/git"
+            "zsh-users/zsh-autosuggestions"
+            "zsh-users/zsh-completions"
+          ]
+          ++ lib.optional cfg.enablePowerlevel10k "romkatv/powerlevel10k"
+          ++ [
+            # NB: This one needs to come last.
+            "zsh-users/zsh-syntax-highlighting"
+          ];
         useFriendlyNames = true;
       };
       oh-my-zsh = {
