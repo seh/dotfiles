@@ -29,6 +29,11 @@ in
           # NB: The "_1password-gui" does not work on macOS for now; it
           # refuses to run if it's not in the "/Applications" directory.
           age
+          # NB: We also configure this as the flake-level tool to use
+          # with the "nix check" command, but that configuraton does
+          # not link the "alejandra" program provided by this package
+          # from a directory on our path along with these other tools.
+          alejandra
           btop
           coreutils
           d2
@@ -42,10 +47,6 @@ in
           jqp
           lsof
           miller
-          # NB: We also configure this as the flake-level tool to use
-          # with the "nix check" command, but that configuraton does
-          # not link the "nixfmt" program provided by this package
-          # from a directory on our path along with these other tools.
           nixfmt
           openssl
           rumdl
@@ -81,6 +82,13 @@ in
         ++ optionals (!isLinux) [
           # NB: On Linux, "watch" is provided by "procps-ng".
           watch
+        ]
+        ++ [
+          # NB: This works around a gap in the "nix-mode" Emacs mode's
+          # invocation of a formatting command.
+          (writeShellScriptBin "alejandra-quiet" ''
+            ${alejandra}/bin/alejandra --quiet "$@"
+          '')
         ];
     };
 

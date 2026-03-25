@@ -210,7 +210,19 @@
   :hook
   (nix-mode . (lambda ()
                 (electric-pair-mode)
-                (add-hook 'before-save-hook #'nix-format-before-save 0 t))))
+                (add-hook 'before-save-hook #'nix-format-before-save 0 t)))
+  :config
+  ;; By default, this formatting program is "nixfmt".
+  ;;
+  ;; NB: As of this writing, neither the `nix--format-call' function
+  ;; nor the `nixd' language server's implementation of
+  ;; `lsp-format-buffer' supply any arguments to the programs that
+  ;; they invoke. Work around this problem by using a small trampoline
+  ;; program to supply the necessary arguments.
+  (let ((formatter-command "alejandra-quiet"))
+    (setq
+     nix-nixfmt-bin formatter-command
+     lsp-nix-nixd-formatting-command (vector formatter-command))))
 
 
 ;:*=======================
