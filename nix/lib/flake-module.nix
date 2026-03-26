@@ -16,10 +16,9 @@ localFlake: {
     modules ? [],
     ...
   } @ args: let
-    finalPkgs =
-      if overlays == []
-      then pkgs
-      else pkgs.extend (lib.composeManyExtensions overlays);
+    finalPkgs = pkgs.extend (
+      lib.composeManyExtensions ([localFlake.inputs.self.overlays.nixpkgs] ++ overlays)
+    );
     userDir =
       if finalPkgs.stdenv.hostPlatform.isDarwin
       then "/Users"
@@ -81,10 +80,9 @@ localFlake: {
     modules ? [],
     ...
   } @ args: let
-    finalPkgs =
-      if overlays == []
-      then pkgs
-      else pkgs.extend (lib.composeManyExtensions overlays);
+    finalPkgs = pkgs.extend (
+      lib.composeManyExtensions ([localFlake.inputs.self.overlays.nixpkgs] ++ overlays)
+    );
     nixpkgsModule = {
       nixpkgs.pkgs = finalPkgs;
     };
@@ -154,10 +152,9 @@ localFlake: {
     modules ? [],
     ...
   } @ args: let
-    finalPkgs =
-      if overlays == []
-      then pkgs
-      else pkgs.extend (lib.composeManyExtensions overlays);
+    finalPkgs = pkgs.extend (
+      lib.composeManyExtensions ([localFlake.inputs.self.overlays.nixpkgs] ++ overlays)
+    );
     nixpkgsModule = {
       nixpkgs.pkgs = finalPkgs;
     };
