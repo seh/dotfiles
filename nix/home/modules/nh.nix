@@ -11,14 +11,22 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-    programs.nh = {
-      enable = lib.mkDefault true;
-      package = lib.mkDefault pkgs.nh;
-      clean = {
+    programs.nh =
+      {
         enable = lib.mkDefault true;
-        extraArgs = "--optimize";
-      };
-      darwinFlake = lib.mkDefault ".#darwinConfigurations.local";
-    };
+        package = lib.mkDefault pkgs.nh;
+        clean = {
+          enable = lib.mkDefault true;
+          extraArgs = "--optimize";
+        };
+      }
+      // (
+        let
+          hostName = "local";
+        in {
+          darwinFlake = lib.mkDefault (".#darwinConfigurations." + hostName);
+          osFlake = lib.mkDefault ("#" + hostName);
+        }
+      );
   };
 }
