@@ -68,14 +68,14 @@ in {
         mkcert
         ngrok
         nodejs-slim
-        nodePackages.prettier
-        nodePackages.typescript
         nssTools # For use with mkcert
         podman
+        prettier
         ripgrep
         sbcl
         shellcheck
         tenv
+        typescript
         # TODO(seh): Enable this again after
         # https://github.com/NixOS/nixpkgs/issues/458008 is fixed.
         #wireshark
@@ -122,13 +122,13 @@ in {
         jq-lsp
         jsonnet-language-server
         nixd # Compare with "nil"
-        nodePackages.vscode-json-languageserver
-        nodePackages.typescript-language-server
         postgres-language-server # Compare with "sqls"
         starpls
         taplo # For TOML files
-        tinymist # For typst files
         terraform-ls
+        tinymist # For typst files
+        typescript-language-server
+        vscode-json-languageserver
         yaml-language-server
       ]
       ++ optionals cfg.development.enableRust [
