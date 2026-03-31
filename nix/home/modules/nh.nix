@@ -3,9 +3,11 @@
   lib,
   pkgs,
   ...
-}: let
+}:
+let
   cfg = config.dotfiles.nh;
-in {
+in
+{
   options.dotfiles.nh = {
     enable = lib.mkEnableOption "nh";
   };
@@ -18,7 +20,15 @@ in {
         enable = lib.mkDefault true;
         extraArgs = "--optimize";
       };
-      darwinFlake = lib.mkDefault ".#darwinConfigurations.local";
-    };
+    }
+    // (
+      let
+        hostName = "local";
+      in
+      {
+        darwinFlake = lib.mkDefault (".#darwinConfigurations." + hostName);
+        osFlake = lib.mkDefault (".#nixosConfigurations." + hostName);
+      }
+    );
   };
 }
