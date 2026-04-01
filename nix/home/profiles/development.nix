@@ -117,11 +117,11 @@ in {
       )
       ++ optionals cfg.development.enableLanguageServers [
         bash-language-server
+        emmylua-ls
         gopls
         graphql-language-service-cli
         jq-lsp
         jsonnet-language-server
-        lua-language-server
         nixd # Compare with "nil"
         postgres-language-server # Compare with "sqls"
         starpls

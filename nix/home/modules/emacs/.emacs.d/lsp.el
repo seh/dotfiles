@@ -1,5 +1,6 @@
-                                        ;:* lsp.el
-                                        ;:*=======================
+;;; -*- lexical-binding: t -*-
+;:* lsp.el
+;:*=======================
 ;;;** Language Server Protocol-related packages
 
 ;; LSP configuration for use with Go and other languages
@@ -50,14 +51,19 @@
                                   :activation-fn (lsp-activate-on "cue")
                                   :server-id 'cue-lsp))
             ;; Lua
-            (let ((program-name "lua-language-server")
-                  (base-directory (expand-file-name "~/.nix-profile")))
-              (setq lsp-clients-lua-language-server-bin
-                    (file-name-concat base-directory "bin" program-name)
-                    lsp-clients-lua-language-server-main-location
-                    (file-name-concat base-directory "share" program-name "main.lua")
-                    ;; This is 4 by default.
-                    lua-ts-indent-offset 2))
+            (setq
+             ;; This is 4 by default.
+             lua-ts-indent-offset 2)
+            (with-eval-after-load 'lsp-lua
+              (let ((program-path (file-name-concat (expand-file-name "~/.nix-profile")
+                                                    "bin"
+                                                    "emmylua_ls")))
+                (setq lsp-clients-emmy-lua-command program-path)
+                ;; NB: The registered LSP client's connection's test
+                ;; command assumes that it's launching the program by
+                ;; way of a hosting JRE.
+                (defun lsp-clients-emmy-lua-test ()
+                  (executable-find program-path))))
             ;; Markdown
             (add-to-list 'lsp-language-id-configuration '(markdown-mode . "markdown"))
             (lsp-register-client (make-lsp-client
@@ -90,8 +96,8 @@
            go-ts-mode
            rustic-mode
            typescript-ts-base-mode) . (lambda ()
-           (lsp-deferred)
-           (lsp-lens-mode)))))
+                                        (lsp-deferred)
+                                        (lsp-lens-mode)))))
 
 (use-package lsp-ivy
   :commands (lsp-ivy-workspace-symbol
