@@ -56,7 +56,8 @@
                                   :major-modes '(markdown-mode)
                                   :server-id 'rumdl))
             ;; Starlark
-            (dolist (mode '(bazel-mode
+            (dolist (mode '(bazel-build-mode
+                            bazel-mode
                             bazel-starlark-mode))
               (add-to-list 'lsp-language-id-configuration (cons mode "starlark")))
             (lsp-register-client (make-lsp-client
