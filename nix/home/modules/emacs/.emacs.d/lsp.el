@@ -49,6 +49,15 @@
                                   :new-connection (lsp-stdio-connection (list "cue" "lsp"))
                                   :activation-fn (lsp-activate-on "cue")
                                   :server-id 'cue-lsp))
+            ;; Lua
+            (let ((program-name "lua-language-server")
+                  (base-directory (expand-file-name "~/.nix-profile")))
+              (setq lsp-clients-lua-language-server-bin
+                    (file-name-concat base-directory "bin" program-name)
+                    lsp-clients-lua-language-server-main-location
+                    (file-name-concat base-directory "share" program-name "main.lua")
+                    ;; This is 4 by default.
+                    lua-ts-indent-offset 2))
             ;; Markdown
             (add-to-list 'lsp-language-id-configuration '(markdown-mode . "markdown"))
             (lsp-register-client (make-lsp-client
