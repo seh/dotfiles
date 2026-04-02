@@ -17,9 +17,5 @@
                                   (dolist (h '(lsp-format-buffer
                                                lsp-organize-imports))
                                     (add-hook 'before-save-hook h nil t)))))
-
-(use-package yasnippet
-  :hook ((go-mode go-ts-mode) . yas-minor-mode))
-
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "Go settings initialized")
