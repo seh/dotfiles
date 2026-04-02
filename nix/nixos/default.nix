@@ -6,6 +6,10 @@ in {
     lib,
     ...
   }: {
+    imports = [
+      ./modules
+    ];
+
     options.dotfiles = {
       _flakeOptions = lib.mkOption {
         type = with lib.types; uniq (lazyAttrsOf anything);

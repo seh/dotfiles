@@ -111,10 +111,12 @@ _: {lib, ...}:
       '';
     };
 
-    nix.package = lib.mkOption {
+    lix.channel = lib.mkOption {
       type = lib.types.str;
-      description = "The Nix package to use, specified by attribute name.";
-      default = "latest"; # Example alternative: "nix_2_24"
+      default = "stable";
+      description = ''
+        The Lix package set channel to use (e.g. "stable", "latest").
+      '';
     };
 
     nixos.modules = lib.mkOption {
