@@ -23,6 +23,5 @@
 (add-hook 'ediff-quit-merge-hook #'seh-jj-resolve-ediff-quit-merge-hook 99)
 ;; TODO(seh): Is this one not already registered by default?
 (add-hook 'ediff-quit-merge-hook #'ediff-maybe-save-and-delete-merge)
-
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "ediff settings initialized")

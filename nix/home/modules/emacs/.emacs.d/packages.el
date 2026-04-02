@@ -394,5 +394,13 @@
 (use-package yaml-pro
   :hook (yaml-mode . yaml-pro-ts-mode))
 
+
+;:*=======================
+;:* yasnippet
+(use-package yasnippet
+  :hook ((go-mode
+          go-ts-mode
+          lua-mode
+          lua-ts-mode) . yas-minor-mode))
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "packages initialized")
