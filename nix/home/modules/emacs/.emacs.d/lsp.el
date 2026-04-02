@@ -10,9 +10,10 @@
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :config (progn
-            (setq lsp-inlay-hint-enable t
+            (setq lsp-format-buffer-on-save t
                   ;; Go-specific
                   lsp-go-use-gofumpt t
+                  lsp-inlay-hint-enable t
                   ;; NB: This only works well with Bazel-based workspaces.
                   ;;lsp-go-env `((GOPACKAGESDRIVER . ,(expand-file-name "gopackagesdriver")))
                   lsp-references-exclude-declaration t
