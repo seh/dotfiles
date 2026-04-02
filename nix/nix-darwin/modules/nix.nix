@@ -5,11 +5,8 @@
   pkgs,
   config,
   ...
-}: let
-  inherit (config.dotfiles) flakeOptions;
-  nixAttrName = flakeOptions.nix.package;
-in {
-  nix.package = lib.mkDefault pkgs.nixVersions.${nixAttrName};
+}: {
+  nix.package = lib.mkDefault pkgs.lixPackageSets.${config.dotfiles.flakeOptions.lix.channel}.lix;
   nix.extraOptions = ''
     experimental-features = nix-command flakes
   '';
