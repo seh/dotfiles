@@ -3,6 +3,10 @@
 ;:*=======================
 ;;;** Language Server Protocol-related packages
 
+(defun seh-lsp-mode-common-hook ()
+  (setq lsp-format-buffer-on-save t)
+  (lsp-deferred))
+
 ;; LSP configuration for use with Go and other languages
 ;;
 ;; See a much more complete example here:
@@ -10,9 +14,9 @@
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :config (progn
-            (setq lsp-inlay-hint-enable t
-                  ;; Go-specific
+            (setq ;; Go-specific
                   lsp-go-use-gofumpt t
+                  lsp-inlay-hint-enable t
                   ;; NB: This only works well with Bazel-based workspaces.
                   ;;lsp-go-env `((GOPACKAGESDRIVER . ,(expand-file-name "gopackagesdriver")))
                   lsp-references-exclude-declaration t
@@ -91,12 +95,13 @@
            bazel-starlark-mode
            cue-mode
            nix-mode
-           typst-ts-mode) . lsp-deferred)
+           typst-ts-mode) . (lambda ()
+                              (seh-lsp-mode-common-hook)))
          ((go-mode
            go-ts-mode
            rustic-mode
            typescript-ts-base-mode) . (lambda ()
-                                        (lsp-deferred)
+                                        (seh-lsp-mode-common-hook)
                                         (lsp-lens-mode)))))
 
 (use-package lsp-ivy
