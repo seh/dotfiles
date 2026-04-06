@@ -118,4 +118,52 @@ function setup(config)
       desc = "copy commit's description",
     })
   end
+
+  config.action(
+    "report-commit-headline-length",
+    function()
+      local target_type = "Commit"
+      local id = context.commit_id()
+      if not id or id == "" then
+        id = context.change_id()
+        target_type = "Change"
+      end
+      if id and #id > 0 then
+        local headline, err = jj(
+          "show",
+          "--no-patch",
+          "--template", "description.first_line()",
+          id)
+        if err then
+          flash({
+            text = err,
+            error = true,
+          })
+          return
+        end
+        local qualifier = ""
+        local suffix = headline:match("^WIP: (.*)$")
+        if suffix then
+          headline = suffix
+          qualifier = " (WIP prefix excluded)"
+        end
+        local headline_length = #headline
+        flash({
+          text = string.format("%s headline length%s: %d", target_type, qualifier, headline_length),
+          error = headline_length > 50,
+        })
+      end
+    end)
+
+  for _, scope in ipairs({
+    "revisions",
+    "revisions.evolog",
+  }) do
+    config.bind({
+      action = "report-commit-headline-length",
+      seq = { "Y", "l" },
+      scope = scope,
+      desc = "report commit headline's length (bytes)",
+    })
+  end
 end
