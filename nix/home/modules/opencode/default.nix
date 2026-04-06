@@ -14,8 +14,6 @@ in {
     programs.opencode = {
       enable = lib.mkDefault true;
       package = lib.mkDefault pkgs.opencode;
-      # TODO(SEHarris): Consider defining these attributes:
-      # rules = "";
       settings = {
         formatter = {
           gofumpt = {
@@ -26,10 +24,14 @@ in {
             extensions = [".go"];
           };
         };
-        tui = {
-          scroll_acceleration = {
-            enabled = true;
-          };
+      };
+      skills = lib.genAttrs [
+        "catch-up-on-recent-jj-changes"
+        "close-bazel-drift"
+      ] (name: ./skills/${name});
+      tui = {
+        scroll_acceleration = {
+          enabled = true;
         };
       };
     };
