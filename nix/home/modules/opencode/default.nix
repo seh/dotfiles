@@ -15,6 +15,8 @@ in {
       enable = lib.mkDefault true;
       package = lib.mkDefault pkgs.opencode;
       settings = {
+        autoupdate = false;
+        default_agent = "plan";
         formatter = {
           gofumpt = {
             command = [
