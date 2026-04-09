@@ -113,7 +113,7 @@ _:
     };
 
     lix.channel = lib.mkOption {
-      type = lib.types.str;
+      type = lib.types.strMatching "git|latest|lix_[0-9]+_[0-9]+|stable";
       default = "stable";
       description = ''
         The Lix package set channel to use (e.g. "stable", "latest").
