@@ -3,13 +3,15 @@
   lib,
   pkgs,
   ...
-}: let
+}:
+let
   cfg = config.dotfiles.gnupg;
   inherit (config.dotfiles) flakeOptions;
   userConfig = flakeOptions.user;
-  hasGPGSigningKey = builtins.hasAttr "gpgKey" userConfig && userConfig.gpgKey != "";
+  hasGPGSigningKey = userConfig.gpgKey != null;
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
-in {
+in
+{
   options.dotfiles.gnupg = {
     enable = lib.mkEnableOption "GnuPG";
 
@@ -29,10 +31,7 @@ in {
       defaultCacheTtl = 28800;
       maxCacheTtl = 28800;
       enableSshSupport = cfg.enableSSHSupport;
-      pinentry.package =
-        if isDarwin
-        then pkgs.pinentry_mac
-        else pkgs.pinentry-curses;
+      pinentry.package = if isDarwin then pkgs.pinentry_mac else pkgs.pinentry-curses;
       enableBashIntegration = true;
       enableFishIntegration = true;
       enableNushellIntegration = true;
