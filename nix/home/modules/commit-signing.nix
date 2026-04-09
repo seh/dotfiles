@@ -3,29 +3,32 @@
   lib,
   pkgs,
   ...
-}: let
+}:
+let
   inherit (config.dotfiles) flakeOptions;
   userConfig = flakeOptions.user;
 
-  hasGPGSigningKey = userConfig.gpgKey != "";
-  hasSSHSigningKey = userConfig.sshSigning.key != "";
+  hasGPGSigningKey = userConfig.gpgKey != null;
+  hasSSHSigningKey = userConfig.sshSigning.key != null;
   hasSigningKey = hasGPGSigningKey || hasSSHSigningKey;
 
   # Email addresses to include for the user's own key.
   # Falls back to [ userConfig.email ] if emailAddresses is empty.
   ownEmailAddresses =
-    if userConfig.sshSigning.emailAddresses != []
-    then userConfig.sshSigning.emailAddresses
-    else [userConfig.email];
+    if userConfig.sshSigning.emailAddresses != [ ] then
+      userConfig.sshSigning.emailAddresses
+    else
+      [ userConfig.email ];
 
   # Build the allowed_signers file content.
   ownSignerEntries = lib.optionals hasSSHSigningKey (
     map (email: "${email} ${userConfig.sshSigning.key}") ownEmailAddresses
   );
-  additionalSignerEntries = map (s: "${s.email} ${s.key}") (userConfig.sshAllowedSigners or []);
+  additionalSignerEntries = map (s: "${s.email} ${s.key}") (userConfig.sshAllowedSigners or [ ]);
   allowedSignersContent = lib.concatStringsSep "\n" (ownSignerEntries ++ additionalSignerEntries);
   allowedSignersFile = pkgs.writeText "allowed_signers" allowedSignersContent;
-in {
+in
+{
   options.dotfiles.commitSigning = {
     # Read-only computed values for other modules to consume.
     hasGPGKey = lib.mkOption {
@@ -68,16 +71,14 @@ in {
         ]
       );
       default =
-        if userConfig.commitSigningBackend != null
-        then userConfig.commitSigningBackend
-        else if hasGPGSigningKey
-        then
-          if hasSSHSigningKey
-          then null
-          else "gpg"
-        else if hasSSHSigningKey
-        then "ssh"
-        else null;
+        if userConfig.commitSigningBackend != null then
+          userConfig.commitSigningBackend
+        else if hasGPGSigningKey then
+          if hasSSHSigningKey then null else "gpg"
+        else if hasSSHSigningKey then
+          "ssh"
+        else
+          null;
       description = ''
         The signing backend to use for commits: "gpg" or "ssh".
 
@@ -91,14 +92,16 @@ in {
 
     key = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = let
-        selectedBackend = config.dotfiles.commitSigning.backend;
-      in
-        if selectedBackend == "gpg"
-        then userConfig.gpgKey
-        else if selectedBackend == "ssh"
-        then userConfig.sshSigning.key
-        else null;
+      default =
+        let
+          selectedBackend = config.dotfiles.commitSigning.backend;
+        in
+        if selectedBackend == "gpg" then
+          userConfig.gpgKey
+        else if selectedBackend == "ssh" then
+          userConfig.sshSigning.key
+        else
+          null;
       readOnly = true;
       internal = true;
       description = "The signing key corresponding to the configured backend.";
