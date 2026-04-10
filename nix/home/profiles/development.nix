@@ -75,6 +75,7 @@ in {
         ripgrep
         sbcl
         shellcheck
+        shfmt
         tenv
         typescript
         # TODO(seh): Enable this again after
