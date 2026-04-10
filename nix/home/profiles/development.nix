@@ -65,6 +65,7 @@ in {
         gofumpt
         golangci-lint
         goperf
+        lcov
         mkcert
         ngrok
         nodejs-slim
