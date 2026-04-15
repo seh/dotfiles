@@ -45,6 +45,11 @@
                              ;;(format "/private/var/tmp/_bazel_%s/[[:xdigit:]]+/external/" (user-login-name))
                              ))
               (add-to-list 'lsp-file-watch-ignored-directories p t))
+            ;; Language server-related adjustments
+            ;; Bash
+            ;; (See https://github.com/emacs-lsp/lsp-mode/issues/5038.)
+            (add-to-list 'lsp--formatting-indent-alist
+                         '(bash-ts-mode . sh-basic-offset))
             ;; Language servers not yet integrated directly with lsp-mode
             ;; (See https://github.com/emacs-lsp/lsp-mode/blob/master/docs/lsp-clients.json.)
             ;;
