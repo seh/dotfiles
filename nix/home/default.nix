@@ -1,10 +1,6 @@
 {inputs, ...} @ flake: let
   dotfiles = inputs.self;
 in {
-  imports = [
-    ./machines
-  ];
-
   flake.homeModules.default = {
     config,
     lib,

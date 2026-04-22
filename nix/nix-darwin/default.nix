@@ -1,8 +1,6 @@
 {inputs, ...} @ flake: let
   dotfiles = inputs.self;
 in {
-  imports = [./machines];
-
   flake.darwinModules.default = {
     config,
     lib,
