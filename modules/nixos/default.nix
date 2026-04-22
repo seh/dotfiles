@@ -6,8 +6,8 @@ in {
     lib,
     ...
   }: {
-    imports = [
-      ./modules
+    imports = dotfiles.lib.importDirs [
+      ./features
     ];
 
     options.dotfiles = {
