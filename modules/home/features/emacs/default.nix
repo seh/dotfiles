@@ -19,8 +19,9 @@ in {
       enable = lib.mkDefault true;
       # NB: Unfortunately, with the "emacs-macport" package, the
       # C-M-SPC key binding for "mark-sexy" gets intercepted by macOS
-      # and presents the Character Viewer applet.
-      #package = lib.mkDefault (if isDarwin then pkgs.emacs-macport else pkgs.emacs);
+      # and presents the Character Viewer applet. package =
+      # lib.mkDefault (if isDarwin then pkgs.emacs-macport else
+      # pkgs.emacs);
       package = lib.mkDefault pkgs.emacs;
       # TODO(seh): Should we add anything here?
       #extraConfig = ''

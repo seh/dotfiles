@@ -41,7 +41,8 @@ in {
         # matches against that outer "cmdline" field, and not the
         # inner ones.
         #
-        # NB: kitty does not accept parenthesized groups in regular expressions.
+        # NB: kitty does not accept parenthesized groups in regular
+        # expressions.
         "--when-focus-on \"title:^✳\\\\x20.+ or title:^claude\\\\b\" shift+enter" = "send_text normal,application \\x0a";
       };
       settings = {

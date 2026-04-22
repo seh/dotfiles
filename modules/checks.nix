@@ -13,7 +13,8 @@
           name: home: lib.nameValuePair "home-manager-${name}" home.activationPackage
         )
         homeConfigurations;
-      # darwinConfigurations = lib.filterAttrs (name: darwin: darwin.hostPlatform == system) (
+      # darwinConfigurations = lib.filterAttrs (name: darwin:
+      # darwin.hostPlatform == system) (
       #   inputs.self.darwinConfigurations or { }
       # );
       # darwinChecks = lib.mapAttrs' (

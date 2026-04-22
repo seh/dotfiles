@@ -18,12 +18,12 @@ in {
         formats
         gstat
         hcl
-        #highlight # TODO(seh): This one is not building correctly for now.
-        #net
+        # highlight # TODO(seh): This one is not building correctly
+        # for now. net
         polars
         query
-        #semver # TODO(seh): This one is not available for Darwin atop x86-64 for now.
-        #units
+        # semver # TODO(seh): This one is not available for Darwin
+        # atop x86-64 for now. units
       ];
     };
     home.packages = with pkgs; [

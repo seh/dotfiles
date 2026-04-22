@@ -3,11 +3,12 @@ final:
 # final
 prev: {
   # NB: The channel name "stable" here ideally matches the default
-  # value of the "dotfiles.flakeOptions.lix.channel" option defined
-  # in "modules/config.nix", but this overlay runs at nixpkgs
-  # instantiation time and cannot access flake-level options. A
-  # caller that changes the channel option cannot easily rectify the
-  # resulting divergence here short of supplying a replacement overlay.
+  # value of the "dotfiles.flakeOptions.lix.channel" option defined in
+  # "modules/config.nix", but this overlay runs at nixpkgs
+  # instantiation time and cannot access flake-level options. A caller
+  # that changes the channel option cannot easily rectify the
+  # resulting divergence here short of supplying a replacement
+  # overlay.
   #
   # NB: We cannot use "final.lixPackageSets.stable.nix-direnv" or
   # "prev.lixPackageSets.stable.nix-direnv" directly here, as both

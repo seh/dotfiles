@@ -22,11 +22,13 @@ in {
 
       defaults = {
         "com.apple.dock" = {
-          # System Preferences > Mission Control > Group windows by application
+          # System Preferences > Mission Control > Group windows by
+          # application
           expose-group-apps = mkDefault true;
           # System Preferences > Dock > Position on screen
           orientation = mkDefault "right";
-          # System Preferences > Dock > Show recent applications in Dock
+          # System Preferences > Dock > Show recent applications in
+          # Dock
           show-recents = mkDefault false;
           #size-immutable
           # System Preferences > Dock > Size

@@ -50,7 +50,8 @@
   in
     lib.filterAttrs (_: lib.isDerivation) (flattenAttrs allPackages);
 
-  #importDir = dir: lib.mapAttrsToList (path: _: lib.path.append dir path) (builtins.readDir dir);
+  # importDir = dir: lib.mapAttrsToList (path: _: lib.path.append dir
+  # path) (builtins.readDir dir);
   importDir = dir: let
     nixFileNames = lib.attrsets.attrNames (
       lib.attrsets.filterAttrs (
