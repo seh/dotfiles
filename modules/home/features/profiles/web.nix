@@ -7,29 +7,33 @@
   ...
 }: let
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
+  hasTag = config.dotfiles._host.hasTag;
 in {
-  options.dotfiles.profiles.web.enable = lib.mkEnableOption "opinionated defaults for Web browsers";
+  config = lib.mkMerge [
+    {
+      dotfiles._knownTags = ["web"];
+    }
+    (lib.mkIf (hasTag "web") {
+      dotfiles.firefox = {
+        enable = lib.mkDefault true;
+        # TODO(seh): Set preferences.
 
-  config = lib.mkIf config.dotfiles.profiles.web.enable {
-    dotfiles.firefox = {
-      enable = lib.mkDefault true;
-      # TODO(seh): Set preferences.
+        policies.Preferences."browser.contentblocking.category" = {
+          Value = lib.mkDefault "strict";
 
-      policies.Preferences."browser.contentblocking.category" = {
-        Value = lib.mkDefault "strict";
-
-        # Firefox forcibly sets this option to "custom" if:
-        #   1. The setting doesn't appear to be set by the user
-        #   2. Related settings deviate from the expected values
-        # https://searchfox.org/mozilla-central/rev/201b2c1/browser/components/BrowserGlue.jsm#5059
-        Status = lib.mkDefault "user";
+          # Firefox forcibly sets this option to "custom" if:
+          #   1. The setting doesn't appear to be set by the user
+          #   2. Related settings deviate from the expected values
+          # https://searchfox.org/mozilla-central/rev/201b2c1/browser/components/BrowserGlue.jsm#5059
+          Status = lib.mkDefault "user";
+        };
       };
-    };
 
-    targets.darwin = lib.mkIf isDarwin {
-      defaults."com.apple.Safari" = {
-        # TODO(seh): Include Safari customizations.
+      targets.darwin = lib.mkIf isDarwin {
+        defaults."com.apple.Safari" = {
+          # TODO(seh): Include Safari customizations.
+        };
       };
-    };
-  };
+    })
+  ];
 }
