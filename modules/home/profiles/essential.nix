@@ -40,8 +40,6 @@ in {
           hunspell
           hunspellDicts.en-us
           jless
-          jq
-          jqp
           lsof
           miller
           nixfmt
@@ -99,6 +97,12 @@ in {
         enableBashIntegration = true;
         enableNushellIntegration = true;
         enableZshIntegration = true;
+      };
+      jq = {
+        enable = true;
+      };
+      jqp = {
+        enable = true;
       };
     };
 
