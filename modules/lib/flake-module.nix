@@ -1,12 +1,13 @@
-localFlake: {
+{
+  inputs,
   lib,
   config,
   getSystem,
   ...
 }: let
-  inherit (localFlake.inputs.home-manager.lib) homeManagerConfiguration;
-  inherit (localFlake.inputs.nix-darwin.lib) darwinSystem;
-  inherit (localFlake.inputs.nixos.lib) nixosSystem;
+  inherit (inputs.home-manager.lib) homeManagerConfiguration;
+  inherit (inputs.nix-darwin.lib) darwinSystem;
+  inherit (inputs.nixos.lib) nixosSystem;
 
   cfg = config.dotfiles;
 
@@ -17,9 +18,7 @@ localFlake: {
     host ? null,
     ...
   } @ args: let
-    finalPkgs = pkgs.extend (
-      lib.composeManyExtensions ([localFlake.inputs.self.overlays.nixpkgs] ++ overlays)
-    );
+    finalPkgs = pkgs.extend (lib.composeManyExtensions ([inputs.self.overlays.nixpkgs] ++ overlays));
     userDir =
       if finalPkgs.stdenv.hostPlatform.isDarwin
       then "/Users"
@@ -50,7 +49,7 @@ localFlake: {
           modules
           ++ cfg.home.modules
           ++ [
-            localFlake.inputs.self.homeModules.default
+            inputs.self.homeModules.default
             flakeOptionsModule
           ]
           ++ hostModule;
@@ -89,9 +88,7 @@ localFlake: {
     host ? null,
     ...
   } @ args: let
-    finalPkgs = pkgs.extend (
-      lib.composeManyExtensions ([localFlake.inputs.self.overlays.nixpkgs] ++ overlays)
-    );
+    finalPkgs = pkgs.extend (lib.composeManyExtensions ([inputs.self.overlays.nixpkgs] ++ overlays));
     nixpkgsModule = {
       nixpkgs.pkgs = finalPkgs;
     };
@@ -103,12 +100,15 @@ localFlake: {
         sharedModules =
           cfg.home.modules
           ++ [
-            localFlake.inputs.self.homeModules.default
+            inputs.self.homeModules.default
             {
               # Set up the default value for the option proxy.
               dotfiles._flakeOptions = cfg;
             }
-          ];
+          ]
+          ++ lib.optional (host != null) {
+            dotfiles._host = host;
+          };
       };
     };
     machineDefaultsModule = {config, ...}: let
@@ -144,8 +144,8 @@ localFlake: {
           ++ cfg.darwin.modules
           ++ [
             nixpkgsModule
-            localFlake.inputs.self.darwinModules.default
-            localFlake.inputs.home-manager.darwinModules.default
+            inputs.self.darwinModules.default
+            inputs.home-manager.darwinModules.default
             flakeOptionsModule
             machineDefaultsModule
           ]
@@ -167,9 +167,7 @@ localFlake: {
     host ? null,
     ...
   } @ args: let
-    finalPkgs = pkgs.extend (
-      lib.composeManyExtensions ([localFlake.inputs.self.overlays.nixpkgs] ++ overlays)
-    );
+    finalPkgs = pkgs.extend (lib.composeManyExtensions ([inputs.self.overlays.nixpkgs] ++ overlays));
     nixpkgsModule = {
       nixpkgs.pkgs = finalPkgs;
     };
@@ -200,8 +198,8 @@ localFlake: {
           ++ cfg.nixos.modules
           ++ [
             nixpkgsModule
-            localFlake.inputs.self.nixosModules.default
-            localFlake.inputs.home-manager.nixosModules.home-manager
+            inputs.self.nixosModules.default
+            inputs.home-manager.nixosModules.home-manager
             flakeOptionsModule
             machineDefaultsModule
           ]

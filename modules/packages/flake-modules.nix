@@ -1,4 +1,5 @@
-{inputs}: {
+{
+  inputs,
   lib,
   flake-parts-lib,
   ...

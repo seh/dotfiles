@@ -1,4 +1,8 @@
-{inputs}: {lib, ...}: {
+{
+  inputs,
+  lib,
+  ...
+}: {
   perSystem = {system, ...}: {
     _module.args.pkgs = lib.mkForce (
       import inputs.nixpkgs {
