@@ -29,7 +29,7 @@
 
   outputs = {flake-parts, ...} @ inputs:
     flake-parts.lib.mkFlake {inherit inputs;} {
-      imports = [./nix];
+      imports = [./modules];
       systems = [
         "aarch64-darwin"
         "aarch64-linux"

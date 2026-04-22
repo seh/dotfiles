@@ -72,7 +72,6 @@ in {
         nssTools # For use with mkcert
         podman
         prettier
-        ripgrep
         sbcl
         shellcheck
         shfmt
@@ -156,6 +155,10 @@ in {
       k9s = {
         enable = cfg.development.enableKubernetes;
         # TODO(seh): Configure settings.
+      };
+
+      ripgrep = {
+        enable = true;
       };
     };
 
