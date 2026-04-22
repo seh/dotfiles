@@ -14,6 +14,7 @@ localFlake: {
     pkgs,
     overlays ? [],
     modules ? [],
+    host ? null,
     ...
   } @ args: let
     finalPkgs = pkgs.extend (
@@ -34,9 +35,15 @@ localFlake: {
         homeDirectory = lib.mkDefault "${userDir}/${config.home.username}";
       };
     };
+    hostModule = lib.optional (host != null) {
+      dotfiles._host = host;
+    };
   in
     homeManagerConfiguration (
-      builtins.removeAttrs args ["overlays"]
+      builtins.removeAttrs args [
+        "overlays"
+        "host"
+      ]
       // {
         pkgs = finalPkgs;
         modules =
@@ -45,7 +52,8 @@ localFlake: {
           ++ [
             localFlake.inputs.self.homeModules.default
             flakeOptionsModule
-          ];
+          ]
+          ++ hostModule;
       }
     );
 
@@ -78,6 +86,7 @@ localFlake: {
     pkgs ? pkgsFor hostPlatform,
     overlays ? [],
     modules ? [],
+    host ? null,
     ...
   } @ args: let
     finalPkgs = pkgs.extend (
@@ -118,12 +127,16 @@ localFlake: {
       };
       users.users.${username}.home = lib.mkDefault "/Users/${username}";
     };
+    hostModule = lib.optional (host != null) {
+      dotfiles._host = host;
+    };
   in
     darwinSystem (
       builtins.removeAttrs args [
         "hostPlatform"
         "overlays"
         "pkgs"
+        "host"
       ]
       // {
         modules =
@@ -135,7 +148,8 @@ localFlake: {
             localFlake.inputs.home-manager.darwinModules.default
             flakeOptionsModule
             machineDefaultsModule
-          ];
+          ]
+          ++ hostModule;
       }
     );
 
@@ -150,6 +164,7 @@ localFlake: {
     pkgs ? pkgsFor hostPlatform,
     overlays ? [],
     modules ? [],
+    host ? null,
     ...
   } @ args: let
     finalPkgs = pkgs.extend (
@@ -168,12 +183,16 @@ localFlake: {
     machineDefaultsModule = {
       nixpkgs.hostPlatform = hostPlatform;
     };
+    hostModule = lib.optional (host != null) {
+      dotfiles._host = host;
+    };
   in
     nixosSystem (
       builtins.removeAttrs args [
         "hostPlatform"
         "overlays"
         "pkgs"
+        "host"
       ]
       // {
         modules =
@@ -185,7 +204,8 @@ localFlake: {
             localFlake.inputs.home-manager.nixosModules.home-manager
             flakeOptionsModule
             machineDefaultsModule
-          ];
+          ]
+          ++ hostModule;
       }
     );
 
