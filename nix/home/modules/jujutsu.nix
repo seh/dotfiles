@@ -183,13 +183,9 @@ in {
               };
             };
           };
+          configLua = ./jjui-config.lua;
         };
       };
-      # Ideally we'd just use
-      #   xdg.configFile."jjui/config.lua"
-      # here, per https://github.com/nix-community/home-manager/issues/9021.
-      home.file."${config.programs.jjui.configDir}/config.lua".source =
-        lib.mkIf config.programs.jjui.enable ./jjui-config.lua;
       home.packages = with pkgs; [
         jj-fzf
       ];
