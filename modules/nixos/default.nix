@@ -6,14 +6,11 @@ in {
     lib,
     ...
   }: {
-    imports =
-      dotfiles.lib.importDirs [
-        ./features
-      ]
-      ++ [
-        ../_tags.nix
-        ../_assertions.nix
-      ];
+    imports = [
+      (inputs.import-tree ./features)
+      ../_tags.nix
+      ../_assertions.nix
+    ];
 
     options.dotfiles = {
       _flakeOptions = lib.mkOption {

@@ -1,4 +1,8 @@
-{inputs, ...}: {lib, ...}: {
+{
+  inputs,
+  lib,
+  ...
+}: {
   imports = [
     inputs.treefmt-nix.flakeModule
     inputs.pre-commit-hooks.flakeModule
