@@ -4,40 +4,30 @@
   config,
   lib,
   ...
-}: let
-  inherit
-    (lib)
-    mkIf
-    mkOption
-    types
-    ;
-in {
-  options.dotfiles.profiles.minimal.enable = mkOption {
-    type = types.bool;
-    default = true;
-    description = "Whether to enable the bare minimum packages to make the dotfiles useful.";
-  };
-
-  config = mkIf config.dotfiles.profiles.minimal.enable {
-    home.packages =
-      # with pkgs;
-      [
+}: {
+  config = lib.mkMerge [
+    {
+      dotfiles._knownTags = ["minimal"];
+    }
+    (lib.mkIf (config.dotfiles._host.hasTag "minimal") {
+      home.packages = [
         # TODO(seh): Do we need to specify any here?
       ];
 
-    programs.direnv = {
-      enable = true;
-      nix-direnv = {
+      programs.direnv = {
         enable = true;
+        nix-direnv = {
+          enable = true;
+        };
       };
-    };
 
-    programs.fzf = {
-      enable = true;
-      defaultOptions = [
-        "--info=inline"
-        "--bind=ctrl-r:toggle-sort"
-      ];
-    };
-  };
+      programs.fzf = {
+        enable = true;
+        defaultOptions = [
+          "--info=inline"
+          "--bind=ctrl-r:toggle-sort"
+        ];
+      };
+    })
+  ];
 }

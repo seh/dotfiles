@@ -5,22 +5,25 @@
   ...
 }: let
   inherit (pkgs.stdenv.hostPlatform) isDarwin;
+  hasTag = config.dotfiles._host.hasTag;
 in {
-  options.dotfiles.profiles.desktop.enable =
-    lib.mkEnableOption "essential packages for desktop environemnts";
+  config = lib.mkMerge [
+    {
+      dotfiles._knownTags = ["desktop"];
+    }
+    (lib.mkIf (hasTag "desktop") {
+      # The "desktop" tag expands into "fonts" always and "macos"
+      # on Darwin hosts, honoring the original cascade semantics.
+      dotfiles._host.tags = ["fonts"] ++ lib.optional isDarwin "macos";
 
-  config = lib.mkIf config.dotfiles.profiles.desktop.enable {
-    home.packages = let
-      candidatePkg = pkgs.zoom-us;
-    in
-      lib.optionals (lib.meta.availableOn pkgs.stdenv.hostPlatform candidatePkg) [
-        candidatePkg
-      ];
+      home.packages = let
+        candidatePkg = pkgs.zoom-us;
+      in
+        lib.optionals (lib.meta.availableOn pkgs.stdenv.hostPlatform candidatePkg) [
+          candidatePkg
+        ];
 
-    dotfiles.emacs.enable = lib.mkDefault true;
-    dotfiles.profiles = {
-      fonts.enable = lib.mkDefault true;
-      macos.enable = lib.mkDefault isDarwin;
-    };
-  };
+      dotfiles.emacs.enable = lib.mkDefault true;
+    })
+  ];
 }
