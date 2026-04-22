@@ -27,9 +27,21 @@
     };
   };
 
-  outputs = {flake-parts, ...} @ inputs:
+  outputs = {
+    flake-parts,
+    import-tree,
+    ...
+  } @ inputs:
     flake-parts.lib.mkFlake {inherit inputs;} {
-      imports = [./modules];
+      imports = [
+        # Exclude paths that the top-level flake-parts walk must not
+        # evaluate:
+        #   - per-kind "features/" subtrees, each loaded as system-level
+        #     modules by "modules/<kind>/default.nix";
+        #   - the embedded template flakes under "modules/templates/",
+        #     which are separate flakes, not flake-parts modules.
+        ((import-tree.matchNot ".*/(darwin|home|nixos)/features/.*").matchNot ".*/templates/.*" ./modules)
+      ];
       systems = [
         "aarch64-darwin"
         "aarch64-linux"

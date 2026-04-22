@@ -49,18 +49,6 @@
     allPackages = collectLegacyPackages attrs packagesFn;
   in
     lib.filterAttrs (_: lib.isDerivation) (flattenAttrs allPackages);
-
-  #importDir = dir: lib.mapAttrsToList (path: _: lib.path.append dir path) (builtins.readDir dir);
-  importDir = dir: let
-    nixFileNames = lib.attrsets.attrNames (
-      lib.attrsets.filterAttrs (
-        name: type: type == "directory" || (type == "regular" && lib.hasSuffix ".nix" name)
-      ) (builtins.readDir dir)
-    );
-  in
-    builtins.map (name: lib.path.append dir name) nixFileNames;
-
-  importDirs = lib.concatMap importDir;
 in {
   flake.lib = {
     inherit
@@ -69,8 +57,6 @@ in {
       filterNonDrvAttrsRecursive
       flatMapAttrs
       flattenAttrs
-      importDir
-      importDirs
       ;
   };
 }
