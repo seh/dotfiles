@@ -7,7 +7,6 @@
     imports = [
       (inputs.import-tree ./features)
       ../_tags.nix
-      ../_assertions.nix
     ];
 
     options.dotfiles = {
