@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.gemini = {
+  dotfiles.featureModules.homeManager.gemini = {
     config,
     lib,
     pkgs,

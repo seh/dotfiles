@@ -1,3 +1,3 @@
 {
-  flake.knownFeatures = ["gcp"];
+  dotfiles.knownFeatures = ["gcp"];
 }

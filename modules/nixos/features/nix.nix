@@ -1,5 +1,5 @@
 {
-  flake.featureModules.nixOS.nix = {
+  dotfiles.featureModules.nixOS.nix = {
     lib,
     pkgs,
     config,
