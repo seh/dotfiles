@@ -4,7 +4,6 @@
   pkgs,
   ...
 }: let
-  inherit (pkgs.stdenv.hostPlatform) isDarwin;
   hasTag = config.dotfiles._host.hasTag;
 in {
   config = lib.mkMerge [
@@ -12,10 +11,6 @@ in {
       dotfiles._knownTags = ["desktop"];
     }
     (lib.mkIf (hasTag "desktop") {
-      # The "desktop" tag expands into "fonts" always and "macos"
-      # on Darwin hosts, honoring the original cascade semantics.
-      dotfiles._host.tags = ["fonts"] ++ lib.optional isDarwin "macos";
-
       home.packages = let
         candidatePkg = pkgs.zoom-us;
       in
