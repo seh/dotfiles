@@ -3,6 +3,7 @@
   lib,
   config,
   getSystem,
+  dotfilesFlake,
   ...
 }: let
   inherit (inputs.home-manager.lib) homeManagerConfiguration;
@@ -10,7 +11,6 @@
   inherit (inputs.nixos.lib) nixosSystem;
 
   cfg = config.dotfiles;
-  dotfilesFlake = config.flake;
 
   # Split a caller-supplied "host" record into a module that seeds
   # "dotfiles._host" with its fields. The declared "profiles" and
