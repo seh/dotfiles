@@ -14,13 +14,19 @@
   flake.flakeModules = {
     default = {
       imports = [
+        ./module-schema.nix
         ./config.nix
         ./nixpkgs-config.nix
         ./lib/default.nix
         ./lib/flake-module.nix
-        ./darwin/default.nix
+        ./nix-darwin/default.nix
+        (inputs.import-tree ./nix-darwin/features)
+        (inputs.import-tree ./nix-darwin/profiles)
         ./home/default.nix
+        (inputs.import-tree ./home/features)
+        (inputs.import-tree ./home/profiles)
         ./nixos/default.nix
+        (inputs.import-tree ./nixos/features)
         ./overlays/default.nix
         ./packages/flake-modules.nix
       ];

@@ -1,12 +1,14 @@
 {
-  lib,
-  pkgs,
-  config,
-  ...
-}: {
-  nix.package = lib.mkDefault pkgs.lixPackageSets.${config.dotfiles.flakeOptions.lix.channel}.lix;
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
+  flake.featureModules.nixOS.nix = {
+    lib,
+    pkgs,
+    config,
+    ...
+  }: {
+    nix.package = lib.mkDefault pkgs.lixPackageSets.${config.dotfiles.flakeOptions.lix.channel}.lix;
+    nix.settings.experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
+  };
 }
