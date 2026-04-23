@@ -9,6 +9,18 @@
         deferred module to be imported into that class's aggregate.
       '';
     };
+    knownTags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      apply = lib.unique;
+      description = ''
+        Tag names advertised by feature and profile modules in this
+        flake or downstream consumers. Accumulated and de-duplicated.
+        Used by the per-class aggregators to populate
+        "dotfiles._knownTags", which the tag-existence assertion in
+        "modules/_assertions.nix" consults.
+      '';
+    };
     profileModules = lib.mkOption {
       type = lib.types.lazyAttrsOf (lib.types.lazyAttrsOf lib.types.deferredModule);
       default = {};

@@ -9,6 +9,10 @@
       ++ (lib.attrValues (config.flake.profileModules.nixDarwin or {}))
       ++ [
         ../_tags.nix
+        ../_assertions.nix
+        {
+          dotfiles._knownTags = flake.config.flake.knownTags;
+        }
         (
           {
             config,
