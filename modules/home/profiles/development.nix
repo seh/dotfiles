@@ -3,15 +3,6 @@
 {
   flake.knownProfiles = ["development"];
 
-  flake.knownFeatures = [
-    "kubernetes"
-    "rust"
-    "aws"
-    "azure"
-    "gcp"
-    "language-servers"
-  ];
-
   flake.profileModules.homeManager.development = {
     config,
     lib,
