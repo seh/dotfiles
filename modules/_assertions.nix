@@ -8,6 +8,11 @@
 # Role-mismatch assertions fire before the plain "unknown name"
 # assertions so that the more specific diagnosis wins when a name
 # was simply declared under the wrong role.
+#
+# The "knownProfiles" and "knownFeatures" registries consulted here
+# are flake-wide by design; see the comment block in
+# "modules/_tags.nix" near the declaration of
+# "dotfiles._knownProfiles" for the rationale.
 {
   lib,
   config,

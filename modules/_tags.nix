@@ -204,6 +204,24 @@ in {
       '';
     };
 
+    # "knownProfiles" and "knownFeatures" are intentionally flake-wide
+    # registries, not class-scoped. A name advertised by any module in
+    # any class (home-manager, darwin, or nixos) is accepted in any
+    # host's declaration regardless of that host's class.
+    #
+    # This shape lets a concept like "development machine" be declared
+    # once at the host level and hook-able by any class whose behavior
+    # is appropriate, implemented differently as each class sees fit.
+    # Today "development" has only a home-manager implementation in
+    # "modules/home/profiles/development.nix", but the same name can
+    # be declared on a NixOS or darwin host; activation picks up
+    # whichever class-specific profile files exist for that name and
+    # does nothing in classes where no such file does.
+    #
+    # Assertion consequence: typos are caught (a misspelled profile
+    # or feature name fails the unknown-name check in
+    # "modules/_assertions.nix"), but cross-class declarations are
+    # accepted as intended.
     _knownProfiles = mkOption {
       type = types.listOf types.str;
       default = [];
