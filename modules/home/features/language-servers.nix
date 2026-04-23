@@ -1,0 +1,3 @@
+{
+  flake.knownFeatures = ["language-servers"];
+}
