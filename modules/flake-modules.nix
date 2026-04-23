@@ -1,33 +1,46 @@
-# Reify the public-API "flake.flakeModules" attribute set so that
-# downstream flakes can opt into specific subsets of this flake's
-# flake-parts modules (rather than importing everything wholesale).
+# Reify "flake.flakeModules" so consumers can opt into specific
+# subsets of this flake's flake-parts modules rather than importing
+# everything wholesale.
 #
-# The modules named below also self-activate in this flake by way of
-# the top-level "import-tree" invocation in "./flake.nix"; their
-# appearance here is solely to expose them under "flakeModules" for
-# external consumers.
-{inputs, ...}: {
+# "flakeModules.default" is the minimal consumer-facing module: the
+# schema for user-facing options ("./config.nix",
+# "./nixpkgs-config.nix"), the "flake.lib" helpers
+# ("./lib/default.nix", "./lib/flake-module.nix"), the "overlays"
+# output ("./overlays/default.nix"), and
+# "perSystem.dotfiles.callPackages" ("./packages/flake-modules.nix").
+#
+# The class aggregators under "./home", "./nix-darwin", and "./nixos"
+# are deliberately excluded: publishing them into a consumer's
+# evaluator would cause "nix flake check" there to warn about
+# "homeModules", "darwinModules", and "nixosModules" as unknown
+# flake outputs. "lib.mkHome", "lib.mkDarwin", and "lib.mkNixOS"
+# reach the aggregators through the "dotfilesFlake" module argument
+# set by "dotfilesFlakeArg" below, which closes over this flake's
+# own "self" at evaluation time.
+#
+# The modules listed here self-activate in this flake via the
+# top-level "import-tree" in "./flake.nix"; their appearance here
+# is solely for external consumers.
+{inputs, ...}: let
+  # Inject "dotfilesFlake" as a module argument carrying this
+  # flake's own "self", captured at this file's evaluation time.
+  dotfilesFlakeArg = {
+    _module.args.dotfilesFlake = inputs.self;
+  };
+in {
   imports = [
     inputs.flake-parts.flakeModules.flakeModules
+    dotfilesFlakeArg
   ];
 
   flake.flakeModules = {
     default = {
       imports = [
-        ./module-schema.nix
+        dotfilesFlakeArg
         ./config.nix
         ./nixpkgs-config.nix
         ./lib/default.nix
         ./lib/flake-module.nix
-        ./nix-darwin/default.nix
-        (inputs.import-tree ./nix-darwin/features)
-        (inputs.import-tree ./nix-darwin/profiles)
-        ./home/default.nix
-        (inputs.import-tree ./home/features)
-        (inputs.import-tree ./home/profiles)
-        ./nixos/default.nix
-        (inputs.import-tree ./nixos/features)
-        (inputs.import-tree ./nixos/profiles)
         ./overlays/default.nix
         ./packages/flake-modules.nix
       ];
