@@ -1,6 +1,4 @@
-{inputs, ...} @ flake: let
-  dotfiles = inputs.self;
-in {
+{inputs, ...} @ flake: {
   flake.homeModules.default = {
     config,
     lib,
@@ -34,15 +32,7 @@ in {
       };
     };
 
-    config = {
-      # NB: This passes this flake as input to these modules via the
-      # "dotfiles" attribute.
-      _module.args = {
-        inherit dotfiles;
-      };
-
-      # TODO(seh): Define "nix.registry"?
-      # TODO(seh): Define "nix.channels"?
-    };
+    # TODO(seh): Define "nix.registry"?
+    # TODO(seh): Define "nix.channels"?
   };
 }

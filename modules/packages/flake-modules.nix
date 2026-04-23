@@ -1,11 +1,12 @@
 {
   inputs,
   lib,
+  config,
   flake-parts-lib,
   ...
 }: let
   inherit (flake-parts-lib) mkPerSystemOption;
-  inherit (inputs.self.lib) collectPackages;
+  inherit (config.flake.lib) collectPackages;
 in {
   options.perSystem = mkPerSystemOption {
     options.dotfiles.callPackages = {
