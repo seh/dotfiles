@@ -1,3 +1,3 @@
 {
-  flake.knownFeatures = ["kubernetes"];
+  dotfiles.knownFeatures = ["kubernetes"];
 }

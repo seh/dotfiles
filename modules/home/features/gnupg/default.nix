@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.gnupg = {
+  dotfiles.featureModules.homeManager.gnupg = {
     config,
     lib,
     pkgs,

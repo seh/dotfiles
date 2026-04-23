@@ -1,7 +1,7 @@
 # Basis of inspiration:
 #   https://github.com/sebastiant/dotfiles/blob/fd3f32073bce885027f7069d870ba4ea254fc348/programs/zsh/zsh.nix
 {
-  flake.featureModules.homeManager.zsh = {
+  dotfiles.featureModules.homeManager.zsh = {
     config,
     lib,
     ...

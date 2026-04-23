@@ -5,7 +5,7 @@
 # default, so genrules and external rulesets fail to find standard
 # tools. This module creates the necessary symlinks.
 {
-  flake.featureModules.nixOS.bazel-fhs = {
+  dotfiles.featureModules.nixOS.bazel-fhs = {
     config,
     lib,
     pkgs,

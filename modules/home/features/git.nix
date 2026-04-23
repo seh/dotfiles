@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.git = {
+  dotfiles.featureModules.homeManager.git = {
     config,
     lib,
     pkgs,

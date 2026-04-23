@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.bash = {
+  dotfiles.featureModules.homeManager.bash = {
     config,
     lib,
     ...

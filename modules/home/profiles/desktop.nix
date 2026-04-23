@@ -1,7 +1,7 @@
 {
-  flake.knownProfiles = ["desktop"];
+  dotfiles.knownProfiles = ["desktop"];
 
-  flake.profileModules.homeManager.desktop = {
+  dotfiles.profileModules.homeManager.desktop = {
     config,
     lib,
     pkgs,

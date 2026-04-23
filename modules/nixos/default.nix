@@ -5,15 +5,15 @@
 } @ flake: {
   flake.nixosModules.default = {
     imports =
-      (lib.attrValues (config.flake.featureModules.nixOS or {}))
-      ++ (lib.attrValues (config.flake.profileModules.nixOS or {}))
+      (lib.attrValues (config.dotfiles.featureModules.nixOS or {}))
+      ++ (lib.attrValues (config.dotfiles.profileModules.nixOS or {}))
       ++ [
         ../_tags.nix
         ../_assertions.nix
         {
           dotfiles = {
-            _knownProfiles = flake.config.flake.knownProfiles;
-            _knownFeatures = flake.config.flake.knownFeatures;
+            _knownProfiles = flake.config.dotfiles.knownProfiles;
+            _knownFeatures = flake.config.dotfiles.knownFeatures;
             _flakeLib = flake.config.flake.lib;
           };
         }

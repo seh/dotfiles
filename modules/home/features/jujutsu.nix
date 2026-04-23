@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.jujutsu = {
+  dotfiles.featureModules.homeManager.jujutsu = {
     config,
     lib,
     pkgs,

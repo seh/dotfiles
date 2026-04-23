@@ -5,15 +5,15 @@
 } @ flake: {
   flake.homeModules.default = {
     imports =
-      (lib.attrValues (config.flake.featureModules.homeManager or {}))
-      ++ (lib.attrValues (config.flake.profileModules.homeManager or {}))
+      (lib.attrValues (config.dotfiles.featureModules.homeManager or {}))
+      ++ (lib.attrValues (config.dotfiles.profileModules.homeManager or {}))
       ++ [
         ../_tags.nix
         ../_assertions.nix
         {
           dotfiles = {
-            _knownProfiles = flake.config.flake.knownProfiles;
-            _knownFeatures = flake.config.flake.knownFeatures;
+            _knownProfiles = flake.config.dotfiles.knownProfiles;
+            _knownFeatures = flake.config.dotfiles.knownFeatures;
             _flakeLib = flake.config.flake.lib;
           };
         }

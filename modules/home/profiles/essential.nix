@@ -1,7 +1,7 @@
 {
-  flake.knownProfiles = ["essential"];
+  dotfiles.knownProfiles = ["essential"];
 
-  flake.profileModules.homeManager.essential = {
+  dotfiles.profileModules.homeManager.essential = {
     config,
     lib,
     pkgs,
