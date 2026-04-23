@@ -6,7 +6,11 @@
 # tags" that feature modules advertise. It is imported by each of
 # "flake.homeModules.default", "flake.darwinModules.default", and
 # "flake.nixosModules.default".
-{lib, ...}: let
+{
+  lib,
+  config,
+  ...
+}: let
   inherit (lib) mkOption types;
 in {
   options.dotfiles = {
@@ -95,6 +99,22 @@ in {
                 "effectiveTags".
               '';
             };
+            unreachableTags = mkOption {
+              type = types.listOf types.str;
+              readOnly = true;
+              description = ''
+                Tags that some imported feature or profile module
+                advertises via "dotfiles._knownTags" but that this
+                host's resolved closure ("effectiveTags") does not
+                include.
+
+                Unreachable tags are not by themselves a bug: a host
+                may legitimately not want a given feature. The option
+                is exposed as a diagnostic aid so that silent cascade
+                regressions (an edge dropped in "cascadesFor", say)
+                can be surfaced via a targeted "nix eval".
+              '';
+            };
           };
 
           config = {
@@ -120,4 +140,6 @@ in {
       '';
     };
   };
+
+  config.dotfiles._host.unreachableTags = lib.subtractLists config.dotfiles._host.effectiveTags config.dotfiles._knownTags;
 }
