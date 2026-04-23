@@ -27,6 +27,7 @@
         (inputs.import-tree ./home/profiles)
         ./nixos/default.nix
         (inputs.import-tree ./nixos/features)
+        (inputs.import-tree ./nixos/profiles)
         ./overlays/default.nix
         ./packages/flake-modules.nix
       ];
