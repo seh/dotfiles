@@ -17,6 +17,10 @@
         ./config.nix
         ./nixpkgs-config.nix
         ./lib/flake-module.nix
+        ./darwin/default.nix
+        ./home/default.nix
+        ./nixos/default.nix
+        ./overlays/default.nix
         ./packages/flake-modules.nix
       ];
     };

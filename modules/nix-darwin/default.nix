@@ -1,6 +1,4 @@
-{inputs, ...} @ flake: let
-  dotfiles = inputs.self;
-in {
+{inputs, ...} @ flake: {
   flake.darwinModules.default = {
     config,
     lib,
@@ -32,12 +30,6 @@ in {
           The flake-parts module options set for the dotfiles flake.
         '';
       };
-    };
-
-    # NB: This passes this flake as input to these modules via the
-    # "dotfiles" attribute.
-    config._module.args = {
-      inherit dotfiles;
     };
   };
 }

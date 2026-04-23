@@ -10,6 +10,7 @@
   inherit (inputs.nixos.lib) nixosSystem;
 
   cfg = config.dotfiles;
+  dotfilesFlake = config.flake;
 
   mkHome = {
     pkgs,
@@ -18,7 +19,9 @@
     host ? null,
     ...
   } @ args: let
-    finalPkgs = pkgs.extend (lib.composeManyExtensions ([inputs.self.overlays.nixpkgs] ++ overlays));
+    finalPkgs = pkgs.extend (
+      lib.composeManyExtensions ([dotfilesFlake.overlays.nixpkgs] ++ overlays)
+    );
     userDir =
       if finalPkgs.stdenv.hostPlatform.isDarwin
       then "/Users"
@@ -49,7 +52,7 @@
           modules
           ++ cfg.home.modules
           ++ [
-            inputs.self.homeModules.default
+            dotfilesFlake.homeModules.default
             flakeOptionsModule
           ]
           ++ hostModule;
@@ -88,7 +91,9 @@
     host ? null,
     ...
   } @ args: let
-    finalPkgs = pkgs.extend (lib.composeManyExtensions ([inputs.self.overlays.nixpkgs] ++ overlays));
+    finalPkgs = pkgs.extend (
+      lib.composeManyExtensions ([dotfilesFlake.overlays.nixpkgs] ++ overlays)
+    );
     nixpkgsModule = {
       nixpkgs.pkgs = finalPkgs;
     };
@@ -100,7 +105,7 @@
         sharedModules =
           cfg.home.modules
           ++ [
-            inputs.self.homeModules.default
+            dotfilesFlake.homeModules.default
             {
               # Set up the default value for the option proxy.
               dotfiles._flakeOptions = cfg;
@@ -144,7 +149,7 @@
           ++ cfg.darwin.modules
           ++ [
             nixpkgsModule
-            inputs.self.darwinModules.default
+            dotfilesFlake.darwinModules.default
             inputs.home-manager.darwinModules.default
             flakeOptionsModule
             machineDefaultsModule
@@ -167,7 +172,9 @@
     host ? null,
     ...
   } @ args: let
-    finalPkgs = pkgs.extend (lib.composeManyExtensions ([inputs.self.overlays.nixpkgs] ++ overlays));
+    finalPkgs = pkgs.extend (
+      lib.composeManyExtensions ([dotfilesFlake.overlays.nixpkgs] ++ overlays)
+    );
     nixpkgsModule = {
       nixpkgs.pkgs = finalPkgs;
     };
@@ -198,7 +205,7 @@
           ++ cfg.nixos.modules
           ++ [
             nixpkgsModule
-            inputs.self.nixosModules.default
+            dotfilesFlake.nixosModules.default
             inputs.home-manager.nixosModules.home-manager
             flakeOptionsModule
             machineDefaultsModule

@@ -1,6 +1,4 @@
-{inputs, ...} @ flake: let
-  dotfiles = inputs.self;
-in {
+{inputs, ...} @ flake: {
   flake.nixosModules.default = {
     config,
     lib,
@@ -35,19 +33,13 @@ in {
     };
 
     config = {
-      # NB: This passes this flake as input to these modules via the
-      # "dotfiles" attribute.
-      _module.args = {
-        inherit dotfiles;
-      };
-
       home-manager = {
         useGlobalPkgs = true;
         useUserPackages = true;
         sharedModules =
           flake.config.dotfiles.home.modules
           ++ [
-            dotfiles.homeModules.default
+            flake.config.flake.homeModules.default
             {dotfiles._flakeOptions = config.dotfiles._flakeOptions;}
           ];
       };
