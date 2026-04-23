@@ -38,9 +38,11 @@
         # evaluate:
         #   - per-kind "features/" subtrees, each loaded as system-level
         #     modules by "modules/<kind>/default.nix";
-        #   - the embedded template flakes under "modules/templates/",
-        #     which are separate flakes, not flake-parts modules.
-        ((import-tree.matchNot ".*/(darwin|home|nixos)/features/.*").matchNot ".*/templates/.*" ./modules)
+        #   - the embedded template flake trees under
+        #     "modules/templates/<name>/", which are separate flakes,
+        #     not flake-parts modules. The "modules/templates/default.nix"
+        #     file must still be imported; it registers the templates.
+        ((import-tree.matchNot ".*/(darwin|home|nixos)/features/.*").matchNot ".*/templates/[^/]+/.*" ./modules)
       ];
       systems = [
         "aarch64-darwin"
