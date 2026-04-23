@@ -12,7 +12,6 @@
         ../_assertions.nix
         {
           dotfiles = {
-            _knownTags = flake.config.flake.knownTags;
             _knownProfiles = flake.config.flake.knownProfiles;
             _knownFeatures = flake.config.flake.knownFeatures;
             _flakeLib = flake.config.flake.lib;

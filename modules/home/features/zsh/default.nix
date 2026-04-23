@@ -70,7 +70,7 @@
           ls = "ls --color=auto --hyperlink=auto";
         };
         siteFunctions = {
-          kuc = lib.mkIf (config.dotfiles._resolved.hasTag "kubernetes") (builtins.readFile ./kuc);
+          kuc = lib.mkIf (config.dotfiles._resolved.activatesFeature "kubernetes") (builtins.readFile ./kuc);
         };
 
         antidote = {
