@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.ssh = {
+  dotfiles.featureModules.homeManager.ssh = {
     lib,
     pkgs,
     config,

@@ -1,3 +1,3 @@
 {
-  flake.knownFeatures = ["azure"];
+  dotfiles.knownFeatures = ["azure"];
 }

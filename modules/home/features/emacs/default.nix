@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.emacs = {
+  dotfiles.featureModules.homeManager.emacs = {
     config,
     lib,
     pkgs,

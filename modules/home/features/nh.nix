@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.nh = {
+  dotfiles.featureModules.homeManager.nh = {
     config,
     lib,
     pkgs,
