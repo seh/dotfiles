@@ -1,9 +1,10 @@
-# Tag substrate shared by Home Manager, nix-darwin, and NixOS
+# Activation substrate shared by Home Manager, nix-darwin, and NixOS
 # configurations.
 #
 # This module declares the options that describe hosts and the
 # currently-active host's resolved record, plus the set of "known
-# tags" that feature modules advertise. It is imported by each of
+# profile and feature names" that profile and feature modules
+# advertise. It is imported by each of
 # "flake.homeModules.default", "flake.darwinModules.default", and
 # "flake.nixosModules.default".
 {
@@ -32,10 +33,15 @@ in {
               type = types.str;
               description = "Nixpkgs system string, e.g. \"aarch64-darwin\".";
             };
-            tags = mkOption {
+            profiles = mkOption {
               type = types.listOf types.str;
               default = [];
-              description = "Feature tags this host opts into.";
+              description = "Profile names this host opts into.";
+            };
+            features = mkOption {
+              type = types.listOf types.str;
+              default = [];
+              description = "Feature names this host opts into.";
             };
           };
         }
@@ -44,7 +50,7 @@ in {
       description = ''
         Declarative registry of all hosts managed by this flake or a
         downstream instantiation flake. Each entry names a host and
-        records its framework, platform, and feature tags.
+        records its framework, platform, and profile/feature activations.
       '';
     };
 
@@ -70,52 +76,6 @@ in {
             platform = mkOption {
               type = types.nullOr types.str;
               default = null;
-            };
-            tags = mkOption {
-              type = types.listOf types.str;
-              default = [];
-              description = "Tags declared for this host.";
-            };
-            excludeTags = mkOption {
-              type = types.listOf types.str;
-              default = [];
-              description = ''
-                Tags to subtract from this host's tag set. Useful for
-                temporarily disabling a tagged feature without editing
-                the host record.
-              '';
-            };
-            effectiveTags = mkOption {
-              type = types.listOf types.str;
-              readOnly = true;
-              description = ''
-                Tags in effect after subtracting "excludeTags" from
-                "tags".
-              '';
-            };
-            hasTag = mkOption {
-              type = types.functionTo types.bool;
-              readOnly = true;
-              description = ''
-                Predicate testing whether a tag is present in
-                "effectiveTags".
-              '';
-            };
-            unreachableTags = mkOption {
-              type = types.listOf types.str;
-              readOnly = true;
-              description = ''
-                Tags that some imported feature or profile module
-                advertises via "dotfiles._knownTags" but that this
-                host's resolved closure ("effectiveTags") does not
-                include.
-
-                Unreachable tags are not by themselves a bug: a host
-                may legitimately not want a given feature. The option
-                is exposed as a diagnostic aid so that silent cascade
-                regressions (an edge dropped in "cascadesFor", say)
-                can be surfaced via a targeted "nix eval".
-              '';
             };
             profiles = mkOption {
               type = types.listOf types.str;
@@ -193,8 +153,7 @@ in {
               description = ''
                 Profiles advertised via "dotfiles._knownProfiles"
                 that this host's resolved closure ("activeProfiles")
-                does not include. Exposed as a diagnostic aid,
-                mirroring "unreachableTags".
+                does not include. Exposed as a diagnostic aid.
               '';
             };
             unreachableFeatures = mkOption {
@@ -203,8 +162,7 @@ in {
               description = ''
                 Features advertised via "dotfiles._knownFeatures"
                 that this host's resolved closure ("activeFeatures")
-                does not include. Exposed as a diagnostic aid,
-                mirroring "unreachableTags".
+                does not include. Exposed as a diagnostic aid.
               '';
             };
           };
@@ -229,8 +187,6 @@ in {
             activeProfiles = lib.subtractLists config.excludeProfiles expanded.profiles;
             activeFeatures = lib.subtractLists config.excludeFeatures expanded.features;
           in {
-            effectiveTags = lib.subtractLists config.excludeTags config.tags;
-            hasTag = tag: builtins.elem tag config.effectiveTags;
             inherit activeProfiles activeFeatures;
             activatesProfile = name: builtins.elem name activeProfiles;
             activatesFeature = name: builtins.elem name activeFeatures;
@@ -241,16 +197,6 @@ in {
       description = ''
         The current host's resolved record. Set internally by
         "lib.mkHome", "lib.mkDarwin", and "lib.mkNixOS".
-      '';
-    };
-
-    _knownTags = mkOption {
-      type = types.listOf types.str;
-      default = [];
-      description = ''
-        Tags that imported feature modules declare they respond to.
-        Accumulated via "listOf"'s append-merge semantics. Used to
-        catch typos in a host's declared tag list.
       '';
     };
 
@@ -291,7 +237,6 @@ in {
   };
 
   config.dotfiles._host = {
-    unreachableTags = lib.subtractLists config.dotfiles._host.effectiveTags config.dotfiles._knownTags;
     unreachableProfiles = lib.subtractLists config.dotfiles._host.activeProfiles config.dotfiles._knownProfiles;
     unreachableFeatures = lib.subtractLists config.dotfiles._host.activeFeatures config.dotfiles._knownFeatures;
   };

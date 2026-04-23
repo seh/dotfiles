@@ -62,8 +62,7 @@
   # the host's framework.
   #
   # The graph across all roles MUST form a DAG; cycles are rejected
-  # at runtime by "expandClosure" (and by "expandTagClosure", which
-  # is a thin wrapper for the legacy flat surface).
+  # at runtime by "expandClosure".
   cascadesFor = {
     framework,
     isDarwin ? framework == "nixDarwin",
@@ -97,39 +96,6 @@
       # principle but none exist today.
     };
   };
-
-  # Project the typed cascade table down to the legacy flat shape
-  # "{ <name> = [<name>...]; }", collapsing role labels. Used only to
-  # back "expandTagClosure" with the original closure-walk
-  # implementation so that pre-typed callers see bit-identical
-  # behaviour.
-  cascadesForTags = args: let
-    typed = cascadesFor args;
-  in
-    lib.foldlAttrs (
-      acc: _role: edges:
-        acc // lib.mapAttrs (_name: targets: (targets.profiles or []) ++ (targets.features or [])) edges
-    ) {}
-    typed;
-
-  # Expand a host's declared tag list into its transitive closure
-  # under the given (flat) cascade table. Throws with a readable
-  # message if the cascade table is cyclic.
-  expandTagClosure = cascades: declared: let
-    universe = lib.unique (lib.attrNames cascades ++ lib.concatLists (lib.attrValues cascades));
-    sorted = lib.lists.toposort (a: b: builtins.elem b (cascades.${a} or [])) universe;
-    closure = builtins.genericClosure {
-      startSet = map (tag: {key = tag;}) declared;
-      operator = {key, ...}: map (t: {key = t;}) (cascades.${key} or []);
-    };
-  in
-    if sorted ? cycle
-    then
-      throw ''
-        Tag cascade contains a cycle involving: ${lib.concatStringsSep ", " sorted.loops}.
-        The cascade table must form a DAG.
-      ''
-    else map (x: x.key) closure;
 
   # Role-parametric transitive closure over the typed cascade table.
   # Takes the record produced by "cascadesFor" and a seed
@@ -256,11 +222,9 @@ in {
   flake.lib = {
     inherit
       cascadesFor
-      cascadesForTags
       collectLegacyPackages
       collectPackages
       expandClosure
-      expandTagClosure
       filterNonDrvAttrsRecursive
       flatMapAttrs
       flattenAttrs

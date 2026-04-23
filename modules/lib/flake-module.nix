@@ -12,37 +12,13 @@
   cfg = config.dotfiles;
   dotfilesFlake = config.flake;
 
-  inherit (dotfilesFlake.lib) cascadesForTags expandTagClosure;
-
   # Split a caller-supplied "host" record into a module that seeds
-  # "dotfiles._host" with its fields. The declared "tags" list is
-  # first expanded into its transitive closure under the cascade
-  # table, so that downstream feature modules see a static,
-  # fully-resolved tag set and no fixpoint is required.
-  #
-  # "profiles" and "features" fields on the host record (added by
-  # the typed-activation migration) are forwarded verbatim; their
-  # closures are computed inside the host submodule in
-  # "modules/_tags.nix".
-  mkHostModule = {
-    host,
-    isDarwin,
-  }:
+  # "dotfiles._host" with its fields. The declared "profiles" and
+  # "features" lists are forwarded verbatim; their closures are
+  # computed inside the host submodule in "modules/_tags.nix".
+  mkHostModule = {host}:
     lib.optional (host != null) {
-      dotfiles._host =
-        (builtins.removeAttrs host [
-          "tags"
-          "profiles"
-          "features"
-        ])
-        // {
-          tags = expandTagClosure (cascadesForTags {
-            framework = host.framework or null;
-            inherit isDarwin;
-          }) (host.tags or []);
-        }
-        // lib.optionalAttrs (host ? profiles) {profiles = host.profiles;}
-        // lib.optionalAttrs (host ? features) {features = host.features;};
+      dotfiles._host = host;
     };
 
   mkHome = {
@@ -72,7 +48,6 @@
     };
     hostModule = mkHostModule {
       inherit host;
-      inherit (finalPkgs.stdenv.hostPlatform) isDarwin;
     };
   in
     homeManagerConfiguration (
@@ -133,7 +108,6 @@
     };
     hostModule = mkHostModule {
       inherit host;
-      isDarwin = true;
     };
     flakeOptionsModule = _: {
       # Set up the default value for the option proxy.
@@ -223,7 +197,6 @@
     };
     hostModule = mkHostModule {
       inherit host;
-      isDarwin = false;
     };
   in
     nixosSystem (

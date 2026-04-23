@@ -1,7 +1,7 @@
 # Basis of inspiration:
 #   https://github.com/midchildan/dotfiles/blob/152b40c3a412b18ba6057c3ecfb984748962282b/nix/home/profiles/web.nix
 {
-  flake.knownTags = ["web"];
+  flake.knownProfiles = ["web"];
 
   flake.profileModules.homeManager.web = {
     config,
@@ -10,9 +10,9 @@
     ...
   }: let
     inherit (pkgs.stdenv.hostPlatform) isDarwin;
-    hasTag = config.dotfiles._host.hasTag;
+    inherit (config.dotfiles._host) activatesProfile;
   in {
-    config = lib.mkIf (hasTag "web") {
+    config = lib.mkIf (activatesProfile "web") {
       dotfiles.firefox = {
         enable = lib.mkDefault true;
         # TODO(seh): Set preferences.

@@ -1,5 +1,5 @@
 {
-  flake.knownTags = ["macos"];
+  flake.knownProfiles = ["macos"];
 
   flake.profileModules.homeManager.macos = {
     config,
@@ -8,9 +8,9 @@
     ...
   }: let
     inherit (lib) mkDefault mkIf;
-    hasTag = config.dotfiles._host.hasTag;
+    inherit (config.dotfiles._host) activatesProfile;
   in {
-    config = mkIf (hasTag "macos") {
+    config = mkIf (activatesProfile "macos") {
       home = {
         packages = with pkgs; [
         ];

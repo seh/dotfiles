@@ -1,5 +1,5 @@
 {
-  flake.knownTags = ["essential"];
+  flake.knownProfiles = ["essential"];
 
   flake.profileModules.homeManager.essential = {
     config,
@@ -10,7 +10,7 @@
     inherit (lib) mkIf optionals;
     inherit (pkgs.stdenv.hostPlatform) isDarwin isLinux;
   in {
-    config = mkIf (config.dotfiles._host.hasTag "essential") {
+    config = mkIf (config.dotfiles._host.activatesProfile "essential") {
       home = {
         packages = with pkgs;
           [

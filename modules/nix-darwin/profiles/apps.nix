@@ -1,16 +1,16 @@
 # Basis of inspiration:
 #  https://github.com/midchildan/dotfiles/blob/7cdd097dd01e0678b6ff56487689c78469237722/nix/darwin/profiles/apps.nix
 {
-  flake.knownTags = ["apps"];
+  flake.knownProfiles = ["apps"];
 
   flake.profileModules.nixDarwin.apps = {
     config,
     lib,
     ...
   }: let
-    hasTag = config.dotfiles._host.hasTag;
+    inherit (config.dotfiles._host) activatesProfile;
   in {
-    config = lib.mkIf (hasTag "apps") {
+    config = lib.mkIf (activatesProfile "apps") {
       # Manage Homebrew with nix-darwin. Mainly useful for managing casks and
       # App Store installations. Any formula or cask not specified in the config
       # would be automatically uninstalled by default.
