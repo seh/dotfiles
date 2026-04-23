@@ -6,11 +6,7 @@
 # tags" that feature modules advertise. It is imported by each of
 # "flake.homeModules.default", "flake.darwinModules.default", and
 # "flake.nixosModules.default".
-{
-  lib,
-  config,
-  ...
-}: let
+{lib, ...}: let
   inherit (lib) mkOption types;
 in {
   options.dotfiles = {
@@ -46,16 +42,6 @@ in {
       '';
     };
 
-    excludeTags = mkOption {
-      type = types.listOf types.str;
-      default = [];
-      description = ''
-        Tags to subtract from the current host's tag set. Useful for
-        temporarily disabling a tagged feature without editing the
-        host record.
-      '';
-    };
-
     _host = mkOption {
       type = types.submodule (
         {config, ...}: {
@@ -84,12 +70,21 @@ in {
               default = [];
               description = "Tags declared for this host.";
             };
+            excludeTags = mkOption {
+              type = types.listOf types.str;
+              default = [];
+              description = ''
+                Tags to subtract from this host's tag set. Useful for
+                temporarily disabling a tagged feature without editing
+                the host record.
+              '';
+            };
             effectiveTags = mkOption {
               type = types.listOf types.str;
               readOnly = true;
               description = ''
-                Tags in effect after subtracting "dotfiles.excludeTags"
-                from "tags".
+                Tags in effect after subtracting "excludeTags" from
+                "tags".
               '';
             };
             hasTag = mkOption {
@@ -100,6 +95,11 @@ in {
                 "effectiveTags".
               '';
             };
+          };
+
+          config = {
+            effectiveTags = lib.subtractLists config.excludeTags config.tags;
+            hasTag = tag: builtins.elem tag config.effectiveTags;
           };
         }
       );
@@ -119,10 +119,5 @@ in {
         catch typos in a host's declared tag list.
       '';
     };
-  };
-
-  config.dotfiles._host = {
-    effectiveTags = lib.subtractLists config.dotfiles.excludeTags config.dotfiles._host.tags;
-    hasTag = tag: builtins.elem tag config.dotfiles._host.effectiveTags;
   };
 }
