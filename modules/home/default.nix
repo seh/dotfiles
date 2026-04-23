@@ -10,6 +10,9 @@
       ++ [
         ../_tags.nix
         ../_assertions.nix
+        {
+          dotfiles._knownTags = flake.config.flake.knownTags;
+        }
         (
           {
             config,
