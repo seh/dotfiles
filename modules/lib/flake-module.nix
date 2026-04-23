@@ -12,26 +12,37 @@
   cfg = config.dotfiles;
   dotfilesFlake = config.flake;
 
-  inherit (dotfilesFlake.lib) cascadesFor expandTagClosure;
+  inherit (dotfilesFlake.lib) cascadesForTags expandTagClosure;
 
   # Split a caller-supplied "host" record into a module that seeds
   # "dotfiles._host" with its fields. The declared "tags" list is
   # first expanded into its transitive closure under the cascade
   # table, so that downstream feature modules see a static,
   # fully-resolved tag set and no fixpoint is required.
+  #
+  # "profiles" and "features" fields on the host record (added by
+  # the typed-activation migration) are forwarded verbatim; their
+  # closures are computed inside the host submodule in
+  # "modules/_tags.nix".
   mkHostModule = {
     host,
     isDarwin,
   }:
     lib.optional (host != null) {
       dotfiles._host =
-        (builtins.removeAttrs host ["tags"])
+        (builtins.removeAttrs host [
+          "tags"
+          "profiles"
+          "features"
+        ])
         // {
-          tags = expandTagClosure (cascadesFor {
+          tags = expandTagClosure (cascadesForTags {
             framework = host.framework or null;
             inherit isDarwin;
           }) (host.tags or []);
-        };
+        }
+        // lib.optionalAttrs (host ? profiles) {profiles = host.profiles;}
+        // lib.optionalAttrs (host ? features) {features = host.features;};
     };
 
   mkHome = {

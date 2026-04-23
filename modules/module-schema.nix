@@ -9,6 +9,26 @@
         deferred module to be imported into that class's aggregate.
       '';
     };
+    knownFeatures = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      apply = lib.unique;
+      description = ''
+        Feature names advertised by feature or profile modules in this
+        flake or downstream consumers. Accumulated and de-duplicated.
+        Populates "dotfiles._knownFeatures" in each class aggregator.
+      '';
+    };
+    knownProfiles = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [];
+      apply = lib.unique;
+      description = ''
+        Profile names advertised by profile modules in this flake or
+        downstream consumers. Accumulated and de-duplicated. Populates
+        "dotfiles._knownProfiles" in each class aggregator.
+      '';
+    };
     knownTags = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
