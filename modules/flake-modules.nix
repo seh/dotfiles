@@ -16,6 +16,7 @@
       imports = [
         ./config.nix
         ./nixpkgs-config.nix
+        ./lib/default.nix
         ./lib/flake-module.nix
         ./darwin/default.nix
         ./home/default.nix
