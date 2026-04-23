@@ -98,16 +98,75 @@
   };
 
   # Role-parametric transitive closure over the typed cascade table.
-  # Takes the record produced by "cascadesFor" and a seed
+  # Takes the record produced by "cascadesFor", a "knownByRole"
+  # attrset naming the identifiers each role advertises (keyed by
+  # role name, value is a list of known names), and a seed
   # "{ profiles = [...]; features = [...]; }" (or any other roles
-  # the cascade advertises), and returns a record of the same shape
+  # the cascade advertises). Returns a record of the same shape
   # with each list expanded to its transitive closure.
   #
   # The implementation iterates over "builtins.attrNames cascades"
   # rather than hard-coding role names, so adding a new role is a
   # pure data-level change.
-  expandClosure = cascades: seed: let
+  #
+  # Two static checks run before the closure walk:
+  #   1. Every edge target named in "cascades.<role>.<source>"
+  #      under a "<targetRole>" key must appear in
+  #      "knownByRole.<targetRole>". Dangling edges (typically
+  #      typos) are rejected with a message that names the edge.
+  #   2. Edges emanating from a feature source may not target
+  #      profiles. Profiles are coarser than features; reversing
+  #      the hierarchy would render host records misleading. This
+  #      is the one role-specific rule inside otherwise
+  #      role-parametric machinery.
+  expandClosure = cascades: knownByRole: seed: let
     roles = builtins.attrNames cascades;
+    # "Profiles" from "profiles", "Features" from "features", etc.
+    # Used only in dangling-edge error messages so that the option
+    # name "flake.known<TargetRole>" reads naturally.
+    capitalize = s: let
+      head = builtins.substring 0 1 s;
+      tail = builtins.substring 1 (builtins.stringLength s) s;
+    in
+      lib.toUpper head + tail;
+    # Walk every declared edge and collect errors. Each error is a
+    # pre-formatted string; the first, if any, is thrown below.
+    edgeErrors =
+      lib.concatMap (
+        role: let
+          edgeRecord = cascades.${role};
+          sources = builtins.attrNames edgeRecord;
+        in
+          lib.concatMap (
+            source: let
+              targetsByRole = edgeRecord.${source};
+              targetRoles = builtins.attrNames targetsByRole;
+              featureToProfileError = lib.optional (role == "features" && builtins.elem "profiles" targetRoles) ''
+                cascadesFor: feature "${source}" has a "profiles" edge field, but features may not cascade to profiles. Remove the field or promote "${source}" to a profile.
+              '';
+              danglingErrors =
+                lib.concatMap (
+                  targetRole: let
+                    known = knownByRole.${targetRole} or [];
+                    targets = targetsByRole.${targetRole};
+                    missing = lib.filter (t: !(builtins.elem t known)) targets;
+                  in
+                    map (t: ''
+                      cascadesFor: dangling edge ${role}.${source} -> ${targetRole}.${t} (no such ${targetRole} is known via "flake.known${capitalize targetRole}")
+                    '')
+                    missing
+                )
+                targetRoles;
+            in
+              featureToProfileError ++ danglingErrors
+          )
+          sources
+      )
+      roles;
+    _edgeCheck =
+      if edgeErrors != []
+      then throw (lib.head edgeErrors)
+      else null;
     # Map each role to a single-character key prefix used inside
     # "builtins.genericClosure". Two roles must not share a prefix.
     rolePrefix = role: builtins.substring 0 1 role;
@@ -213,11 +272,13 @@
   in
     if sorted ? cycle
     then
-      lib.seq _prefixCollision (throw ''
-        Cascade contains a cycle involving: ${lib.concatStringsSep ", " sorted.loops}.
-        The cascade table must form a DAG across all roles.
-      '')
-    else lib.seq _prefixCollision grouped;
+      lib.seq _prefixCollision (
+        lib.seq _edgeCheck (throw ''
+          Cascade contains a cycle involving: ${lib.concatStringsSep ", " sorted.loops}.
+          The cascade table must form a DAG across all roles.
+        '')
+      )
+    else lib.seq _prefixCollision (lib.seq _edgeCheck grouped);
 in {
   flake.lib = {
     inherit

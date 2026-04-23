@@ -5,8 +5,8 @@
 # currently-active host's resolved record, plus the set of "known
 # profile and feature names" that profile and feature modules
 # advertise. It is imported by each of
-# "flake.homeModules.default", "flake.darwinModules.default", and
-# "flake.nixosModules.default".
+# "flake.modules.homeManager.default", "flake.modules.darwin.default",
+# and "flake.modules.nixos.default".
 {
   lib,
   config,
@@ -56,7 +56,9 @@ in {
 
     _host = mkOption {
       type = types.submodule (
-        {config, ...}: {
+        submoduleArgs: let
+          hostCfg = submoduleArgs.config;
+        in {
           options = {
             name = mkOption {
               type = types.nullOr types.str;
@@ -173,19 +175,21 @@ in {
               then
                 flakeLib.expandClosure
                 (flakeLib.cascadesFor {
-                  kind = config.kind;
-                  isDarwin = config.kind == "darwin";
+                  inherit (hostCfg) framework;
+                  isDarwin = hostCfg.framework == "nixDarwin";
                 })
                 {
-                  profiles = config.profiles;
-                  features = config.features;
+                  profiles = config.dotfiles._knownProfiles;
+                  features = config.dotfiles._knownFeatures;
+                }
+                {
+                  inherit (hostCfg) profiles features;
                 }
               else {
-                profiles = config.profiles;
-                features = config.features;
+                inherit (hostCfg) profiles features;
               };
-            activeProfiles = lib.subtractLists config.excludeProfiles expanded.profiles;
-            activeFeatures = lib.subtractLists config.excludeFeatures expanded.features;
+            activeProfiles = lib.subtractLists hostCfg.excludeProfiles expanded.profiles;
+            activeFeatures = lib.subtractLists hostCfg.excludeFeatures expanded.features;
           in {
             inherit activeProfiles activeFeatures;
             activatesProfile = name: builtins.elem name activeProfiles;
