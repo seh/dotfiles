@@ -1,14 +1,14 @@
 {
-  flake.knownTags = ["essential"];
+  flake.knownProfiles = ["essential"];
 
   flake.profileModules.nixOS.essential = {
     config,
     lib,
     ...
   }: let
-    inherit (config.dotfiles._host) hasTag;
+    inherit (config.dotfiles._host) activatesProfile;
   in {
-    config = lib.mkIf (hasTag "essential") {
+    config = lib.mkIf (activatesProfile "essential") {
       programs.zsh.enable = true;
 
       services.openssh = {

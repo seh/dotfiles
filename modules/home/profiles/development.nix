@@ -1,8 +1,9 @@
 # Basis of inspiration:
 #   https://github.com/midchildan/dotfiles/blob/1c190d0ac1d87c159b8b7d777f02261ae58a3fc5/nix/home/profiles/development.nix
 {
-  flake.knownTags = [
-    "development"
+  flake.knownProfiles = ["development"];
+
+  flake.knownFeatures = [
     "kubernetes"
     "rust"
     "aws"
@@ -19,9 +20,9 @@
   }: let
     inherit (lib) mkIf optionals;
     inherit (pkgs.stdenv.hostPlatform) isDarwin;
-    hasTag = config.dotfiles._host.hasTag;
+    inherit (config.dotfiles._host) activatesProfile activatesFeature;
   in {
-    config = mkIf (hasTag "development") {
+    config = mkIf (activatesProfile "development") {
       home.packages = with pkgs;
         [
           bazel-buildtools
@@ -64,21 +65,21 @@
           # macOS.
           qemu
         ]
-        ++ optionals (hasTag "aws") [
+        ++ optionals (activatesFeature "aws") [
           aws-vault
           awscli2
         ]
-        ++ optionals (hasTag "azure") [
+        ++ optionals (activatesFeature "azure") [
           azure-cli
         ]
-        ++ optionals (hasTag "gcp") [
+        ++ optionals (activatesFeature "gcp") [
           (google-cloud-sdk.withExtraComponents (
             with google-cloud-sdk.components; [
               gke-gcloud-auth-plugin
             ]
           ))
         ]
-        ++ optionals (hasTag "kubernetes") (
+        ++ optionals (activatesFeature "kubernetes") (
           [
             fluxcd
             k3d
@@ -93,7 +94,7 @@
             kubectl
           ]
         )
-        ++ optionals (hasTag "language-servers") [
+        ++ optionals (activatesFeature "language-servers") [
           bash-language-server
           emmylua-ls
           gopls
@@ -110,7 +111,7 @@
           vscode-json-languageserver
           yaml-language-server
         ]
-        ++ optionals (hasTag "rust") [
+        ++ optionals (activatesFeature "rust") [
           # NB: rustup includes the following:
           # - cargo
           # - rust-analyzer
@@ -124,13 +125,13 @@
         };
 
         granted = {
-          enable = hasTag "aws";
+          enable = activatesFeature "aws";
           enableFishIntegration = true;
           enableZshIntegration = true;
         };
 
         k9s = {
-          enable = hasTag "kubernetes";
+          enable = activatesFeature "kubernetes";
           # TODO(seh): Configure settings.
         };
 
