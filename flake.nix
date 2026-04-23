@@ -34,12 +34,7 @@
   } @ inputs:
     flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
-        # Exclude paths that the top-level flake-parts walk must not
-        # evaluate: the embedded template flake trees under
-        # "modules/templates/<name>/", which are separate flakes, not
-        # flake-parts modules. The "modules/templates/default.nix"
-        # file must still be imported; it registers the templates.
-        (import-tree.matchNot ".*/templates/[^/]+/.*" ./modules)
+        (import-tree [./modules ./templates])
       ];
       systems = [
         "aarch64-darwin"
