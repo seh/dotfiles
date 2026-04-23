@@ -1,7 +1,7 @@
 # Basis of inspiration:
 #   https://github.com/midchildan/dotfiles/blob/152b40c3a412b18ba6057c3ecfb984748962282b/nix/home/modules/firefox.nix
 {
-  flake.featureModules.homeManager.firefox = {
+  dotfiles.featureModules.homeManager.firefox = {
     config,
     lib,
     pkgs,

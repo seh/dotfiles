@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.nushell = {
+  dotfiles.featureModules.homeManager.nushell = {
     config,
     lib,
     pkgs,

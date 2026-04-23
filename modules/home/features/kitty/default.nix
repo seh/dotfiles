@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.kitty = {
+  dotfiles.featureModules.homeManager.kitty = {
     config,
     lib,
     pkgs,

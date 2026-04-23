@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.commit-signing = {
+  dotfiles.featureModules.homeManager.commit-signing = {
     config,
     lib,
     pkgs,

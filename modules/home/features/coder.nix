@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.coder = {
+  dotfiles.featureModules.homeManager.coder = {
     config,
     lib,
     pkgs,

@@ -1,7 +1,7 @@
 {
-  flake.knownProfiles = ["macos"];
+  dotfiles.knownProfiles = ["macos"];
 
-  flake.profileModules.homeManager.macos = {
+  dotfiles.profileModules.homeManager.macos = {
     config,
     lib,
     pkgs,

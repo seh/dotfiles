@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.helix = {
+  dotfiles.featureModules.homeManager.helix = {
     config,
     lib,
     pkgs,

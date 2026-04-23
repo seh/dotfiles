@@ -1,3 +1,3 @@
 {
-  flake.knownFeatures = ["language-servers"];
+  dotfiles.knownFeatures = ["language-servers"];
 }

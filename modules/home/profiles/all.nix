@@ -6,7 +6,7 @@
   # advertisement below exists solely so that
   # "modules/_assertions.nix" accepts "all" in a host's declared
   # "profiles" list.
-  flake.knownProfiles = ["all"];
+  dotfiles.knownProfiles = ["all"];
 
-  flake.profileModules.homeManager.all = {...}: {};
+  dotfiles.profileModules.homeManager.all = _: {};
 }

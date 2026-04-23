@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.difftastic = {
+  dotfiles.featureModules.homeManager.difftastic = {
     config,
     lib,
     pkgs,

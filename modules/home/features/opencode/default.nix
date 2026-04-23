@@ -1,5 +1,5 @@
 {
-  flake.featureModules.homeManager.opencode = {
+  dotfiles.featureModules.homeManager.opencode = {
     config,
     lib,
     pkgs,

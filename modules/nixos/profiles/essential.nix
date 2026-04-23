@@ -1,7 +1,7 @@
 {
-  flake.knownProfiles = ["essential"];
+  dotfiles.knownProfiles = ["essential"];
 
-  flake.profileModules.nixOS.essential = {
+  dotfiles.profileModules.nixOS.essential = {
     config,
     lib,
     ...
