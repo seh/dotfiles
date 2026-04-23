@@ -1,5 +1,5 @@
 {
-  flake.knownTags = ["desktop"];
+  flake.knownProfiles = ["desktop"];
 
   flake.profileModules.homeManager.desktop = {
     config,
@@ -7,9 +7,9 @@
     pkgs,
     ...
   }: let
-    hasTag = config.dotfiles._host.hasTag;
+    inherit (config.dotfiles._host) activatesProfile;
   in {
-    config = lib.mkIf (hasTag "desktop") {
+    config = lib.mkIf (activatesProfile "desktop") {
       home.packages = let
         candidatePkg = pkgs.zoom-us;
       in

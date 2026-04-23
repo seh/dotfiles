@@ -1,7 +1,7 @@
 # Basis of inspiration:
 #   https://github.com/midchildan/dotfiles/blob/8105b21f1a743960a8bbbf5bdcd752a7d9b60d10/nix/home/profiles/fonts.nix
 {
-  flake.knownTags = ["fonts"];
+  flake.knownProfiles = ["fonts"];
 
   flake.profileModules.homeManager.fonts = {
     config,
@@ -10,9 +10,9 @@
     ...
   }: let
     inherit (pkgs.stdenv.hostPlatform) isLinux;
-    hasTag = config.dotfiles._host.hasTag;
+    inherit (config.dotfiles._host) activatesProfile;
   in {
-    config = lib.mkIf (hasTag "fonts") {
+    config = lib.mkIf (activatesProfile "fonts") {
       fonts.fontconfig.enable = lib.mkDefault isLinux;
 
       home.packages = with pkgs; [

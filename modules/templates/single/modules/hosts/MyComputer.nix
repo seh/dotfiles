@@ -8,19 +8,22 @@
   # Likely alternative: "x86_64-darwin"
   hostPlatform = "aarch64-darwin";
 
-  # Activate feature modules by listing the tags that apply to this
-  # host. The "all" tag is a convenience aggregate that expands (via
-  # the cascade table in the dotfiles flake) to
+  # Activate feature modules by listing profiles and features that
+  # apply to this host. The "all" profile is a convenience aggregate
+  # that expands (via the cascade table in the dotfiles flake) to
   # "essential", "development", "desktop", "fonts", and (on Darwin)
-  # "macos". Add specific leaf tags such as "kubernetes", "aws", or
-  # "rust" as appropriate. See:
-  # https://github.com/seh/dotfiles/tree/main/modules/home/features/profiles
+  # "macos". Add specific features such as "kubernetes", "aws", or
+  # "rust" under "features". See:
+  # https://github.com/seh/dotfiles/tree/main/modules/home/profiles
+  # https://github.com/seh/dotfiles/tree/main/modules/home/features
   hostRecord = {
     name = hostName;
     framework = "nixDarwin";
     platform = hostPlatform;
-    tags = [
+    profiles = [
       "all"
+    ];
+    features = [
       # "kubernetes"
       # "aws"
       # "rust"
@@ -50,9 +53,9 @@ in {
         host = hostRecord;
         modules = [
           {
-            # nix-darwin feature tags are advertised under:
-            # https://github.com/seh/dotfiles/tree/main/modules/nix-darwin/features
-            dotfiles._host.tags = ["apps"];
+            # nix-darwin profiles are advertised under:
+            # https://github.com/seh/dotfiles/tree/main/modules/nix-darwin/profiles
+            dotfiles._host.profiles = ["apps"];
 
             # Override some default values as necessary:
             # system.stateVersion = 4; # Default is 6
