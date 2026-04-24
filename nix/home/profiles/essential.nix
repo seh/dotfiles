@@ -84,7 +84,7 @@ in {
           # NB: This works around a gap in the "nix-mode" Emacs mode's
           # invocation of a formatting command.
           (writeShellScriptBin "alejandra-quiet" ''
-            ${alejandra}/bin/alejandra --quiet "$@"
+            ${lib.getExe alejandra} --quiet "$@"
           '')
         ];
     };
