@@ -5,8 +5,8 @@
     pkgs,
     ...
   }: let
-    inherit (config.dotfiles) flakeOptions commitSigning;
-    userConfig = flakeOptions.user;
+    inherit (config.dotfiles) commitSigning;
+    userConfig = config.dotfiles.user;
     cfg = config.dotfiles.jujutsu;
     tomlFormat = pkgs.formats.toml {};
   in {
