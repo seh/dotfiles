@@ -18,9 +18,17 @@ in {
         autoupdate = false;
         default_agent = "plan";
         formatter = {
+          alejandra = {
+            command = [
+              (lib.getExe pkgs.alejandra)
+              "--quiet"
+              "$FILE"
+            ];
+            extensions = [".nix"];
+          };
           gofumpt = {
             command = [
-              "gofumpt"
+              (lib.getExe pkgs.gofumpt)
               "$FILE"
             ];
             extensions = [".go"];
