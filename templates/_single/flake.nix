@@ -4,10 +4,7 @@
   inputs = {
     dotfiles.url = "github:seh/dotfiles";
     flake-parts.follows = "dotfiles/flake-parts";
-    home-manager.follows = "dotfiles/home-manager";
     import-tree.follows = "dotfiles/import-tree";
-    nix-darwin.follows = "dotfiles/nix-darwin";
-    nixos.follows = "dotfiles/nixos";
     nixpkgs.follows = "dotfiles/nixpkgs";
     pre-commit-hooks.follows = "dotfiles/pre-commit-hooks";
     treefmt-nix.follows = "dotfiles/treefmt-nix";
@@ -31,7 +28,6 @@
   } @ inputs:
     flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
-        inputs.dotfiles.flakeModules.default
         inputs.dotfiles.flakeModules.checks # optional
         inputs.dotfiles.flakeModules.style # optional
         (import-tree ./modules)
