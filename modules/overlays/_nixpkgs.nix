@@ -1,8 +1,7 @@
 # Overlay for the nixpkgs input to this flake
 final: prev: {
   # NB: The channel name "stable" here ideally matches the default
-  # value of the "dotfiles.flakeOptions.lix.channel" option defined
-  # in "modules/config.nix", but this overlay runs at nixpkgs
+  # value of the "dotfiles.lix.channel" option, but this overlay runs at nixpkgs
   # instantiation time and cannot access flake-level options. A
   # caller that changes the channel option cannot easily rectify the
   # resulting divergence here short of supplying a replacement overlay.
