@@ -1,12 +1,14 @@
 {
-  self,
-  config,
+  inputs,
   lib,
   ...
 }: let
   hostName = "MyComputer";
   # Likely alternative: "x86_64-darwin"
   hostPlatform = "aarch64-darwin";
+
+  identity = import ../../identity.nix;
+  username = identity.dotfiles.user.name;
 
   # Activate feature modules by listing profiles and features that
   # apply to this host. The "all" profile is a convenience aggregate
@@ -36,10 +38,11 @@
 in {
   flake = {
     homeConfigurations = {
-      "${config.dotfiles.user.name}@${hostName}.local" = self.lib.mkHome {
-        pkgs = self.lib.pkgsFor hostPlatform;
+      "${username}@${hostName}.local" = inputs.dotfiles.lib.mkHome {
+        pkgs = inputs.dotfiles.lib.pkgsFor hostPlatform;
         host = hostRecord;
         modules = [
+          identity
           homeManagerConfig
           {programs.home-manager.enable = true;}
         ];
@@ -47,11 +50,12 @@ in {
     };
 
     darwinConfigurations = let
-      darwinConfig = self.lib.mkDarwin {
+      darwinConfig = inputs.dotfiles.lib.mkDarwin {
         inherit hostPlatform;
-        pkgs = self.lib.pkgsFor hostPlatform;
+        pkgs = inputs.dotfiles.lib.pkgsFor hostPlatform;
         host = hostRecord;
         modules = [
+          identity
           {
             # nix-darwin profiles are advertised under:
             # https://github.com/seh/dotfiles/tree/main/modules/nix-darwin/profiles
@@ -60,7 +64,7 @@ in {
             # Override some default values as necessary:
             # system.stateVersion = 4; # Default is 6
 
-            home-manager.users.${config.dotfiles.user.name} = homeManagerConfig;
+            home-manager.users.${username} = homeManagerConfig;
           }
         ];
       };
