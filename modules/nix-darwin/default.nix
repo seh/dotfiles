@@ -10,6 +10,7 @@
       ++ [
         ../_tags.nix
         ../_assertions.nix
+        ../_user-identity.nix
         {
           dotfiles = {
             _knownProfiles = flake.config.dotfiles.knownProfiles;
