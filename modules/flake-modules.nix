@@ -1,50 +1,27 @@
-# Reify "flake.flakeModules" so consumers can opt into specific
-# subsets of this flake's flake-parts modules rather than importing
-# everything wholesale.
+# Reify a handful of this flake's flake-parts modules under
+# "flake.flakeModules" so consumers can opt into them from their own
+# evaluators.
 #
-# "flakeModules.default" is the minimal consumer-facing module: the
-# schema for user-facing options ("./config.nix",
-# "./nixpkgs-config.nix"), the "flake.lib" helpers
-# ("./lib/default.nix", "./lib/flake-module.nix"), the "overlays"
-# output ("./overlays/default.nix"), and
-# "perSystem.dotfiles.callPackages" ("./packages/flake-modules.nix").
+# "flakeModules.checks" and "flakeModules.style" are consumer-facing
+# extensions: a consumer importing either one installs the
+# corresponding "perSystem" contributions into its own evaluator.
 #
-# The class aggregators under "./home", "./nix-darwin", and "./nixos"
-# are deliberately excluded: publishing them into a consumer's
-# evaluator would cause "nix flake check" there to warn about
-# "homeModules", "darwinModules", and "nixosModules" as unknown
-# flake outputs. "lib.mkHome", "lib.mkDarwin", and "lib.mkNixOS"
-# reach the aggregators through the "dotfilesFlake" module argument
-# set by "dotfilesFlakeArg" below, which closes over this flake's
-# own "self" at evaluation time.
+# There is deliberately no "flakeModules.default": the constructors
+# ("lib.mkHome", "lib.mkDarwin", "lib.mkNixOS") are reached as plain
+# library functions through "inputs.dotfiles.lib.*", closing over
+# this flake's own "self" without installing anything into the
+# consumer evaluator. All option schemas and overlays relevant to a
+# consumer flow in through the modules passed to those constructors,
+# inside the target class evaluator where they are actually read.
 #
-# The modules listed here self-activate in this flake via the
-# top-level "import-tree" in "./flake.nix"; their appearance here
-# is solely for external consumers.
-{inputs, ...}: let
-  # Inject "dotfilesFlake" as a module argument carrying this
-  # flake's own "self", captured at this file's evaluation time.
-  dotfilesFlakeArg = {
-    _module.args.dotfilesFlake = inputs.self;
-  };
-in {
-  imports = [
-    inputs.flake-parts.flakeModules.flakeModules
-    dotfilesFlakeArg
-  ];
-
+# These outputs flow through flake-parts' raw "flake" passthrough
+# rather than through "inputs.flake-parts.flakeModules.flakeModules":
+# importing that module declares an alias "flake.flakeModule"
+# (singular) for "flake.flakeModules.default", which "nix flake
+# check" eagerly evaluates and would abort against because no
+# "default" entry exists.
+_: {
   flake.flakeModules = {
-    default = {
-      imports = [
-        dotfilesFlakeArg
-        ./config.nix
-        ./nixpkgs-config.nix
-        ./lib/default.nix
-        ./lib/flake-module.nix
-        ./overlays/default.nix
-        ./packages/flake-modules.nix
-      ];
-    };
     checks = ./checks.nix;
     style = ./style.nix;
   };

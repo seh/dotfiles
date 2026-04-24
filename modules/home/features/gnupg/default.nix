@@ -6,8 +6,7 @@
     ...
   }: let
     cfg = config.dotfiles.gnupg;
-    inherit (config.dotfiles) flakeOptions;
-    userConfig = flakeOptions.user;
+    userConfig = config.dotfiles.user;
     hasGPGSigningKey = userConfig.gpgKey != null;
     inherit (pkgs.stdenv.hostPlatform) isDarwin;
   in {
