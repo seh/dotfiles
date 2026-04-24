@@ -5,8 +5,7 @@
     pkgs,
     ...
   }: let
-    inherit (config.dotfiles) flakeOptions;
-    userConfig = flakeOptions.user;
+    userConfig = config.dotfiles.user;
 
     hasGPGSigningKey = userConfig.gpgKey != null;
     hasSSHSigningKey = userConfig.sshSigning.key != null;
