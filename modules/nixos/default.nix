@@ -3,7 +3,7 @@
   lib,
   ...
 } @ flake: {
-  flake.nixosModules.default = {
+  flake.modules.nixos.default = {
     imports =
       (lib.attrValues (config.dotfiles.featureModules.nixOS or {}))
       ++ (lib.attrValues (config.dotfiles.profileModules.nixOS or {}))
@@ -21,7 +21,7 @@
             useGlobalPkgs = true;
             useUserPackages = true;
             sharedModules = [
-              flake.config.flake.homeModules.default
+              flake.config.flake.modules.homeManager.default
             ];
           };
         }

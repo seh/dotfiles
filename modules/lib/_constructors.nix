@@ -105,7 +105,7 @@
         modules =
           modules
           ++ [
-            dotfilesFlake.homeModules.default
+            dotfilesFlake.modules.homeManager.default
             homeDefaultsModule
           ]
           ++ hostModule;
@@ -129,7 +129,7 @@
     homeManagerSharedModule = {
       home-manager = {
         useGlobalPkgs = true;
-        sharedModules = [dotfilesFlake.homeModules.default] ++ mkHostModule host;
+        sharedModules = [dotfilesFlake.modules.homeManager.default] ++ mkHostModule host;
       };
     };
     machineDefaultsModule = {config, ...}: let
@@ -160,7 +160,7 @@
           modules
           ++ [
             nixpkgsModule
-            dotfilesFlake.darwinModules.default
+            dotfilesFlake.modules.darwin.default
             inputs.home-manager.darwinModules.default
             homeManagerSharedModule
             machineDefaultsModule
@@ -203,7 +203,7 @@
           modules
           ++ [
             nixpkgsModule
-            dotfilesFlake.nixosModules.default
+            dotfilesFlake.modules.nixos.default
             inputs.home-manager.nixosModules.home-manager
             machineDefaultsModule
           ]
