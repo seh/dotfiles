@@ -28,8 +28,8 @@
   } @ inputs:
     flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
-        inputs.dotfiles.flakeModules.checks # optional
-        inputs.dotfiles.flakeModules.style # optional
+        inputs.dotfiles.modules.flake.checks # optional
+        inputs.dotfiles.modules.flake.style # optional
         (import-tree ./modules)
       ];
 
