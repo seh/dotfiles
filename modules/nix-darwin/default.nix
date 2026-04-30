@@ -3,7 +3,7 @@
   lib,
   ...
 } @ flake: {
-  flake.darwinModules.default = {
+  flake.modules.darwin.default = {
     imports =
       (lib.attrValues (config.dotfiles.featureModules.nixDarwin or {}))
       ++ (lib.attrValues (config.dotfiles.profileModules.nixDarwin or {}))
