@@ -1,3 +1,3 @@
 {
-  dotfiles.knownFeatures = ["rust"];
+  dotfiles.knownFeatures = ["lang/rust"];
 }

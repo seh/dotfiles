@@ -1,3 +1,3 @@
 {
-  dotfiles.knownFeatures = ["language-servers"];
+  dotfiles.knownFeatures = ["dev/language-servers"];
 }

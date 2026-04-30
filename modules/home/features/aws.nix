@@ -1,3 +1,3 @@
 {
-  dotfiles.knownFeatures = ["aws"];
+  dotfiles.knownFeatures = ["cloud/aws"];
 }
