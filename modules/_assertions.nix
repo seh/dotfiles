@@ -84,8 +84,26 @@
       Resolving host "${hostName}": declaring ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Add the corresponding ${role.humanSingular} module or remove the name(s) from "${role.seedOption}".
     '';
   };
+
+  # Soft check: known feature names should follow the scoped naming
+  # convention "[scope/]name", with one or more "/"-separated segments
+  # of lowercase letters, digits, and hyphens. Each segment must start
+  # with a lowercase letter.
+  scopedNamePattern = "[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*";
+  badFeatureNames =
+    lib.filter (
+      n: builtins.match scopedNamePattern n == null
+    )
+    config.dotfiles._knownFeatures;
 in {
   # Mismatch assertions run before unknown-name assertions so that
   # a misplaced name produces the more actionable diagnosis.
   assertions = map mismatchAssertion crossPairs ++ map unknownAssertion roles;
+
+  warnings = lib.optional (badFeatureNames != []) ''
+    These known feature names do not follow the scoped naming
+    convention "[scope/]name" with lowercase letters, digits, and
+    hyphens (one or more "/"-separated segments):
+    ${lib.concatMapStringsSep "\n" (n: "  - ${n}") badFeatureNames}
+  '';
 }

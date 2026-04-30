@@ -83,7 +83,7 @@
       };
       development = {
         profiles = [];
-        features = ["language-servers"];
+        features = ["dev/language-servers"];
       };
       desktop = {
         profiles = ["fonts"] ++ lib.optional isDarwin "macos";
