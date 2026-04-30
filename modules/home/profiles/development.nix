@@ -11,7 +11,7 @@
   }: let
     inherit (lib) mkIf optionals;
     inherit (pkgs.stdenv.hostPlatform) isDarwin;
-    inherit (config.dotfiles._host) activatesProfile activatesFeature;
+    inherit (config.dotfiles._host) activatesProfile;
   in {
     config = mkIf (activatesProfile "development") {
       home.packages = with pkgs;
@@ -55,75 +55,11 @@
           # Without QEMU available, Podman can't work as intended atop
           # macOS.
           qemu
-        ]
-        ++ optionals (activatesFeature "cloud/aws") [
-          aws-vault
-          awscli2
-        ]
-        ++ optionals (activatesFeature "cloud/azure") [
-          azure-cli
-        ]
-        ++ optionals (activatesFeature "cloud/gcp") [
-          (google-cloud-sdk.withExtraComponents (
-            with google-cloud-sdk.components; [
-              gke-gcloud-auth-plugin
-            ]
-          ))
-        ]
-        ++ optionals (activatesFeature "kubernetes") (
-          [
-            fluxcd
-            k3d
-            k9s
-            kind
-            kpt
-            kubernetes-helm
-            kustomize
-          ]
-          # NB: On Darwin, "kubectl" is provided by OrbStack.
-          ++ optionals (!isDarwin) [
-            kubectl
-          ]
-        )
-        ++ optionals (activatesFeature "dev/language-servers") [
-          bash-language-server
-          emmylua-ls
-          gopls
-          graphql-language-service-cli
-          jq-lsp
-          jsonnet-language-server
-          nixd # Compare with "nil"
-          postgres-language-server # Compare with "sqls"
-          starpls
-          taplo # For TOML files
-          terraform-ls
-          tinymist # For typst files
-          typescript-language-server
-          vscode-json-languageserver
-          yaml-language-server
-        ]
-        ++ optionals (activatesFeature "lang/rust") [
-          # NB: rustup includes the following:
-          # - cargo
-          # - rust-analyzer
-          # - rustfmt
-          rustup
         ];
 
       programs = {
         go = {
           enable = true;
-        };
-
-        granted = {
-          enable = activatesFeature "cloud/aws";
-          enableFishIntegration = true;
-          enableZshIntegration = true;
-        };
-
-        k9s = {
-          enable = activatesFeature "kubernetes";
-          # TODO(seh): Configure settings.
         };
 
         ripgrep = {
