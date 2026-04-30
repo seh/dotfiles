@@ -1,3 +1,3 @@
 {
-  dotfiles.knownFeatures = ["azure"];
+  dotfiles.knownFeatures = ["cloud/azure"];
 }
