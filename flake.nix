@@ -30,11 +30,25 @@
   outputs = {
     flake-parts,
     import-tree,
+    nixpkgs,
     ...
-  } @ inputs:
-    flake-parts.lib.mkFlake {inherit inputs;} {
+  } @ inputs: let
+    flakeLib = import ./modules/lib/_assembly.nix {
+      inherit inputs;
+      inherit (nixpkgs) lib;
+    };
+  in
+    flake-parts.lib.mkFlake
+    {
+      inherit inputs;
+      specialArgs = {inherit flakeLib;};
+    }
+    {
       imports = [
-        (import-tree [./modules ./templates])
+        (import-tree [
+          ./modules
+          ./templates
+        ])
       ];
       systems = [
         "aarch64-darwin"
