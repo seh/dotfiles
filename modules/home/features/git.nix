@@ -56,7 +56,7 @@
               conflictStyle = "zdiff3";
             };
             rebase = {
-              autosqaush = true;
+              autosquash = true;
             };
             rerere = {
               enabled = 1;
