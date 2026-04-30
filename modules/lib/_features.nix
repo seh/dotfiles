@@ -14,14 +14,24 @@
 #
 # The "bodies" attrset is keyed by class name as recognized by this
 # flake's class aggregators ("homeManager", "nixDarwin", "nixOS").
-# Each value is a deferred module that, by convention, returns the
-# *contents* of a "config" block — not a full module with its own
-# "config = {...}" key. The helper inserts the
-# "config = lib.mkIf (activatesFeature name) (...)" wrapper, so a
-# body that itself wraps in "config = {...}" would produce
-# "config.config = {...}" and silently drop its contributions.
+# Each value is one of two shapes:
 #
-# Conditional sub-contributions inside a body should use
+#   1. A deferred module returning the *contents* of a "config"
+#      block — not a full module with its own "config = {...}" key.
+#      The helper inserts the
+#      "config = lib.mkIf (activatesFeature name) (...)" wrapper, so
+#      a body that itself wraps in "config = {...}" would produce
+#      "config.config = {...}" and silently drop its contributions.
+#
+#   2. A structured attrset "{options? = ...; config? = ...;}" for
+#      features that declare their own options. The "options" half
+#      is a normal module function (e.g. "{lib, ...}: {options = ...;}")
+#      passed through verbatim — option declarations cannot be
+#      conditional. The "config" half follows the same contract as
+#      shape 1 and gets the same activation gate. Either key may be
+#      omitted.
+#
+# Conditional sub-contributions inside a config body should use
 # "lib.mkMerge" / "lib.mkIf" at the value level, not at the module
 # level.
 #
@@ -58,6 +68,23 @@
     config = lib.mkIf (predicate config.dotfiles._host name) (body args);
   };
 
+  # Build the per-class deferred module for one body, dispatching
+  # on its shape. A function body is the plain shape (config-only,
+  # gated). An attrset with at least one of "options"/"config" is
+  # the structured shape (options pass through, config gated). The
+  # result is "lib.mkMerge" of the parts so the module evaluator
+  # sees one contribution per class.
+  buildClassModule = predicate: name: body:
+    if lib.isFunction body
+    then wrap predicate name body
+    else if lib.isAttrs body && (body ? options || body ? config)
+    then
+      lib.mkMerge (
+        lib.optional (body ? options) body.options
+        ++ lib.optional (body ? config) (wrap predicate name body.config)
+      )
+    else throw "mkFeature/mkProfile: body for \"${name}\" must be a function or an attrset with \"options\" and/or \"config\"";
+
   # Common builder for both helpers. "knownKey" is the
   # accumulator-list option ("knownFeatures" / "knownProfiles");
   # "modulesKey" is the per-class deferred-module option
@@ -75,7 +102,7 @@
       // lib.optionalAttrs (bodies != {}) {
         ${modulesKey} =
           lib.mapAttrs (_class: body: {
-            ${name} = wrap predicate name body;
+            ${name} = buildClassModule predicate name body;
           })
           bodies;
       };
