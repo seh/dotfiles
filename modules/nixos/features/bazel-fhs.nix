@@ -5,7 +5,9 @@
 # default, so genrules and external rulesets fail to find standard
 # tools. This module creates the necessary symlinks.
 {
-  dotfiles.featureModules.nixOS.bazel-fhs = {
+  dotfiles.knownFeatures = ["compat/bazel-fhs"];
+
+  dotfiles.featureModules.nixOS."compat/bazel-fhs" = {
     config,
     lib,
     pkgs,

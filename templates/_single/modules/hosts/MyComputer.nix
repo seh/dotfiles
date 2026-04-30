@@ -14,8 +14,8 @@
   # apply to this host. The "all" profile is a convenience aggregate
   # that expands (via the cascade table in the dotfiles flake) to
   # "essential", "development", "desktop", "fonts", and (on Darwin)
-  # "macos". Add specific features such as "kubernetes", "aws", or
-  # "rust" under "features". See:
+  # "macos". Add specific features such as "kubernetes", "cloud/aws",
+  # or "lang/rust" under "features". See:
   # https://github.com/seh/dotfiles/tree/main/modules/home/profiles
   # https://github.com/seh/dotfiles/tree/main/modules/home/features
   hostRecord = {
@@ -27,8 +27,8 @@
     ];
     features = [
       # "kubernetes"
-      # "aws"
-      # "rust"
+      # "cloud/aws"
+      # "lang/rust"
     ];
   };
 

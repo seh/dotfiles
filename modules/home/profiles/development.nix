@@ -56,14 +56,14 @@
           # macOS.
           qemu
         ]
-        ++ optionals (activatesFeature "aws") [
+        ++ optionals (activatesFeature "cloud/aws") [
           aws-vault
           awscli2
         ]
-        ++ optionals (activatesFeature "azure") [
+        ++ optionals (activatesFeature "cloud/azure") [
           azure-cli
         ]
-        ++ optionals (activatesFeature "gcp") [
+        ++ optionals (activatesFeature "cloud/gcp") [
           (google-cloud-sdk.withExtraComponents (
             with google-cloud-sdk.components; [
               gke-gcloud-auth-plugin
@@ -85,7 +85,7 @@
             kubectl
           ]
         )
-        ++ optionals (activatesFeature "language-servers") [
+        ++ optionals (activatesFeature "dev/language-servers") [
           bash-language-server
           emmylua-ls
           gopls
@@ -102,7 +102,7 @@
           vscode-json-languageserver
           yaml-language-server
         ]
-        ++ optionals (activatesFeature "rust") [
+        ++ optionals (activatesFeature "lang/rust") [
           # NB: rustup includes the following:
           # - cargo
           # - rust-analyzer
@@ -116,7 +116,7 @@
         };
 
         granted = {
-          enable = activatesFeature "aws";
+          enable = activatesFeature "cloud/aws";
           enableFishIntegration = true;
           enableZshIntegration = true;
         };

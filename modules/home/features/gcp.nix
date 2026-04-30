@@ -1,3 +1,3 @@
 {
-  dotfiles.knownFeatures = ["gcp"];
+  dotfiles.knownFeatures = ["cloud/gcp"];
 }
