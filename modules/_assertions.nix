@@ -28,18 +28,22 @@
     {
       name = "profiles";
       declared = host.profiles;
+      excluded = host.excludeProfiles;
       known = config.dotfiles._knownProfiles;
       humanSingular = "profile";
       humanPlural = "profile(s)";
       seedOption = "dotfiles._host.profiles";
+      excludeOption = "dotfiles._host.excludeProfiles";
     }
     {
       name = "features";
       declared = host.features;
+      excluded = host.excludeFeatures;
       known = config.dotfiles._knownFeatures;
       humanSingular = "feature";
       humanPlural = "feature(s)";
       seedOption = "dotfiles._host.features";
+      excludeOption = "dotfiles._host.excludeFeatures";
     }
   ];
 
@@ -85,6 +89,19 @@
     '';
   };
 
+  # Unknown-exclude assertion: any name listed under a role's
+  # "exclude" option must also appear in that role's known set.
+  # A misspelled exclusion would otherwise silently fail to
+  # suppress, leaving the host with an unintended activation set.
+  unknownExcludeAssertion = role: let
+    unknown = builtins.filter (n: !(builtins.elem n role.known)) role.excluded;
+  in {
+    assertion = unknown == [];
+    message = ''
+      Resolving host "${hostName}": excluding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${role.excludeOption}".
+    '';
+  };
+
   # Soft check: known feature names should follow the scoped naming
   # convention "[scope/]name", with one or more "/"-separated segments
   # of lowercase letters, digits, and hyphens. Each segment must start
@@ -98,7 +115,8 @@
 in {
   # Mismatch assertions run before unknown-name assertions so that
   # a misplaced name produces the more actionable diagnosis.
-  assertions = map mismatchAssertion crossPairs ++ map unknownAssertion roles;
+  assertions =
+    map mismatchAssertion crossPairs ++ map unknownAssertion roles ++ map unknownExcludeAssertion roles;
 
   warnings = lib.optional (badFeatureNames != []) ''
     These known feature names do not follow the scoped naming
