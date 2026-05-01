@@ -1,5 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "emacs" {
+flakeLib.mkFeature "editor/emacs" {
   homeManager = {
     lib,
     pkgs,
