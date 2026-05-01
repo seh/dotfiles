@@ -45,8 +45,8 @@ in {
     darwinConfig = inputs.dotfiles.lib.mkDarwin {
       inherit hostPlatform;
       pkgs = inputs.dotfiles.lib.pkgsFor hostPlatform;
-      host = hostRecord;
       modules = [
+        {dotfiles.host = hostRecord;}
         identity
         {
           # Override some default values as necessary:

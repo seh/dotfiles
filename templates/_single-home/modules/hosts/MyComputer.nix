@@ -46,8 +46,8 @@ in {
   flake.homeConfigurations = {
     "${username}@${hostName}" = inputs.dotfiles.lib.mkHome {
       pkgs = inputs.dotfiles.lib.pkgsFor hostPlatform;
-      host = hostRecord;
       modules = [
+        {dotfiles.host = hostRecord;}
         identity
         homeManagerConfig
         {programs.home-manager.enable = true;}

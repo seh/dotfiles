@@ -57,8 +57,8 @@ in {
   flake.nixosConfigurations = let
     nixosConfig = inputs.dotfiles.lib.mkNixOS {
       inherit hostPlatform;
-      host = hostRecord;
       modules = [
+        {dotfiles.host = hostRecord;}
         identity
         systemModule
       ];
