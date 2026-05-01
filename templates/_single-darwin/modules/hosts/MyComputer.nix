@@ -41,47 +41,33 @@
     home.stateVersion = "25.11";
   };
 in {
-  flake = {
-    homeConfigurations = {
-      "${username}@${hostName}.local" = inputs.dotfiles.lib.mkHome {
-        pkgs = inputs.dotfiles.lib.pkgsFor hostPlatform;
-        host = hostRecord;
-        modules = [
-          identity
-          homeManagerConfig
-          {programs.home-manager.enable = true;}
-        ];
-      };
+  flake.darwinConfigurations = let
+    darwinConfig = inputs.dotfiles.lib.mkDarwin {
+      inherit hostPlatform;
+      pkgs = inputs.dotfiles.lib.pkgsFor hostPlatform;
+      host = hostRecord;
+      modules = [
+        identity
+        {
+          # Override some default values as necessary:
+          # system.stateVersion = 4; # Default is 6
+
+          home-manager.users.${username} = homeManagerConfig;
+        }
+      ];
     };
-
-    darwinConfigurations = let
-      darwinConfig = inputs.dotfiles.lib.mkDarwin {
-        inherit hostPlatform;
-        pkgs = inputs.dotfiles.lib.pkgsFor hostPlatform;
-        host = hostRecord;
-        modules = [
-          identity
-          {
-            # Override some default values as necessary:
-            # system.stateVersion = 4; # Default is 6
-
-            home-manager.users.${username} = homeManagerConfig;
-          }
-        ];
-      };
-    in
-      {
-        ${hostName} = darwinConfig;
-      }
-      // lib.optionalAttrs (hostName != "local") {
-        # By default nix-darwin will look for a configuration
-        # whose name matches its hostname, per the value
-        # reported by invoking the "scutil --get
-        # LocalHostName" command.
-        #
-        # We can use a general name here to establish the
-        # common case.
-        local = darwinConfig;
-      };
-  };
+  in
+    {
+      ${hostName} = darwinConfig;
+    }
+    // lib.optionalAttrs (hostName != "local") {
+      # By default nix-darwin will look for a configuration
+      # whose name matches its hostname, per the value
+      # reported by invoking the "scutil --get
+      # LocalHostName" command.
+      #
+      # We can use a general name here to establish the
+      # common case.
+      local = darwinConfig;
+    };
 }
