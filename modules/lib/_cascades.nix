@@ -99,10 +99,15 @@
         profiles = [];
         features = [
           "claude"
+          "cloud/aws"
+          "cloud/azure"
+          "cloud/gcp"
           "coder"
           "commit-signing"
           "dev/language-servers"
           "helix"
+          "kubernetes"
+          "lang/rust"
           "opencode"
         ];
       };
