@@ -183,6 +183,13 @@
     nixpkgsModule = {
       nixpkgs.pkgs = finalPkgs;
     };
+    homeManagerSharedModule = {
+      home-manager = {
+        useGlobalPkgs = true;
+        useUserPackages = true;
+        sharedModules = [dotfilesFlake.modules.homeManager.default] ++ mkHostModule host;
+      };
+    };
     machineDefaultsModule = {config, ...}: let
       username = config.dotfiles.user.name;
     in {
@@ -205,6 +212,7 @@
             nixpkgsModule
             dotfilesFlake.modules.nixos.default
             inputs.home-manager.nixosModules.home-manager
+            homeManagerSharedModule
             machineDefaultsModule
           ]
           ++ hostModule;
