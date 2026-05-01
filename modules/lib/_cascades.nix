@@ -61,20 +61,22 @@
   # "desktop" implies "macos" only on Darwin hosts) can vary with
   # the host's framework.
   #
+  # The "all" umbrella's targets are computed from "knownProfiles"
+  # rather than enumerated, so that introducing a new profile folds
+  # it into "all" automatically. Hosts that want to skip a specific
+  # umbrella member list it under "excludeProfiles".
+  #
   # The graph across all roles MUST form a DAG; cycles are rejected
   # at runtime by "expandClosure".
   cascadesFor = {
     framework,
+    knownProfiles,
     isDarwin ? framework == "nixDarwin",
     ...
   }: {
     profiles = {
       all = {
-        profiles = [
-          "essential"
-          "development"
-          "desktop"
-        ];
+        profiles = lib.subtractLists ["all"] knownProfiles;
         features = [];
       };
       essential = {

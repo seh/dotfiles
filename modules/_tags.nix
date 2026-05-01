@@ -194,6 +194,7 @@ in {
               (flakeLib.cascadesFor {
                 inherit (host) framework;
                 isDarwin = host.framework == "nixDarwin";
+                knownProfiles = config.dotfiles._knownProfiles;
               })
               {
                 profiles = config.dotfiles._knownProfiles;
