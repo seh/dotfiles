@@ -1,10 +1,20 @@
 {
   flake.templates = rec {
-    single = {
-      path = ./_single;
-      description = "Configure one computer with Home Manager or nix-darwin.";
+    single-darwin = {
+      path = ./_single-darwin;
+      description = "Configure one Mac with nix-darwin and Home Manager.";
     };
 
-    default = single;
+    single-nixos = {
+      path = ./_single-nixos;
+      description = "Configure one Linux machine with NixOS and Home Manager.";
+    };
+
+    single-home = {
+      path = ./_single-home;
+      description = "Configure one user's home directory with Home Manager (no system-level configuration).";
+    };
+
+    default = single-darwin;
   };
 }
