@@ -10,7 +10,6 @@ flakeLib.mkProfile "web" {
     inherit (pkgs.stdenv.hostPlatform) isDarwin;
   in {
     dotfiles.firefox = {
-      enable = lib.mkDefault true;
       # TODO(seh): Set preferences.
 
       policies.Preferences."browser.contentblocking.category" = {
