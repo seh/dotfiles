@@ -1,5 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "commit-signing" {
+flakeLib.mkFeature "vcs/commit-signing" {
   homeManager = {
     options = {
       config,

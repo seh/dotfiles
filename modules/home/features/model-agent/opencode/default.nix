@@ -1,5 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "opencode" {
+flakeLib.mkFeature "model-agent/opencode" {
   homeManager = {
     lib,
     pkgs,

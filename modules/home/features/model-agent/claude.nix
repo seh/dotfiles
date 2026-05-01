@@ -1,5 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "claude" {
+flakeLib.mkFeature "model-agent/claude" {
   homeManager = {
     lib,
     pkgs,
