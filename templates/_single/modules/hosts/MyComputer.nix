@@ -24,6 +24,7 @@
     platform = hostPlatform;
     profiles = [
       "all"
+      "apps"
     ];
     features = [
       # "kubernetes"
@@ -57,10 +58,6 @@ in {
         modules = [
           identity
           {
-            # nix-darwin profiles are advertised under:
-            # https://github.com/seh/dotfiles/tree/main/modules/nix-darwin/profiles
-            dotfiles._host.profiles = ["apps"];
-
             # Override some default values as necessary:
             # system.stateVersion = 4; # Default is 6
 
