@@ -18,7 +18,7 @@
   config,
   ...
 }: let
-  host = config.dotfiles._host;
+  inherit (config.dotfiles) host;
   hostName = toString host.name;
 
   # Role-parametric driver. Iterating over this list (rather than
@@ -32,8 +32,8 @@
       known = config.dotfiles._knownProfiles;
       humanSingular = "profile";
       humanPlural = "profile(s)";
-      seedOption = "dotfiles._host.profiles";
-      excludeOption = "dotfiles._host.excludeProfiles";
+      seedOption = "dotfiles.host.profiles";
+      excludeOption = "dotfiles.host.excludeProfiles";
     }
     {
       name = "features";
@@ -42,8 +42,8 @@
       known = config.dotfiles._knownFeatures;
       humanSingular = "feature";
       humanPlural = "feature(s)";
-      seedOption = "dotfiles._host.features";
-      excludeOption = "dotfiles._host.excludeFeatures";
+      seedOption = "dotfiles.host.features";
+      excludeOption = "dotfiles.host.excludeFeatures";
     }
   ];
 

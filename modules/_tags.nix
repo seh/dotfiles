@@ -54,153 +54,167 @@ in {
       '';
     };
 
-    _host = mkOption {
-      type = types.submodule (
-        submoduleArgs: let
-          hostCfg = submoduleArgs.config;
-        in {
-          options = {
-            name = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "Resolved host name, or null when unset.";
-            };
-            framework = mkOption {
-              type = types.nullOr (
-                types.enum [
-                  "homeManager"
-                  "nixDarwin"
-                  "nixOS"
-                ]
-              );
-              default = null;
-            };
-            platform = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-            };
-            profiles = mkOption {
-              type = types.listOf types.str;
-              default = [];
-              description = ''
-                Profile names this host opts into. These seed the
-                typed cascade walk in "flake.lib.expandClosure",
-                which produces "activeProfiles" and
-                "activeFeatures".
-              '';
-            };
-            features = mkOption {
-              type = types.listOf types.str;
-              default = [];
-              description = ''
-                Feature names this host opts into directly (outside
-                of any profile that would pull them in). These seed
-                the typed cascade walk together with "profiles".
-              '';
-            };
-            excludeProfiles = mkOption {
-              type = types.listOf types.str;
-              default = [];
-              description = ''
-                Profile names to subtract from this host's resolved
-                profile closure. Useful for temporarily disabling a
-                profile without editing the host record.
-              '';
-            };
-            excludeFeatures = mkOption {
-              type = types.listOf types.str;
-              default = [];
-              description = ''
-                Feature names to subtract from this host's resolved
-                feature closure. Useful for temporarily disabling a
-                feature without editing the host record.
-              '';
-            };
-            activeProfiles = mkOption {
-              type = types.listOf types.str;
-              readOnly = true;
-              description = ''
-                Profiles in effect after expanding "profiles" through
-                the typed cascade and subtracting "excludeProfiles".
-              '';
-            };
-            activeFeatures = mkOption {
-              type = types.listOf types.str;
-              readOnly = true;
-              description = ''
-                Features in effect after expanding "profiles" and
-                "features" through the typed cascade and subtracting
-                "excludeFeatures".
-              '';
-            };
-            activatesProfile = mkOption {
-              type = types.functionTo types.bool;
-              readOnly = true;
-              description = ''
-                Predicate testing whether a profile name is present
-                in "activeProfiles".
-              '';
-            };
-            activatesFeature = mkOption {
-              type = types.functionTo types.bool;
-              readOnly = true;
-              description = ''
-                Predicate testing whether a feature name is present
-                in "activeFeatures".
-              '';
-            };
-            unreachableProfiles = mkOption {
-              type = types.listOf types.str;
-              readOnly = true;
-              description = ''
-                Profiles advertised via "dotfiles._knownProfiles"
-                that this host's resolved closure ("activeProfiles")
-                does not include. Exposed as a diagnostic aid.
-              '';
-            };
-            unreachableFeatures = mkOption {
-              type = types.listOf types.str;
-              readOnly = true;
-              description = ''
-                Features advertised via "dotfiles._knownFeatures"
-                that this host's resolved closure ("activeFeatures")
-                does not include. Exposed as a diagnostic aid.
-              '';
-            };
+    host = mkOption {
+      type = types.submodule {
+        options = {
+          name = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "Resolved host name, or null when unset.";
           };
-
-          config = let
-            expanded =
-              if flakeLib != null && flakeLib ? expandClosure && flakeLib ? cascadesFor
-              then
-                flakeLib.expandClosure
-                (flakeLib.cascadesFor {
-                  inherit (hostCfg) framework;
-                  isDarwin = hostCfg.framework == "nixDarwin";
-                })
-                {
-                  profiles = config.dotfiles._knownProfiles;
-                  features = config.dotfiles._knownFeatures;
-                }
-                {
-                  inherit (hostCfg) profiles features;
-                }
-              else {
-                inherit (hostCfg) profiles features;
-              };
-            activeProfiles = lib.subtractLists hostCfg.excludeProfiles expanded.profiles;
-            activeFeatures = lib.subtractLists hostCfg.excludeFeatures expanded.features;
-          in {
-            inherit activeProfiles activeFeatures;
-            activatesProfile = name: builtins.elem name activeProfiles;
-            activatesFeature = name: builtins.elem name activeFeatures;
+          framework = mkOption {
+            type = types.nullOr (
+              types.enum [
+                "homeManager"
+                "nixDarwin"
+                "nixOS"
+              ]
+            );
+            default = null;
           };
-        }
-      );
+          platform = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+          };
+          profiles = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = ''
+              Profile names this host opts into. These seed the
+              typed cascade walk in "flake.lib.expandClosure",
+              which produces "_host.activeProfiles" and
+              "_host.activeFeatures".
+            '';
+          };
+          features = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = ''
+              Feature names this host opts into directly (outside
+              of any profile that would pull them in). These seed
+              the typed cascade walk together with "profiles".
+            '';
+          };
+          excludeProfiles = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = ''
+              Profile names to subtract from this host's resolved
+              profile closure. Useful for temporarily disabling a
+              profile without editing the host record.
+            '';
+          };
+          excludeFeatures = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = ''
+              Feature names to subtract from this host's resolved
+              feature closure. Useful for temporarily disabling a
+              feature without editing the host record.
+            '';
+          };
+        };
+      };
       default = {};
       description = ''
-        The current host's resolved record. Set internally by
-        "lib.mkHome", "lib.mkDarwin", and "lib.mkNixOS".
+        User-facing host record. Set by "lib.mkHome",
+        "lib.mkDarwin", and "lib.mkNixOS" from the "host = {...}"
+        argument; consumer modules may extend its "profiles",
+        "features", "excludeProfiles", and "excludeFeatures" lists
+        via the module system's append-merge.
+      '';
+    };
+
+    _host = mkOption {
+      type = types.submodule {
+        options = {
+          activeProfiles = mkOption {
+            type = types.listOf types.str;
+            readOnly = true;
+            description = ''
+              Profiles in effect after expanding "host.profiles"
+              through the typed cascade and subtracting
+              "host.excludeProfiles".
+            '';
+          };
+          activeFeatures = mkOption {
+            type = types.listOf types.str;
+            readOnly = true;
+            description = ''
+              Features in effect after expanding "host.profiles"
+              and "host.features" through the typed cascade and
+              subtracting "host.excludeFeatures".
+            '';
+          };
+          activatesProfile = mkOption {
+            type = types.functionTo types.bool;
+            readOnly = true;
+            description = ''
+              Predicate testing whether a profile name is present
+              in "activeProfiles".
+            '';
+          };
+          activatesFeature = mkOption {
+            type = types.functionTo types.bool;
+            readOnly = true;
+            description = ''
+              Predicate testing whether a feature name is present
+              in "activeFeatures".
+            '';
+          };
+          unreachableProfiles = mkOption {
+            type = types.listOf types.str;
+            readOnly = true;
+            description = ''
+              Profiles advertised via "dotfiles._knownProfiles"
+              that this host's resolved closure ("activeProfiles")
+              does not include. Exposed as a diagnostic aid.
+            '';
+          };
+          unreachableFeatures = mkOption {
+            type = types.listOf types.str;
+            readOnly = true;
+            description = ''
+              Features advertised via "dotfiles._knownFeatures"
+              that this host's resolved closure ("activeFeatures")
+              does not include. Exposed as a diagnostic aid.
+            '';
+          };
+        };
+
+        config = let
+          inherit (config.dotfiles) host;
+          seeds = {
+            inherit (host) profiles features;
+          };
+          expanded =
+            if flakeLib != null && flakeLib ? expandClosure && flakeLib ? cascadesFor
+            then
+              flakeLib.expandClosure
+              (flakeLib.cascadesFor {
+                inherit (host) framework;
+                isDarwin = host.framework == "nixDarwin";
+              })
+              {
+                profiles = config.dotfiles._knownProfiles;
+                features = config.dotfiles._knownFeatures;
+              }
+              seeds
+            else seeds;
+          activeProfiles = lib.subtractLists host.excludeProfiles expanded.profiles;
+          activeFeatures = lib.subtractLists host.excludeFeatures expanded.features;
+        in {
+          inherit activeProfiles activeFeatures;
+          activatesProfile = name: builtins.elem name activeProfiles;
+          activatesFeature = name: builtins.elem name activeFeatures;
+          unreachableProfiles = lib.subtractLists activeProfiles config.dotfiles._knownProfiles;
+          unreachableFeatures = lib.subtractLists activeFeatures config.dotfiles._knownFeatures;
+        };
+      };
+      default = {};
+      description = ''
+        Computed activation record derived from "dotfiles.host"
+        and the cascade table. All fields are read-only.
       '';
     };
 
@@ -256,10 +270,5 @@ in {
         possible without a flake-parts context.
       '';
     };
-  };
-
-  config.dotfiles._host = {
-    unreachableProfiles = lib.subtractLists config.dotfiles._host.activeProfiles config.dotfiles._knownProfiles;
-    unreachableFeatures = lib.subtractLists config.dotfiles._host.activeFeatures config.dotfiles._knownFeatures;
   };
 }
