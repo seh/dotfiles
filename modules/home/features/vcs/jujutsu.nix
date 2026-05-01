@@ -1,5 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "jujutsu" {
+flakeLib.mkFeature "vcs/jujutsu" {
   homeManager = {
     options = {
       lib,
@@ -114,7 +114,7 @@ flakeLib.mkFeature "jujutsu" {
                 emacsMergeToolName = "ediff-alt";
               in {
                 merge-tools = {
-                  ${difftasticMergeToolName} = lib.mkIf (config.dotfiles._host.activatesFeature "difftastic") {
+                  ${difftasticMergeToolName} = lib.mkIf (config.dotfiles._host.activatesFeature "dev/difftastic") {
                     program = lib.getExe config.programs.difftastic.package;
                     diff-args = [
                       "--color=always"
@@ -125,7 +125,7 @@ flakeLib.mkFeature "jujutsu" {
                   ${emacsMergeToolName} = let
                     programName = "emacs-ediff-alt";
                     emacsDiffProgram = pkgs.writeShellScriptBin programName (
-                      builtins.readFile (./. + "/${programName}")
+                      builtins.readFile (../. + "/${programName}")
                     );
                   in {
                     program = lib.getExe emacsDiffProgram;
@@ -146,7 +146,7 @@ flakeLib.mkFeature "jujutsu" {
                   editor = let
                     programName = "emacsclient-for-jj-describe";
                     emacsclientProgram = pkgs.writeShellScriptBin programName (
-                      builtins.readFile (./. + "/${programName}")
+                      builtins.readFile (../. + "/${programName}")
                     );
                   in
                     lib.getExe emacsclientProgram;
@@ -201,7 +201,7 @@ flakeLib.mkFeature "jujutsu" {
               };
             };
           };
-          configLua = ./jjui-config.lua;
+          configLua = ../jjui-config.lua;
         };
       };
       home.packages = with pkgs; [
