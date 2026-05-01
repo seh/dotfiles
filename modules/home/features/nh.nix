@@ -1,34 +1,26 @@
-{
-  dotfiles.featureModules.homeManager.nh = {
-    config,
+{flakeLib, ...}:
+flakeLib.mkFeature "nh" {
+  homeManager = {
     lib,
     pkgs,
     ...
-  }: let
-    cfg = config.dotfiles.nh;
-  in {
-    options.dotfiles.nh = {
-      enable = lib.mkEnableOption "nh";
-    };
-
-    config = lib.mkIf cfg.enable {
-      programs.nh =
-        {
+  }: {
+    programs.nh =
+      {
+        enable = lib.mkDefault true;
+        package = lib.mkDefault pkgs.nh;
+        clean = {
           enable = lib.mkDefault true;
-          package = lib.mkDefault pkgs.nh;
-          clean = {
-            enable = lib.mkDefault true;
-            extraArgs = "--optimize";
-          };
+          extraArgs = "--optimize";
+        };
+      }
+      // (
+        let
+          hostName = "local";
+        in {
+          darwinFlake = lib.mkDefault (".#darwinConfigurations." + hostName);
+          osFlake = lib.mkDefault (".#nixosConfigurations." + hostName);
         }
-        // (
-          let
-            hostName = "local";
-          in {
-            darwinFlake = lib.mkDefault (".#darwinConfigurations." + hostName);
-            osFlake = lib.mkDefault (".#nixosConfigurations." + hostName);
-          }
-        );
-    };
+      );
   };
 }

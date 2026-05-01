@@ -102,40 +102,11 @@
       };
 
       dotfiles = {
-        bash = {
-          enable = lib.mkDefault true;
-        };
-        difftastic = {
-          enable = lib.mkDefault true;
-        };
-        emacs = {
-          enable = lib.mkDefault true;
-        };
-        git = {
-          enable = lib.mkDefault true;
-        };
         gnupg = {
-          enable = lib.mkDefault true;
           enableSSHSupport = true;
         };
-        jujutsu = {
-          enable = lib.mkDefault true;
-        };
-        kitty = {
-          enable = lib.mkDefault true;
-        };
-        nh = {
-          enable = lib.mkDefault true;
-        };
-        nushell = {
-          enable = lib.mkDefault true;
-        };
         ssh = {
-          enable = lib.mkDefault true;
           enableMultiplexing = lib.mkDefault true;
-        };
-        zsh = {
-          enable = lib.mkDefault true;
         };
       };
     };

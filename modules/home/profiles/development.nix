@@ -68,18 +68,8 @@
       };
 
       dotfiles = {
-        claude = {
-          enable = lib.mkDefault true;
-        };
         coder = {
-          enable = lib.mkDefault true;
           enableSSHIntegration = lib.mkDefault true;
-        };
-        helix = {
-          enable = lib.mkDefault true;
-        };
-        opencode = {
-          enable = lib.mkDefault true;
         };
       };
     };

@@ -1,22 +1,23 @@
-{
-  dotfiles.featureModules.homeManager.gnupg = {
-    config,
-    lib,
-    pkgs,
-    ...
-  }: let
-    cfg = config.dotfiles.gnupg;
-    userConfig = config.dotfiles.user;
-    hasGPGSigningKey = userConfig.gpgKey != null;
-    inherit (pkgs.stdenv.hostPlatform) isDarwin;
-  in {
-    options.dotfiles.gnupg = {
-      enable = lib.mkEnableOption "GnuPG";
-
-      enableSSHSupport = lib.mkEnableOption "GnuPG SSH support";
+{flakeLib, ...}:
+flakeLib.mkFeature "gnupg" {
+  homeManager = {
+    options = {lib, ...}: {
+      options.dotfiles.gnupg = {
+        enableSSHSupport = lib.mkEnableOption "GnuPG SSH support";
+      };
     };
 
-    config = lib.mkIf cfg.enable {
+    config = {
+      config,
+      lib,
+      pkgs,
+      ...
+    }: let
+      cfg = config.dotfiles.gnupg;
+      userConfig = config.dotfiles.user;
+      hasGPGSigningKey = userConfig.gpgKey != null;
+      inherit (pkgs.stdenv.hostPlatform) isDarwin;
+    in {
       programs.gpg = {
         enable = true;
         settings = lib.mkIf hasGPGSigningKey {

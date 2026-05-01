@@ -1,24 +1,25 @@
 # Basis of inspiration:
 #   https://github.com/sebastiant/dotfiles/blob/fd3f32073bce885027f7069d870ba4ea254fc348/programs/zsh/zsh.nix
-{
-  dotfiles.featureModules.homeManager.zsh = {
-    config,
-    lib,
-    ...
-  }: let
-    cfg = config.dotfiles.zsh;
-  in {
-    options.dotfiles.zsh = {
-      enable = lib.mkEnableOption "zsh";
-
-      enablePowerlevel10k = lib.mkOption {
-        type = lib.types.bool;
-        default = true;
-        description = "Whether to install and activate the Powerlevel10k theme for zsh.";
+{flakeLib, ...}:
+flakeLib.mkFeature "zsh" {
+  homeManager = {
+    options = {lib, ...}: {
+      options.dotfiles.zsh = {
+        enablePowerlevel10k = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Whether to install and activate the Powerlevel10k theme for zsh.";
+        };
       };
     };
 
-    config = lib.mkIf cfg.enable {
+    config = {
+      config,
+      lib,
+      ...
+    }: let
+      cfg = config.dotfiles.zsh;
+    in {
       # NB: We reference this file from the "zshrc" file.
       home.file.".p10k.zsh" = lib.mkIf cfg.enablePowerlevel10k {source = ./p10k.zsh;};
 
