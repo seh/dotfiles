@@ -125,7 +125,7 @@ flakeLib.mkFeature "vcs/jujutsu" {
                   ${emacsMergeToolName} = let
                     programName = "emacs-ediff-alt";
                     emacsDiffProgram = pkgs.writeShellScriptBin programName (
-                      builtins.readFile (../. + "/${programName}")
+                      builtins.readFile (./. + "/${programName}")
                     );
                   in {
                     program = lib.getExe emacsDiffProgram;
@@ -146,7 +146,7 @@ flakeLib.mkFeature "vcs/jujutsu" {
                   editor = let
                     programName = "emacsclient-for-jj-describe";
                     emacsclientProgram = pkgs.writeShellScriptBin programName (
-                      builtins.readFile (../. + "/${programName}")
+                      builtins.readFile (./. + "/${programName}")
                     );
                   in
                     lib.getExe emacsclientProgram;
@@ -201,7 +201,7 @@ flakeLib.mkFeature "vcs/jujutsu" {
               };
             };
           };
-          configLua = ../jjui-config.lua;
+          configLua = ./jjui-config.lua;
         };
       };
       home.packages = with pkgs; [
