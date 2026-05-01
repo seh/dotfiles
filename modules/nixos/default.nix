@@ -17,13 +17,6 @@
             _knownFeatures = flake.config.dotfiles.knownFeatures;
             _flakeLib = flake.config.flake.lib;
           };
-          home-manager = {
-            useGlobalPkgs = true;
-            useUserPackages = true;
-            sharedModules = [
-              flake.config.flake.modules.homeManager.default
-            ];
-          };
         }
       ];
   };
