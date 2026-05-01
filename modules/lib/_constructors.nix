@@ -56,12 +56,12 @@
     );
 
   # Split a caller-supplied "host" record into a module that seeds
-  # "dotfiles._resolved" with its fields. The declared "profiles" and
+  # "dotfiles.host" with its fields. The declared "profiles" and
   # "features" lists are forwarded verbatim; their closures are
-  # computed inside the host submodule in "../_tags.nix".
+  # computed inside the "_resolved" submodule in "../_tags.nix".
   mkHostModule = host:
     lib.optional (host != null) {
-      dotfiles._resolved = host;
+      dotfiles.host = host;
     };
 
   mkHome = {
