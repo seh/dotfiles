@@ -79,15 +79,35 @@
       };
       essential = {
         profiles = ["minimal"];
-        features = [];
+        features = [
+          "bash"
+          "difftastic"
+          "emacs"
+          "git"
+          "gnupg"
+          "jujutsu"
+          "kitty"
+          "nh"
+          "nix"
+          "nushell"
+          "shell"
+          "ssh"
+          "zsh"
+        ];
       };
       development = {
         profiles = [];
-        features = ["dev/language-servers"];
+        features = [
+          "claude"
+          "coder"
+          "commit-signing"
+          "dev/language-servers"
+          "helix"
+          "opencode"
+        ];
       };
       desktop = {
         profiles = ["fonts"] ++ lib.optional isDarwin "macos";
-        features = [];
       };
     };
     features = {
