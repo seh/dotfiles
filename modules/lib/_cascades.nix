@@ -32,38 +32,45 @@
         profiles = ["minimal"];
         features = [
           "bash"
-          "difftastic"
-          "emacs"
-          "git"
+          "dev/difftastic"
+          "editor/emacs"
           "gnupg"
-          "jujutsu"
           "kitty"
           "nh"
           "nix"
           "nushell"
           "shell"
           "ssh"
+          "vcs/git"
+          "vcs/jujutsu"
           "zsh"
         ];
       };
       development = {
         profiles = [];
         features = [
-          "claude"
           "cloud/aws"
           "cloud/azure"
           "cloud/gcp"
           "coder"
-          "commit-signing"
           "dev/language-servers"
-          "helix"
+          "editor/helix"
           "kubernetes"
           "lang/rust"
-          "opencode"
+          "model-agent/claude"
+          "model-agent/opencode"
+          "vcs/commit-signing"
         ];
       };
       desktop = {
-        profiles = ["fonts"] ++ lib.optional isDarwin "macos";
+        profiles =
+          [
+            "fonts"
+          ]
+          ++ lib.optionals isDarwin [
+            "apps"
+            "macos"
+          ];
       };
       web = {
         profiles = [];

@@ -1,5 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "helix" {
+flakeLib.mkFeature "editor/helix" {
   homeManager = {
     lib,
     pkgs,
