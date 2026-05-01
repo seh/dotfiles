@@ -7,19 +7,33 @@
 # them as plain library functions:
 #
 #   inputs.dotfiles.lib.mkDarwin {
-#     modules = [./machine.nix];
-#     host = { framework = "nixDarwin"; profiles = ["essential"]; };
+#     modules = [
+#       {
+#         dotfiles.host = {
+#           framework = "nixDarwin";
+#           profiles = ["essential"];
+#         };
+#       }
+#       ./machine.nix
+#     ];
 #   };
 #
 # without having to install any flake-parts module into the consumer
 # evaluator. All identity and behavior assignments (e.g.
-# "dotfiles.user.email", "dotfiles.knownProfiles") happen inside the
-# modules the consumer passes through "modules = [...]", flowing
-# through the target evaluator's module-system merge where those
-# fields are actually read. That keeps assignments close to the
-# evaluator that reads them and avoids the flake-parts boundary
+# "dotfiles.user.email", "dotfiles.host.profiles", "dotfiles.knownProfiles")
+# happen inside the modules the consumer passes through "modules =
+# [...]", flowing through the target evaluator's module-system merge
+# where those fields are actually read. That keeps assignments close
+# to the evaluator that reads them and avoids the flake-parts boundary
 # crossing that the previous proxy option ("_flakeOptions") used to
 # bridge.
+#
+# For the system constructors ("mkDarwin" and "mkNixOS"), the
+# sub-namespaces named in "propagatedSubNamespaces" are mirrored from
+# the system evaluator's merged "config.dotfiles.<name>" into each
+# nested "home-manager.users.<user>.dotfiles.<name>", so identity and
+# host data assigned at the system level reaches the nested Home
+# Manager evaluator as well.
 {
   lib,
   inputs,
@@ -31,6 +45,14 @@
   inherit (inputs.nixos.lib) nixosSystem;
 
   nixpkgsDefaults = import ../_nixpkgs-defaults.nix;
+
+  # Sub-namespaces of "config.dotfiles" that the system constructors
+  # mirror into each nested Home Manager evaluator. Add an entry here
+  # to extend the propagation registry; no other change is required.
+  propagatedSubNamespaces = [
+    "host"
+    "user"
+  ];
 
   # Build a "pkgs" instance for the given system, with this flake's
   # own nixpkgs overlay and shared "allowUnfreePackages" list
@@ -55,20 +77,20 @@
       }
     );
 
-  # Split a caller-supplied "host" record into a module that seeds
-  # "dotfiles.host" with its fields. The declared "profiles" and
-  # "features" lists are forwarded verbatim; their closures are
-  # computed inside the "_host" submodule in "../_tags.nix".
-  mkHostModule = host:
-    lib.optional (host != null) {
-      dotfiles.host = host;
-    };
+  # System-level module that mirrors each named sub-namespace from
+  # the system evaluator's merged "config.dotfiles.<name>" into
+  # "home-manager.users.${config.dotfiles.user.name}.dotfiles.<name>"
+  # so the nested Home Manager evaluator sees the same values.
+  identityPropagationModule = {config, ...}: {
+    home-manager.users.${config.dotfiles.user.name}.dotfiles = lib.genAttrs propagatedSubNamespaces (
+      name: config.dotfiles.${name}
+    );
+  };
 
   mkHome = {
     pkgs,
     overlays ? [],
     modules ? [],
-    host ? null,
     ...
   } @ args: let
     finalPkgs = pkgs.extend (
@@ -93,12 +115,10 @@
         homeDirectory = lib.mkDefault "${userDir}/${config.home.username}";
       };
     };
-    hostModule = mkHostModule host;
   in
     homeManagerConfiguration (
       builtins.removeAttrs args [
         "overlays"
-        "host"
       ]
       // {
         pkgs = finalPkgs;
@@ -107,8 +127,7 @@
           ++ [
             dotfilesFlake.modules.homeManager.default
             homeDefaultsModule
-          ]
-          ++ hostModule;
+          ];
       }
     );
 
@@ -117,7 +136,6 @@
     pkgs ? pkgsFor hostPlatform,
     overlays ? [],
     modules ? [],
-    host ? null,
     ...
   } @ args: let
     finalPkgs = pkgs.extend (
@@ -129,7 +147,7 @@
     homeManagerSharedModule = {
       home-manager = {
         useGlobalPkgs = true;
-        sharedModules = [dotfilesFlake.modules.homeManager.default] ++ mkHostModule host;
+        sharedModules = [dotfilesFlake.modules.homeManager.default];
       };
     };
     machineDefaultsModule = {config, ...}: let
@@ -146,14 +164,12 @@
       };
       users.users.${username}.home = lib.mkDefault "/Users/${username}";
     };
-    hostModule = mkHostModule host;
   in
     darwinSystem (
       builtins.removeAttrs args [
         "hostPlatform"
         "overlays"
         "pkgs"
-        "host"
       ]
       // {
         modules =
@@ -164,8 +180,8 @@
             inputs.home-manager.darwinModules.default
             homeManagerSharedModule
             machineDefaultsModule
-          ]
-          ++ hostModule;
+            identityPropagationModule
+          ];
       }
     );
 
@@ -174,7 +190,6 @@
     pkgs ? pkgsFor hostPlatform,
     overlays ? [],
     modules ? [],
-    host ? null,
     ...
   } @ args: let
     finalPkgs = pkgs.extend (
@@ -187,7 +202,7 @@
       home-manager = {
         useGlobalPkgs = true;
         useUserPackages = true;
-        sharedModules = [dotfilesFlake.modules.homeManager.default] ++ mkHostModule host;
+        sharedModules = [dotfilesFlake.modules.homeManager.default];
       };
     };
     machineDefaultsModule = {config, ...}: let
@@ -196,14 +211,12 @@
       nixpkgs.hostPlatform = hostPlatform;
       users.users.${username}.home = lib.mkDefault "/home/${username}";
     };
-    hostModule = mkHostModule host;
   in
     nixosSystem (
       builtins.removeAttrs args [
         "hostPlatform"
         "overlays"
         "pkgs"
-        "host"
       ]
       // {
         modules =
@@ -214,8 +227,8 @@
             inputs.home-manager.nixosModules.home-manager
             homeManagerSharedModule
             machineDefaultsModule
-          ]
-          ++ hostModule;
+            identityPropagationModule
+          ];
       }
     );
 
