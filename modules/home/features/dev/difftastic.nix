@@ -1,5 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "difftastic" {
+flakeLib.mkFeature "dev/difftastic" {
   homeManager = {
     lib,
     pkgs,

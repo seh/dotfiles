@@ -3,8 +3,11 @@ flakeLib.mkFeature "cloud/aws" {
   homeManager = {pkgs, ...}: {
     home.packages = with pkgs; [
       aws-vault
-      awscli2
     ];
+
+    programs.awscli = {
+      enable = true;
+    };
 
     programs.granted = {
       enable = true;

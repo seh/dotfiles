@@ -1,5 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "git" {
+flakeLib.mkFeature "vcs/git" {
   homeManager = {
     config,
     lib,
