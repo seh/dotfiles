@@ -1,5 +1,6 @@
-{
-  dotfiles.featureModules.nixOS.nix = {
+{flakeLib, ...}:
+flakeLib.mkFeature "nix" {
+  nixOS = {
     lib,
     pkgs,
     config,

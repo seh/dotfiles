@@ -16,8 +16,6 @@
         lib.optionals (lib.meta.availableOn pkgs.stdenv.hostPlatform candidatePkg) [
           candidatePkg
         ];
-
-      dotfiles.emacs.enable = lib.mkDefault true;
     };
   };
 }
