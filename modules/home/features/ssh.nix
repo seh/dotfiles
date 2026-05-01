@@ -1,25 +1,27 @@
-{
-  dotfiles.featureModules.homeManager.ssh = {
-    lib,
-    pkgs,
-    config,
-    ...
-  }: let
-    cfg = config.dotfiles.ssh;
-    inherit (pkgs.stdenv.hostPlatform) isDarwin;
-    githubKnownHostsFile = ./ssh-known-hosts-github;
-    panixKnownHostsFile = pkgs.fetchurl {
-      url = "https://config.panix.com/vault/sshdata/ssh.ed25519";
-      sha256 = "a8a0f8f28ea66d0a3eb73c926b51ede407297fb03143e4ea2ff529b9fe542424";
-    };
-    sshControlDir = "~/.ssh/sockets";
-  in {
-    options.dotfiles.ssh = {
-      enable = lib.mkEnableOption "SSH";
-      enableMultiplexing = lib.mkEnableOption "SSH multiplexing";
+{flakeLib, ...}:
+flakeLib.mkFeature "ssh" {
+  homeManager = {
+    options = {lib, ...}: {
+      options.dotfiles.ssh = {
+        enableMultiplexing = lib.mkEnableOption "SSH multiplexing";
+      };
     };
 
-    config = lib.mkIf cfg.enable {
+    config = {
+      lib,
+      pkgs,
+      config,
+      ...
+    }: let
+      cfg = config.dotfiles.ssh;
+      inherit (pkgs.stdenv.hostPlatform) isDarwin;
+      githubKnownHostsFile = ./ssh-known-hosts-github;
+      panixKnownHostsFile = pkgs.fetchurl {
+        url = "https://config.panix.com/vault/sshdata/ssh.ed25519";
+        sha256 = "a8a0f8f28ea66d0a3eb73c926b51ede407297fb03143e4ea2ff529b9fe542424";
+      };
+      sshControlDir = "~/.ssh/sockets";
+    in {
       programs.ssh = lib.mkMerge [
         {
           enable = true;

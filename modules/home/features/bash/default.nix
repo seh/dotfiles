@@ -1,20 +1,9 @@
-{
-  dotfiles.featureModules.homeManager.bash = {
-    config,
-    lib,
-    ...
-  }: let
-    cfg = config.dotfiles.bash;
-  in {
-    options.dotfiles.bash = {
-      enable = lib.mkEnableOption "bash";
-    };
-
-    config = lib.mkIf cfg.enable {
-      # TODO(seh): Elaborate this configuration.
-      programs.bash = {
-        enable = true;
-      };
+{flakeLib, ...}:
+flakeLib.mkFeature "bash" {
+  homeManager = _: {
+    # TODO(seh): Elaborate this configuration.
+    programs.bash = {
+      enable = true;
     };
   };
 }
