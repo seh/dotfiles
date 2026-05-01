@@ -116,6 +116,10 @@
       desktop = {
         profiles = ["fonts"] ++ lib.optional isDarwin "macos";
       };
+      web = {
+        profiles = [];
+        features = ["web/firefox"];
+      };
     };
     features = {
       # Leaf role: no entries today. Feature-to-profile cascades are
