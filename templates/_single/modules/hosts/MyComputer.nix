@@ -11,11 +11,13 @@
   username = identity.dotfiles.user.name;
 
   # Activate feature modules by listing profiles and features that
-  # apply to this host. The "all" profile is a convenience aggregate
-  # that expands (via the cascade table in the dotfiles flake) to
-  # "essential", "development", "desktop", "fonts", and (on Darwin)
-  # "macos". Add specific features such as "kubernetes", "cloud/aws",
-  # or "lang/rust" under "features". See:
+  # apply to this host. The "all" profile is an umbrella that
+  # expands to every profile this flake advertises, computed from
+  # the "knownProfiles" registry. To opt out of specific umbrella
+  # members (such as the Firefox/Safari customization in "web"),
+  # list them under "excludeProfiles". Add specific features such
+  # as "kubernetes", "cloud/aws", or "lang/rust" under "features".
+  # See:
   # https://github.com/seh/dotfiles/tree/main/modules/home/profiles
   # https://github.com/seh/dotfiles/tree/main/modules/home/features
   hostRecord = {
@@ -24,8 +26,10 @@
     platform = hostPlatform;
     profiles = [
       "all"
-      "apps"
     ];
+    # Opt out of specific umbrella members. For example, to skip
+    # Firefox/Safari customization:
+    # excludeProfiles = ["web"];
     features = [
       # "kubernetes"
       # "cloud/aws"
