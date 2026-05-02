@@ -1,19 +1,17 @@
 # Identity values for this flake. Imported as plain data by
-# "./modules/hosts/MyComputer.nix" and passed into
+# "./modules/hosts/MyComputer.nix" and used to seed the per-user
+# entry under "dotfiles.users" passed into
 # "inputs.dotfiles.lib.mkNixOS" through the "modules" argument so
 # that the target NixOS and home-manager evaluators apply the
-# assignment. The schema for "dotfiles.user" is declared by the
-# "_user-identity.nix" module that each of the home-manager,
-# nix-darwin, and NixOS class aggregators in the dotfiles flake
-# imports.
+# assignment. The schema for "dotfiles.users.<name>" is declared by
+# the "_host-users.nix" module that the nix-darwin and NixOS class
+# aggregators in the dotfiles flake import.
 #
 # Available options:
-#   https://github.com/seh/dotfiles/blob/main/modules/_user-identity.nix
+#   https://github.com/seh/dotfiles/blob/main/modules/_host-users.nix
 {
-  dotfiles.user = {
-    email = "seharris@example.com";
-    fullName = "Steve Harris";
-    gpgKey = "CAFEBABECAFEBABE";
-    name = "seharris";
-  };
+  email = "seharris@example.com";
+  fullName = "Steve Harris";
+  gpgKey = "CAFEBABECAFEBABE";
+  name = "seharris";
 }

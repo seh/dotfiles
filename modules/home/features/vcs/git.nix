@@ -7,7 +7,7 @@ flakeLib.mkFeature "vcs/git" {
     ...
   }: let
     inherit (config.dotfiles) commitSigning;
-    userConfig = config.dotfiles.user;
+    userConfig = config.dotfiles.identity;
   in {
     programs.git = {
       enable = lib.mkDefault true;
