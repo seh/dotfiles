@@ -14,7 +14,7 @@ flakeLib.mkFeature "gnupg" {
       ...
     }: let
       cfg = config.dotfiles.gnupg;
-      userConfig = config.dotfiles.user;
+      userConfig = config.dotfiles.identity;
       hasGPGSigningKey = userConfig.gpgKey != null;
       inherit (pkgs.stdenv.hostPlatform) isDarwin;
     in {
