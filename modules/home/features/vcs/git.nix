@@ -24,10 +24,21 @@ flakeLib.mkFeature "vcs/git" {
       # Use Home Manager's native signing options.
       signing = lib.mkIf commitSigning.hasKey {
         signByDefault = true;
-        format =
-          if commitSigning.backend == "ssh"
-          then "ssh"
-          else null;
+        format = let
+          # NB: Home Manager's "programs.git.signing.format" option also
+          # accepts "x509" (S/MIME via "gpgsm"), but our
+          # "commitSigning.backend" enumeration does not yet offer a
+          # backend that maps to it. Add an "x509" entry here in
+          # tandem with extending the enumeration if and when X.509
+          # signing becomes desirable.
+          signingFormatsByBackend = {
+            gpg = "openpgp";
+            ssh = "ssh";
+          };
+        in
+          if commitSigning.backend == null
+          then null
+          else signingFormatsByBackend.${commitSigning.backend};
         inherit (commitSigning) key;
       };
 
