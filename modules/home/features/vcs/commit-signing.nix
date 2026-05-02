@@ -7,7 +7,7 @@ flakeLib.mkFeature "vcs/commit-signing" {
       pkgs,
       ...
     }: let
-      userConfig = config.dotfiles.user;
+      userConfig = config.dotfiles.identity;
 
       hasGPGSigningKey = userConfig.gpgKey != null;
       hasSSHSigningKey = userConfig.sshSigning.key != null;
@@ -83,10 +83,10 @@ flakeLib.mkFeature "vcs/commit-signing" {
           description = ''
             The signing backend to use for commits: "gpg" or "ssh".
 
-            Defaults to the value of dotfiles.user.commitSigningBackend if set.
+            Defaults to the value of dotfiles.identity.commitSigningBackend if set.
             Otherwise, when only one of gpgKey or sshSigning.key is configured,
             this defaults to the corresponding backend. When both are configured
-            and dotfiles.user.commitSigningBackend is not set, this option must
+            and dotfiles.identity.commitSigningBackend is not set, this option must
             be set explicitly.
           '';
         };
@@ -117,7 +117,7 @@ flakeLib.mkFeature "vcs/commit-signing" {
     };
 
     config = {config, ...}: let
-      userConfig = config.dotfiles.user;
+      userConfig = config.dotfiles.identity;
       hasGPGSigningKey = userConfig.gpgKey != null;
       hasSSHSigningKey = userConfig.sshSigning.key != null;
     in {
@@ -129,11 +129,11 @@ flakeLib.mkFeature "vcs/commit-signing" {
         }
         {
           assertion = userConfig.commitSigningBackend == "gpg" -> hasGPGSigningKey;
-          message = ''dotfiles.user.commitSigningBackend is "gpg" but no gpgKey is configured'';
+          message = ''dotfiles.identity.commitSigningBackend is "gpg" but no gpgKey is configured'';
         }
         {
           assertion = userConfig.commitSigningBackend == "ssh" -> hasSSHSigningKey;
-          message = ''dotfiles.user.commitSigningBackend is "ssh" but no sshSigning.key is configured'';
+          message = ''dotfiles.identity.commitSigningBackend is "ssh" but no sshSigning.key is configured'';
         }
       ];
     };
