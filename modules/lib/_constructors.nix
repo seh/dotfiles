@@ -11,6 +11,12 @@
 #       {
 #         dotfiles.host = {
 #           framework = "nixDarwin";
+#         };
+#         dotfiles.users.seh = {
+#           identity = {
+#             email = "seh@panix.com";
+#             fullName = "Steven E. Harris";
+#           };
 #           profiles = ["essential"];
 #         };
 #       }
@@ -20,20 +26,23 @@
 #
 # without having to install any flake-parts module into the consumer
 # evaluator. All identity and behavior assignments (e.g.
-# "dotfiles.user.email", "dotfiles.host.profiles", "dotfiles.knownProfiles")
-# happen inside the modules the consumer passes through "modules =
-# [...]", flowing through the target evaluator's module-system merge
-# where those fields are actually read. That keeps assignments close
-# to the evaluator that reads them and avoids the flake-parts boundary
-# crossing that the previous proxy option ("_flakeOptions") used to
-# bridge.
+# "dotfiles.users.<name>.identity.email", "dotfiles.users.<name>.profiles",
+# "dotfiles.knownProfiles") happen inside the modules the consumer
+# passes through "modules = [...]", flowing through the target
+# evaluator's module-system merge where those fields are actually
+# read. That keeps assignments close to the evaluator that reads
+# them and avoids the flake-parts boundary crossing that the
+# previous proxy option ("_flakeOptions") used to bridge.
 #
-# For the system constructors ("mkDarwin" and "mkNixOS"), the
-# sub-namespaces named in "propagatedSubNamespaces" are mirrored from
-# the system evaluator's merged "config.dotfiles.<name>" into each
-# nested "home-manager.users.<user>.dotfiles.<name>", so identity and
-# host data assigned at the system level reaches the nested Home
-# Manager evaluator as well.
+# For the system constructors ("mkDarwin" and "mkNixOS"), each user
+# assigned under "dotfiles.users" is mirrored into
+# "home-manager.users.<name>.dotfiles" in two places: the user's
+# identity fields under "dotfiles.identity", and the system-level
+# "dotfiles.host" extended with the user's cascade inputs (profiles,
+# features, excludeProfiles, excludeFeatures) under "dotfiles.host".
+# The latter shape lets the existing "dotfiles._host" derivation in
+# "modules/_tags.nix" continue to read its inputs from one place
+# inside the nested home-manager evaluator without modification.
 {
   lib,
   inputs,
@@ -44,15 +53,9 @@
   inherit (inputs.nix-darwin.lib) darwinSystem;
   inherit (inputs.nixos.lib) nixosSystem;
 
-  nixpkgsDefaults = import ../_nixpkgs-defaults.nix;
+  inherit (import ./_cascades.nix {inherit lib;}) cascadesFor expandClosure;
 
-  # Sub-namespaces of "config.dotfiles" that the system constructors
-  # mirror into each nested Home Manager evaluator. Add an entry here
-  # to extend the propagation registry; no other change is required.
-  propagatedSubNamespaces = [
-    "host"
-    "user"
-  ];
+  nixpkgsDefaults = import ../_nixpkgs-defaults.nix;
 
   # Build a "pkgs" instance for the given system, with this flake's
   # own nixpkgs overlay and shared "allowUnfreePackages" list
@@ -77,14 +80,93 @@
       }
     );
 
-  # System-level module that mirrors each named sub-namespace from
-  # the system evaluator's merged "config.dotfiles.<name>" into
-  # "home-manager.users.${config.dotfiles.user.name}.dotfiles.<name>"
-  # so the nested Home Manager evaluator sees the same values.
-  identityPropagationModule = {config, ...}: {
-    home-manager.users.${config.dotfiles.user.name}.dotfiles = lib.genAttrs propagatedSubNamespaces (
-      name: config.dotfiles.${name}
-    );
+  # System-level module that, for each user assigned under
+  # "config.dotfiles.users", mirrors the user's identity and the
+  # combined host record into that user's nested home-manager
+  # evaluator, and assigns the user's home directory.
+  #
+  # Also computes the system-level cascade as the union of each
+  # user's resolved active sets. NixOS profile/feature modules
+  # contribute system-level configuration (for example, an "essential"
+  # profile that sets "programs.zsh.enable = true;" so that
+  # "/etc/shells" registers zsh as a legitimate login shell). A
+  # profile that any user activates must therefore reach the
+  # system-level evaluator. The cascade walk runs once per user,
+  # using that user's seed and exclusions; the deduplicated union
+  # of those active sets is assigned to the system-level
+  # "dotfiles.host.{profiles,features}". Per-user exclusions are
+  # already applied before unioning, so the system-level
+  # "excludeProfiles" / "excludeFeatures" are left empty.
+  #
+  # The nested home-manager evaluator sees:
+  #   dotfiles.identity = <user>.identity
+  #   dotfiles.host = (system-level) config.dotfiles.host
+  #                 // <user>'s cascade inputs
+  # so the existing "dotfiles._host" derivation logic (which reads
+  # "config.dotfiles.host.{profiles,features,excludeProfiles,excludeFeatures}"
+  # from inside the home-manager evaluator) works unchanged.
+  multiUserPropagationModule = userDir: {config, ...}: let
+    inherit (config.dotfiles) host;
+    cascades = cascadesFor {
+      inherit (host) framework;
+      isDarwin = host.framework == "nixDarwin";
+      knownProfiles = config.dotfiles._knownProfiles;
+    };
+    knownByRole = {
+      profiles = config.dotfiles._knownProfiles;
+      features = config.dotfiles._knownFeatures;
+    };
+    # Per-user effective active sets: expand each user's seed
+    # through the cascade, then subtract that user's exclusions.
+    activePerUser =
+      lib.mapAttrs (
+        _: userCfg: let
+          expanded = expandClosure cascades knownByRole {
+            inherit (userCfg) profiles features;
+          };
+        in {
+          profiles = lib.subtractLists userCfg.excludeProfiles expanded.profiles;
+          features = lib.subtractLists userCfg.excludeFeatures expanded.features;
+        }
+      )
+      config.dotfiles.users;
+    # Union of every user's active profiles / features. Stable
+    # order via "lib.unique" applied after concatenation.
+    unionActive = {
+      profiles = lib.unique (lib.concatMap (a: a.profiles) (lib.attrValues activePerUser));
+      features = lib.unique (lib.concatMap (a: a.features) (lib.attrValues activePerUser));
+    };
+  in {
+    dotfiles.host = {
+      profiles = lib.mkDefault unionActive.profiles;
+      features = lib.mkDefault unionActive.features;
+    };
+
+    home-manager.users =
+      lib.mapAttrs (_: userCfg: {
+        imports = [userCfg.homeManagerConfig];
+        dotfiles = {
+          inherit (userCfg) identity;
+          host =
+            host
+            // {
+              inherit
+                (userCfg)
+                profiles
+                excludeProfiles
+                features
+                excludeFeatures
+                ;
+            };
+        };
+      })
+      config.dotfiles.users;
+
+    users.users =
+      lib.mapAttrs (userName: _: {
+        home = lib.mkDefault "${userDir}/${userName}";
+      })
+      config.dotfiles.users;
   };
 
   mkHome = {
@@ -101,19 +183,27 @@
       then "/Users"
       else "/home";
     # Default "home.username" and "home.homeDirectory" from the
-    # target evaluator's merged "config.dotfiles.user.name". The
+    # target evaluator's merged "config.dotfiles.identity.name". The
     # consumer can override either by assigning "home.username" /
     # "home.homeDirectory" directly, or by assigning
-    # "dotfiles.user.name" inside a module it passes in.
+    # "dotfiles.identity.name" inside a module it passes in.
+    #
+    # Default "programs.home-manager.enable" to true so that the
+    # "home-manager" CLI is available in the activated user
+    # profile. Consumers managing user profiles centrally (for
+    # example, an administrator who deploys home-manager
+    # configurations on behalf of users) can override this to
+    # false in a module they pass in.
     homeDefaultsModule = {
       lib,
       config,
       ...
     }: {
       home = {
-        username = lib.mkDefault config.dotfiles.user.name;
+        username = lib.mkDefault config.dotfiles.identity.name;
         homeDirectory = lib.mkDefault "${userDir}/${config.home.username}";
       };
+      programs.home-manager.enable = lib.mkDefault true;
     };
   in
     homeManagerConfiguration (
@@ -150,19 +240,16 @@
         sharedModules = [dotfilesFlake.modules.homeManager.default];
       };
     };
-    machineDefaultsModule = {config, ...}: let
-      username = config.dotfiles.user.name;
-    in {
+    machineDefaultsModule = {config, ...}: {
       nixpkgs.hostPlatform = hostPlatform;
       # See the following GitHub issues for what makes this
       # necessary, perhaps only temporarily:
       #   https://github.com/nix-darwin/nix-darwin/issues/1462
       #   https://github.com/nix-darwin/nix-darwin/issues/1457
       system = {
-        primaryUser = lib.mkDefault username;
+        primaryUser = lib.mkDefault config.dotfiles.primaryUser;
         stateVersion = lib.mkDefault 6;
       };
-      users.users.${username}.home = lib.mkDefault "/Users/${username}";
     };
   in
     darwinSystem (
@@ -180,7 +267,7 @@
             inputs.home-manager.darwinModules.default
             homeManagerSharedModule
             machineDefaultsModule
-            identityPropagationModule
+            (multiUserPropagationModule "/Users")
           ];
       }
     );
@@ -205,11 +292,8 @@
         sharedModules = [dotfilesFlake.modules.homeManager.default];
       };
     };
-    machineDefaultsModule = {config, ...}: let
-      username = config.dotfiles.user.name;
-    in {
+    machineDefaultsModule = {
       nixpkgs.hostPlatform = hostPlatform;
-      users.users.${username}.home = lib.mkDefault "/home/${username}";
     };
   in
     nixosSystem (
@@ -227,7 +311,7 @@
             inputs.home-manager.nixosModules.home-manager
             homeManagerSharedModule
             machineDefaultsModule
-            identityPropagationModule
+            (multiUserPropagationModule "/home")
           ];
       }
     );

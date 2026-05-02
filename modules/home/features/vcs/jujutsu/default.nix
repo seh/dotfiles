@@ -24,7 +24,7 @@ flakeLib.mkFeature "vcs/jujutsu" {
       ...
     }: let
       inherit (config.dotfiles) commitSigning;
-      userConfig = config.dotfiles.user;
+      userConfig = config.dotfiles.identity;
       cfg = config.dotfiles.jujutsu;
       difftasticMergeToolName = "difftastic-split-view";
     in {
