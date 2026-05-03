@@ -21,6 +21,7 @@ flakeLib.mkProfile "development" {
         #bruno
         buf
         cue
+        diffnav
         fswatch
         git-town
         go-jsonnet
