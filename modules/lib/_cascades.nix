@@ -267,9 +267,36 @@
         '')
       )
     else lib.seq _prefixCollision (lib.seq _edgeCheck grouped);
+  # Delete a set of vertices from the cascade table. Excluded
+  # vertices lose their out-edges (their adjacency entries are
+  # removed) and their in-edges (every surviving adjacency list is
+  # filtered to drop them as targets). The result is a cascade
+  # record of the same shape, suitable for passing to
+  # "expandClosure".
+  #
+  # Excluding a profile (or feature) is therefore equivalent to
+  # deleting that vertex from the DAG: anything reachable only
+  # through the excluded vertex falls out of the closure
+  # automatically, without the consumer having to enumerate the
+  # downstream vertices in "excludeFeatures".
+  pruneCascades = cascades: excluded: let
+    isExcluded = role: name: builtins.elem name (excluded.${role} or []);
+    withoutExcludedSources =
+      lib.mapAttrs (
+        role: edges: lib.filterAttrs (name: _: !(isExcluded role name)) edges
+      )
+      cascades;
+    pruneTargets = targetsByRole:
+      lib.mapAttrs (
+        targetRole: targetNames: lib.filter (n: !(isExcluded targetRole n)) targetNames
+      )
+      targetsByRole;
+  in
+    lib.mapAttrs (_role: edges: lib.mapAttrs (_source: pruneTargets) edges) withoutExcludedSources;
 in {
   inherit
     cascadesFor
     expandClosure
+    pruneCascades
     ;
 }
