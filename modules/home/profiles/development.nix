@@ -20,7 +20,6 @@ flakeLib.mkProfile "development" {
         # https://github.com/NixOS/nixpkgs/pull/453796 is available.
         #bruno
         buf
-        copilot-cli
         cue
         fswatch
         git-town

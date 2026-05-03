@@ -58,6 +58,7 @@
           "kubernetes"
           "lang/rust"
           "model-agent/claude"
+          "model-agent/copilot"
           "model-agent/opencode"
           "vcs/commit-signing"
         ];
