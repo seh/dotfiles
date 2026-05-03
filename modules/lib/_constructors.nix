@@ -53,7 +53,7 @@
   inherit (inputs.nix-darwin.lib) darwinSystem;
   inherit (inputs.nixos.lib) nixosSystem;
 
-  inherit (import ./_cascades.nix {inherit lib;}) cascadesFor expandClosure;
+  inherit (import ./_cascades.nix {inherit lib;}) cascadesFor expandClosure pruneCascades;
 
   nixpkgsDefaults = import ../_nixpkgs-defaults.nix;
 
@@ -116,17 +116,25 @@
       profiles = config.dotfiles._knownProfiles;
       features = config.dotfiles._knownFeatures;
     };
-    # Per-user effective active sets: expand each user's seed
-    # through the cascade, then subtract that user's exclusions.
+    # Per-user effective active sets: prune the cascade by the
+    # user's exclusions, filter the seed of those same names, and
+    # walk the closure on the pruned graph. A feature reachable
+    # only through an excluded profile drops out automatically;
+    # a feature reachable through a non-excluded path remains.
     activePerUser =
       lib.mapAttrs (
         _: userCfg: let
-          expanded = expandClosure cascades knownByRole {
-            inherit (userCfg) profiles features;
+          prunedCascades = pruneCascades cascades {
+            profiles = userCfg.excludeProfiles;
+            features = userCfg.excludeFeatures;
           };
+          prunedSeed = {
+            profiles = lib.subtractLists userCfg.excludeProfiles userCfg.profiles;
+            features = lib.subtractLists userCfg.excludeFeatures userCfg.features;
+          };
+          expanded = expandClosure prunedCascades knownByRole prunedSeed;
         in {
-          profiles = lib.subtractLists userCfg.excludeProfiles expanded.profiles;
-          features = lib.subtractLists userCfg.excludeFeatures expanded.features;
+          inherit (expanded) profiles features;
         }
       )
       config.dotfiles.users;
