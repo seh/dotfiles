@@ -99,18 +99,23 @@ in {
             type = types.listOf types.str;
             default = [];
             description = ''
-              Profile names to subtract from this host's resolved
-              profile closure. Useful for temporarily disabling a
-              profile without editing the host record.
+              Profile names to delete from this host's cascade
+              before the closure walk. Both their out-edges (the
+              dependencies they would advertise) and their
+              in-edges (other profiles that target them) are
+              removed, so anything reachable only through an
+              excluded profile is automatically absent from the
+              resolved closure.
             '';
           };
           excludeFeatures = mkOption {
             type = types.listOf types.str;
             default = [];
             description = ''
-              Feature names to subtract from this host's resolved
-              feature closure. Useful for temporarily disabling a
-              feature without editing the host record.
+              Feature names to delete from this host's cascade
+              before the closure walk. A feature still reachable
+              through a non-excluded path remains active; one
+              reachable only through excluded vertices drops out.
             '';
           };
         };
@@ -132,18 +137,21 @@ in {
             type = types.listOf types.str;
             readOnly = true;
             description = ''
-              Profiles in effect after expanding "host.profiles"
-              through the typed cascade and subtracting
-              "host.excludeProfiles".
+              Profiles in effect after deleting
+              "host.excludeProfiles" from the cascade and walking
+              the typed closure from "host.profiles".
             '';
           };
           activeFeatures = mkOption {
             type = types.listOf types.str;
             readOnly = true;
             description = ''
-              Features in effect after expanding "host.profiles"
-              and "host.features" through the typed cascade and
-              subtracting "host.excludeFeatures".
+              Features in effect after deleting
+              "host.excludeProfiles" / "host.excludeFeatures" from
+              the cascade and walking the typed closure from
+              "host.profiles" and "host.features". A feature
+              reachable only through an excluded profile is
+              automatically absent.
             '';
           };
           activatesProfile = mkOption {
@@ -184,26 +192,43 @@ in {
 
         config = let
           inherit (config.dotfiles) host;
-          seeds = {
-            inherit (host) profiles features;
-          };
-          expanded =
-            if flakeLib != null && flakeLib ? expandClosure && flakeLib ? cascadesFor
+          hasCascadeLib =
+            flakeLib != null && flakeLib ? expandClosure && flakeLib ? cascadesFor && flakeLib ? pruneCascades;
+          cascades =
+            if hasCascadeLib
             then
-              flakeLib.expandClosure
-              (flakeLib.cascadesFor {
+              flakeLib.cascadesFor {
                 inherit (host) framework;
                 isDarwin = host.framework == "nixDarwin";
                 knownProfiles = config.dotfiles._knownProfiles;
-              })
-              {
-                profiles = config.dotfiles._knownProfiles;
-                features = config.dotfiles._knownFeatures;
               }
-              seeds
-            else seeds;
-          activeProfiles = lib.subtractLists host.excludeProfiles expanded.profiles;
-          activeFeatures = lib.subtractLists host.excludeFeatures expanded.features;
+            else null;
+          knownByRole = {
+            profiles = config.dotfiles._knownProfiles;
+            features = config.dotfiles._knownFeatures;
+          };
+          seed = {
+            inherit (host) profiles features;
+          };
+          prunedCascades =
+            if hasCascadeLib
+            then
+              flakeLib.pruneCascades cascades {
+                profiles = host.excludeProfiles;
+                features = host.excludeFeatures;
+              }
+            else null;
+          prunedSeed = {
+            profiles = lib.subtractLists host.excludeProfiles host.profiles;
+            features = lib.subtractLists host.excludeFeatures host.features;
+          };
+          # Closure on the pruned graph: the activation answer.
+          expanded =
+            if hasCascadeLib
+            then flakeLib.expandClosure prunedCascades knownByRole prunedSeed
+            else seed;
+          activeProfiles = expanded.profiles;
+          activeFeatures = expanded.features;
         in {
           inherit activeProfiles activeFeatures;
           activatesProfile = name: builtins.elem name activeProfiles;
@@ -271,5 +296,82 @@ in {
         possible without a flake-parts context.
       '';
     };
+  };
+
+  # Diagnose exclusions that name a known item which is already
+  # unreachable once the other exclusions have been applied: the
+  # exclusion has no effect and may be removed. For each candidate
+  # name "n" in "excludeProfiles" (or "excludeFeatures"), recompute
+  # the closure with "n" temporarily removed from its exclusion
+  # list (but with all other exclusions still pruning the graph).
+  # If "n" is not in the resulting closure, it would not have been
+  # active anyway, so listing it as excluded changes nothing.
+  config = let
+    inherit (config.dotfiles) host;
+    flakeLib = config.dotfiles._flakeLib;
+    hasCascadeLib =
+      flakeLib != null && flakeLib ? expandClosure && flakeLib ? cascadesFor && flakeLib ? pruneCascades;
+    hostLabel = toString host.name;
+    knownByRole = {
+      profiles = config.dotfiles._knownProfiles;
+      features = config.dotfiles._knownFeatures;
+    };
+    cascades =
+      if hasCascadeLib
+      then
+        flakeLib.cascadesFor {
+          inherit (host) framework;
+          isDarwin = host.framework == "nixDarwin";
+          knownProfiles = config.dotfiles._knownProfiles;
+        }
+      else null;
+    seed = {
+      inherit (host) profiles features;
+    };
+    # The unpruned closure also forces the schema-level checks
+    # inside "expandClosure" (dangling edges, feature edges that
+    # target profiles) to run against the full table. Pruning
+    # could otherwise hide a typo in an excluded profile's
+    # adjacency list.
+    _unprunedSideEffect =
+      if hasCascadeLib
+      then flakeLib.expandClosure cascades knownByRole seed
+      else null;
+    # Redundancy test: a name "n" excluded under "role" is
+    # redundant when, with "n" removed from its own exclusion
+    # list (but every other exclusion still pruning), the
+    # resulting closure does not contain "n" anyway.
+    isRedundant = role: name: let
+      excluded = {
+        profiles = host.excludeProfiles;
+        features = host.excludeFeatures;
+      };
+      withoutSelf =
+        excluded
+        // {
+          ${role} = lib.filter (m: m != name) excluded.${role};
+        };
+      pruned = flakeLib.pruneCascades cascades withoutSelf;
+      seedHere = {
+        profiles = lib.subtractLists withoutSelf.profiles host.profiles;
+        features = lib.subtractLists withoutSelf.features host.features;
+      };
+      closure = flakeLib.expandClosure pruned knownByRole seedHere;
+    in
+      !(builtins.elem name (closure.${role} or []));
+    redundantOf = role: known: excluded:
+      if hasCascadeLib
+      then builtins.filter (n: builtins.elem n known && isRedundant role n) excluded
+      else [];
+    redundantProfiles = redundantOf "profiles" config.dotfiles._knownProfiles host.excludeProfiles;
+    redundantFeatures = redundantOf "features" config.dotfiles._knownFeatures host.excludeFeatures;
+    mkWarning = role: option: name: ''
+      Resolving host "${hostLabel}": ${option} entry "${name}" names a known ${role} that is already unreachable in the cascade closure; the exclusion has no effect and may be removed.
+    '';
+  in {
+    warnings = lib.seq _unprunedSideEffect (
+      map (mkWarning "profile" "excludeProfiles") redundantProfiles
+      ++ map (mkWarning "feature" "excludeFeatures") redundantFeatures
+    );
   };
 }
