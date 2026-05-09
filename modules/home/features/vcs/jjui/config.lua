@@ -166,4 +166,29 @@ function setup(config)
       desc = "report commit headline's length (bytes)",
     })
   end
+
+  -- Basis of inspiration:
+  --   https://discord.com/channels/968932220549103686/1502018867516674098/1502675861651062784
+  config.action(
+    "jump-to-commit",
+    function()
+      local commit_id = input({
+        title = "Enter commit ID"
+      })
+      if not commit_id then
+        return
+      end
+      jjui.revset.set(string.format("::%s | descendants(%s, 3)", commit_id, commit_id))
+      jjui.wait_refresh()
+      jjui.revisions.navigate({
+        to = commit_id,
+      })
+    end)
+
+  config.bind({
+    action = "jump-to-commit",
+    key = "ctrl+j",
+    scope = "revisions",
+    desc = "jump to commit by ID or revset",
+  })
 end
