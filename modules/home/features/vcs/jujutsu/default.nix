@@ -142,7 +142,7 @@ flakeLib.mkFeature "vcs/jujutsu" {
                   };
                 };
                 ui = {
-                  diff-formatter = difftasticMergeToolName;
+                  diff-formatter = lib.mkIf (config.dotfiles._host.activatesFeature "dev/difftastic") difftasticMergeToolName;
                   editor = let
                     programName = "emacsclient-for-jj-describe";
                     emacsclientProgram = pkgs.writeShellScriptBin programName (
@@ -157,51 +157,6 @@ flakeLib.mkFeature "vcs/jujutsu" {
               }
             )
           ];
-        };
-        jjui = {
-          enable = lib.mkDefault true;
-          package = lib.mkDefault pkgs.jjui;
-          settings = {
-            bindings = [
-              {
-                action = "revisions.inline_describe.accept";
-                key = "enter";
-                scope = "revisions.inline_describe";
-              }
-              {
-                action = "revisions.inline_describe.new_line";
-                key = "shift+enter";
-                scope = "revisions.inline_describe";
-              }
-            ];
-            preview = {
-              file_command = [
-                "diff"
-                "--color"
-                "always"
-                "-r"
-                "$change_id"
-                "--config"
-                "ui.diff-formatter=${difftasticMergeToolName}"
-                "$file"
-              ];
-              revision_command = [
-                "show"
-                "--color"
-                "always"
-                "-r"
-                "$change_id"
-                "--config"
-                "ui.diff-formatter=${difftasticMergeToolName}"
-              ];
-            };
-            ui = {
-              tracer = {
-                enabled = true;
-              };
-            };
-          };
-          configLua = ./jjui-config.lua;
         };
       };
       home.packages = with pkgs; [

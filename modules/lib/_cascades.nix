@@ -42,6 +42,7 @@
           "shell"
           "ssh"
           "vcs/git"
+          "vcs/jjui"
           "vcs/jujutsu"
           "zsh"
         ];
@@ -79,9 +80,11 @@
       };
     };
     features = {
-      # Leaf role: no entries today. Feature-to-profile cascades are
-      # forbidden; feature-to-feature cascades are possible in
-      # principle but none exist today.
+      # NB: Feature-to-profile cascades are forbidden, but
+      # feature-to-feature cascades are allowed.
+      "vcs/jjui" = {
+        features = ["vcs/jujutsu"];
+      };
     };
   };
 
