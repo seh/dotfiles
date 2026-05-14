@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+# A "PostToolUse" hook for "Claude Code": once the model has written
+# or edited a file, "Claude Code" runs this program and hands it a
+# JSON record on standard input. Reformat that file if it holds a
+# shell program, and leave every other file untouched.
+#
+# The "shfmt" tool returns exit code 0 whether or not it rewrote the
+# file, and a non-zero exit code when it fails, most often because it
+# cannot parse the file. Report that failure with exit code 2 rather
+# than with the "shfmt" tool's own exit code: for a "PostToolUse"
+# event, exit code 2 passes this program's stderr to the model, while
+# any other non-zero exit code shows the user a hook error notice
+# carrying only the first line of stderr. The model wrote the file
+# that will not parse, so the model is the party to tell. Exit code 0,
+# whether after formatting or for a file this program leaves alone,
+# shows nothing to the model or the user.
+
+# The "jq" tool reads the hook's JSON record from standard input. The
+# "select" filter yields nothing when the record carries no file path
+# or carries an empty string, and the "--exit-status" flag turns that
+# empty result into a non-zero exit code.
+if ! file_path="$(jq --exit-status --raw-output '.tool_input.file_path | select(length > 0)')"; then
+  printf 'format-shell-program: hook input lacks .tool_input.file_path\n' >&2
+  exit 1
+fi
+# Judge the base name alone. A dot in a directory component, as in
+# "foo.bar/script", would otherwise look like an extension and skip a
+# file worth formatting.
+case "$(basename -- "${file_path}")" in
+# An extension that settles the language. The "shfmt" tool's default
+# "auto" dialect reads the extension itself: ".zsh" selects zsh and
+# ".mksh" selects mksh, while ".sh", ".bash", and ".ksh" all parse as
+# bash.
+*.sh | *.bash | *.zsh | *.ksh | *.mksh) ;;
+# Any other extension belongs to some other language. The leading "?"
+# demands a character before the dot, so a name like ".bashrc" falls
+# through to the content check below instead of matching here.
+?*.*)
+  exit 0
+  ;;
+# There is no extension by which to judge, so ask the "file" tool what
+# the content looks like.
+*)
+  case "$(file --brief -- "${file_path}" 2>/dev/null)" in
+  # The "file" tool describes a zsh program as a "zsh script" and
+  # never as a "shell script"; matching on "shell script" alone would
+  # miss every zsh program.
+  *"shell script"* | *"zsh script"*) ;;
+  # Not a shell program.
+  *) exit 0 ;;
+  esac
+  ;;
+esac
+# Pass the "shfmt" tool no dialect or style flags. Any such flag would
+# stop it from reading ".editorconfig" files found in the formatted
+# file's parent directories.
+if ! shfmt --write -- "${file_path}"; then
+  # Only exit code 2 sends stderr to the model.
+  exit 2
+fi
