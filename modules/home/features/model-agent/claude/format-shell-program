@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+if ! file_path="$(jq --exit-status --raw-output '.tool_input.file_path | select(length > 0)')"; then
+  printf 'format-shell-program: hook input lacks .tool_input.file_path\n' >&2
+  exit 1
+fi
+case "$(basename -- "${file_path}")" in
+*.sh | *.bash | *.zsh | *.ksh | *.mksh) ;;
+?*.*)
+  exit 0
+  ;;
+*)
+  case "$(file --brief -- "${file_path}" 2>/dev/null)" in
+  *"shell script"* | *"zsh script"*) ;;
+  *) exit 0 ;;
+  esac
+  ;;
+esac
+shfmt --write -- "${file_path}"
