@@ -57,6 +57,7 @@
           "dev/language-servers"
           "editor/helix"
           "kubernetes"
+          "lang/lua"
           "lang/rust"
           "model-agent/claude"
           "model-agent/copilot"

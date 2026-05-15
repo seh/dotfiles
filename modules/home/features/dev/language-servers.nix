@@ -3,7 +3,6 @@ flakeLib.mkFeature "dev/language-servers" {
   homeManager = {pkgs, ...}: {
     home.packages = with pkgs; [
       bash-language-server
-      emmylua-ls
       gopls
       graphql-language-service-cli
       jq-lsp
