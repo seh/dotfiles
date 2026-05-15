@@ -2,8 +2,6 @@
 # - https://github.com/jj-vcs/jj/issues/6540
 # - https://github.com/magit/magit/discussions/5372
 
-set -e -u -o pipefail
-
 function usage() {
   printf "usage: %s [-h] description_file\n" "$(basename "${0}")" 1>&2
   exit 2
