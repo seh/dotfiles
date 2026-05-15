@@ -36,7 +36,6 @@ flakeLib.mkProfile "essential" {
           miller
           nixfmt
           openssl
-          rumdl
           sops
           sqlite
           statix
