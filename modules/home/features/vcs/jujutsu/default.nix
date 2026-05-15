@@ -124,9 +124,14 @@ flakeLib.mkFeature "vcs/jujutsu" {
                   };
                   ${emacsMergeToolName} = let
                     programName = "emacs-ediff-alt";
-                    emacsDiffProgram = pkgs.writeShellScriptBin programName (
-                      builtins.readFile (./. + "/${programName}")
-                    );
+                    emacsDiffProgram = pkgs.writeShellApplication {
+                      name = programName;
+                      runtimeInputs = with pkgs; [
+                        coreutils
+                        fswatch
+                      ];
+                      text = builtins.readFile (./. + "/${programName}");
+                    };
                   in {
                     program = lib.getExe emacsDiffProgram;
                     merge-args = [
@@ -145,9 +150,13 @@ flakeLib.mkFeature "vcs/jujutsu" {
                   diff-formatter = lib.mkIf (config.dotfiles._host.activatesFeature "dev/difftastic") difftasticMergeToolName;
                   editor = let
                     programName = "emacsclient-for-jj-describe";
-                    emacsclientProgram = pkgs.writeShellScriptBin programName (
-                      builtins.readFile (./. + "/${programName}")
-                    );
+                    emacsclientProgram = pkgs.writeShellApplication {
+                      name = programName;
+                      runtimeInputs = with pkgs; [
+                        jujutsu
+                      ];
+                      text = builtins.readFile (./. + "/${programName}");
+                    };
                   in
                     lib.getExe emacsclientProgram;
                   log-word-wrap = true;

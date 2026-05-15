@@ -1,5 +1,3 @@
-set -e -u -o pipefail
-
 # NB: If we delete the file ahead of time,
 # ediff-merge-files-with-ancestor will write a fresh file to the same
 # path as soon as we quit the merge. Is it possible to disable that
