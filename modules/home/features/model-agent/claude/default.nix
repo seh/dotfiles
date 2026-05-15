@@ -86,15 +86,15 @@ flakeLib.mkFeature "model-agent/claude" {
                   command = ''${lib.getExe pkgs.stylua} --config-path ${config.dotfiles.lua.styluaConfigFile} -- ${receiveInputFilePath}'';
                 };
               }
+              ++ lib.optional (config.dotfiles._host.activatesFeature "lang/markdown") {
+                # Markdown files
+                hooks = mkPerEventHooks {
+                  events = editingEvents;
+                  patterns = ["*.md"];
+                  command = ''${lib.getExe pkgs.rumdl} fmt -- ${receiveInputFilePath}'';
+                };
+              }
               ++ [
-                {
-                  # Markdown files
-                  hooks = mkPerEventHooks {
-                    events = editingEvents;
-                    patterns = ["*.md"];
-                    command = ''${lib.getExe pkgs.rumdl} fmt -- ${receiveInputFilePath}'';
-                  };
-                }
                 {
                   # Nix files
                   hooks = mkPerEventHooks {
