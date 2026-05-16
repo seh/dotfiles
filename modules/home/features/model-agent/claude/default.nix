@@ -16,21 +16,6 @@ flakeLib.mkFeature "model-agent/claude" {
       ];
       text = builtins.readFile ./format-shell-program;
     };
-    mkPerEventHooks = {
-      events,
-      patterns,
-      command,
-    }:
-      lib.concatMap (
-        pattern:
-          map (event: {
-            type = "command";
-            "if" = "${event}(${pattern})";
-            inherit command;
-          })
-          events
-      )
-      patterns;
   in {
     programs.claude-code = {
       enable = lib.mkDefault true;
@@ -45,86 +30,83 @@ flakeLib.mkFeature "model-agent/claude" {
               "Edit"
               "Write"
             ];
-            matcher = lib.concatStringsSep "|" editingEvents;
             receiveInputFilePath = ''"$(${jq} --raw-output '.tool_input.file_path')"'';
-          in
-            map (entry: entry // {inherit matcher;}) (
+            languages =
               [
                 {
                   # Bazel files
-                  hooks = mkPerEventHooks {
-                    events = editingEvents;
-                    patterns = [
-                      "*.bazel"
-                      "*.bzl"
-                    ];
-                    command = ''${lib.getExe' pkgs.buildifier "buildifier"} ${receiveInputFilePath}'';
-                  };
+                  patterns = [
+                    "*.bazel"
+                    "*.bzl"
+                  ];
+                  command = ''${lib.getExe' pkgs.buildifier "buildifier"} ${receiveInputFilePath}'';
                 }
                 {
                   # CUE files
-                  hooks = mkPerEventHooks {
-                    events = editingEvents;
-                    patterns = ["*.cue"];
-                    command = ''${lib.getExe pkgs.cue} fmt --files -- ${receiveInputFilePath}'';
-                  };
+                  patterns = ["*.cue"];
+                  command = ''${lib.getExe pkgs.cue} fmt --files -- ${receiveInputFilePath}'';
                 }
                 {
                   # Go files
-                  hooks = mkPerEventHooks {
-                    events = editingEvents;
-                    patterns = ["*.go"];
-                    command = ''${lib.getExe pkgs.gofumpt} -w ${receiveInputFilePath}'';
-                  };
+                  patterns = ["*.go"];
+                  command = ''${lib.getExe pkgs.gofumpt} -w ${receiveInputFilePath}'';
                 }
               ]
               ++ lib.optional (config.dotfiles._host.activatesFeature "lang/lua") {
                 # Lua files
-                hooks = mkPerEventHooks {
-                  events = editingEvents;
-                  patterns = ["*.lua"];
-                  command = ''${lib.getExe pkgs.stylua} --config-path ${config.dotfiles.lua.styluaConfigFile} -- ${receiveInputFilePath}'';
-                };
+                patterns = ["*.lua"];
+                command = ''${lib.getExe pkgs.stylua} --config-path ${config.dotfiles.lua.styluaConfigFile} -- ${receiveInputFilePath}'';
               }
               ++ lib.optional (config.dotfiles._host.activatesFeature "lang/markdown") {
                 # Markdown files
-                hooks = mkPerEventHooks {
-                  events = editingEvents;
-                  patterns = ["*.md"];
-                  command = ''${lib.getExe pkgs.rumdl} fmt -- ${receiveInputFilePath}'';
-                };
+                patterns = ["*.md"];
+                command = ''${lib.getExe pkgs.rumdl} fmt -- ${receiveInputFilePath}'';
               }
               ++ [
                 {
                   # Nix files
-                  hooks = mkPerEventHooks {
-                    events = editingEvents;
-                    patterns = ["*.nix"];
-                    command = ''${lib.getExe pkgs.alejandra} --quiet ${receiveInputFilePath}'';
-                  };
-                }
-                {
-                  # Shell programs
-                  hooks = [
-                    {
-                      type = "command";
-                      command = lib.getExe format-shell-program;
-                    }
-                  ];
+                  patterns = ["*.nix"];
+                  command = ''${lib.getExe pkgs.alejandra} --quiet ${receiveInputFilePath}'';
                 }
                 {
                   # Terraform files
-                  hooks = mkPerEventHooks {
-                    events = editingEvents;
-                    patterns = [
-                      "*.tf"
-                      "*.tfvars"
-                    ];
-                    command = ''${lib.getExe' pkgs.tenv "terraform"} fmt ${receiveInputFilePath}'';
-                  };
+                  patterns = [
+                    "*.tf"
+                    "*.tfvars"
+                  ];
+                  command = ''${lib.getExe' pkgs.tenv "terraform"} fmt ${receiveInputFilePath}'';
                 }
-              ]
-            );
+              ];
+            mkEventHandlers = event:
+              lib.concatMap (
+                lang:
+                  map (pattern: {
+                    type = "command";
+                    "if" = "${event}(${pattern})";
+                    inherit (lang) command;
+                  })
+                  lang.patterns
+              )
+              languages;
+          in
+            map (event: {
+              matcher = event;
+              hooks = mkEventHandlers event;
+            })
+            editingEvents
+            ++ [
+              {
+                # Shell programs (the "format-shell-program" decides
+                # internally whether to format).
+                matcher = lib.concatStringsSep "|" editingEvents;
+                hooks = [
+                  {
+                    type = "command";
+                    command = lib.getExe format-shell-program;
+                  }
+                ];
+              }
+            ];
         };
         permissions = {
           defaultMode = "auto";
