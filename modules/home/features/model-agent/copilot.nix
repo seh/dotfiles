@@ -7,7 +7,7 @@ flakeLib.mkFeature "model-agent/copilot" {
   }: {
     programs.github-copilot-cli = {
       enable = lib.mkDefault true;
-      package = lib.mkDefault pkgs.copilot-cli;
+      package = lib.mkDefault pkgs.github-copilot-cli;
     };
   };
 }
