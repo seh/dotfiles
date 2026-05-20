@@ -75,6 +75,7 @@ flakeLib.mkFeature "compat/bazel-fhs" {
         paste = "${pkgs.coreutils}/bin/paste";
         printf = "${pkgs.coreutils}/bin/printf";
         python3 = "${pkgs.python3}/bin/python3";
+        realpath = "${pkgs.coreutils}/bin/realpath";
         rm = "${pkgs.coreutils}/bin/rm";
         sed = "${pkgs.gnused}/bin/sed";
         sort = "${pkgs.coreutils}/bin/sort";
