@@ -22,54 +22,43 @@ flakeLib.mkFeature "ssh" {
       };
       sshControlDir = "~/.ssh/sockets";
     in {
-      programs.ssh = lib.mkMerge [
-        {
-          enable = true;
-          enableDefaultConfig = false;
-          extraConfig = ''
-            CanonicalizeHostname yes
-            CanonicalizeFallbackLocal yes
-          '';
-          matchBlocks = {
-            "*" = {
-              forwardAgent = true;
-            };
-            "Panix" = {
-              hostname = "shell.panix.com";
-              user = "seh";
-              extraOptions = {
-                UserKnownHostsFile = "${panixKnownHostsFile}";
-              };
-            };
-            "github.com" = {
-              user = "git";
-              extraOptions =
-                {
-                  UserKnownHostsFile = "${githubKnownHostsFile}";
-                  AddKeysToAgent = "yes";
-                }
-                # NB: UseKeychain is a macOS-specific option.
-                // lib.optionalAttrs isDarwin {
-                  UseKeychain = "yes";
-                };
-            };
-            "github.com gitlab.com bitbucket.com" = {
-              extraOptions = {
-                ControlMaster = "no";
-              };
-            };
+      programs.ssh = {
+        enable = true;
+        enableDefaultConfig = false;
+        extraConfig = ''
+          CanonicalizeFallbackLocal yes
+          CanonicalizeHostname yes
+        '';
+        settings = {
+          "*" = lib.mkMerge [
+            {
+              ForwardAgent = true;
+            }
+            (lib.mkIf cfg.enableMultiplexing {
+              ControlMaster = "auto";
+              ControlPath = "${sshControlDir}/%C.sock";
+              ControlPersist = "30s";
+            })
+          ];
+          "Panix" = {
+            Hostname = "shell.panix.com";
+            User = "seh";
+            UserKnownHostsFile = "${panixKnownHostsFile}";
           };
-        }
-        (lib.mkIf cfg.enableMultiplexing {
-          matchBlocks = {
-            "*" = {
-              controlMaster = "auto";
-              controlPath = "${sshControlDir}/%C.sock";
-              controlPersist = "30s";
+          "github.com" =
+            {
+              AddKeysToAgent = "yes";
+              User = "git";
+              UserKnownHostsFile = "${githubKnownHostsFile}";
+            } # NB: UseKeychain is a macOS-specific option.
+            // lib.optionalAttrs isDarwin {
+              UseKeychain = "yes";
             };
+          "github.com gitlab.com bitbucket.com" = {
+            ControlMaster = "no";
           };
-        })
-      ];
+        };
+      };
 
       home.activation = lib.mkIf cfg.enableMultiplexing {
         # Alternately, we could use a ".keep" file in this directory and

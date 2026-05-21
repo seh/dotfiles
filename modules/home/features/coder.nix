@@ -23,16 +23,14 @@ flakeLib.mkFeature "coder" {
       home.packages = [
         cfg.package
       ];
-      programs.ssh.matchBlocks =
+      programs.ssh.settings =
         lib.mkIf (cfg.enableSSHIntegration && config.dotfiles._host.activatesFeature "ssh")
         {
           "coder.*.main" = {
-            proxyCommand = "${lib.getExe cfg.package} ssh --stdio --ssh-host-prefix 'coder.' %h";
-            userKnownHostsFile = "/dev/null";
-            extraOptions = {
-              connectTimeout = "0";
-              logLevel = "ERROR";
-            };
+            ConnectTimeout = "0";
+            LogLevel = "ERROR";
+            ProxyCommand = "${lib.getExe cfg.package} ssh --stdio --ssh-host-prefix 'coder.' %h";
+            UserKnownHostsFile = "/dev/null";
           };
         };
     };
