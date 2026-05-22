@@ -54,6 +54,16 @@ flakeLib.mkFeature "vcs/jujutsu" {
                   & mine()
                   ~ trunk()::
                 '';
+                # stack(x, n) is the set of mutable commits reachable
+                # from 'x', with 'n' parents. 'n' is often useful to
+                # customize the display and return set for certain
+                # operations. 'x' can be used to target the set of
+                # 'roots' to traverse, e.g. @ is the current stack.
+                #
+                # Basis of inspiration: https://github.com/thoughtpolice/a/blob/c88edea13dc86adaa46e33f7fc6c7dd16552755f/tilde/aseipp/dotfiles/jj/config.toml#L109-L115
+                "stack(x, n)" = "ancestors(reachable(x, mutable()), n)";
+                "stack(x)" = "stack(x, 2)";
+                "stack()" = "stack(@)";
               };
               template-aliases = {
                 # Basis of inspiration:
