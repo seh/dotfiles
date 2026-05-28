@@ -4,9 +4,9 @@
   inputs = {
     dotfiles.url = "github:seh/dotfiles";
     flake-parts.follows = "dotfiles/flake-parts";
+    git-hooks-nix.follows = "dotfiles/git-hooks-nix";
     import-tree.follows = "dotfiles/import-tree";
     nixpkgs.follows = "dotfiles/nixpkgs";
-    pre-commit-hooks.follows = "dotfiles/pre-commit-hooks";
     treefmt-nix.follows = "dotfiles/treefmt-nix";
   };
 
