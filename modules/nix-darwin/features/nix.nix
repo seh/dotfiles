@@ -9,9 +9,13 @@ flakeLib.mkFeature "nix" {
     ...
   }: {
     nix.package = lib.mkDefault pkgs.lixPackageSets.${config.dotfiles.lix.channel}.lix;
-    nix.settings.experimental-features = [
-      "nix-command"
-      "flakes"
-    ];
+    nix.settings = {
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
+      # NB: nix-darwin includes the "root" user automatically.
+      trusted-users = builtins.attrNames config.dotfiles.users;
+    };
   };
 }
