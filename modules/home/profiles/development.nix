@@ -64,6 +64,14 @@ flakeLib.mkProfile "development" {
       ripgrep = {
         enable = true;
       };
+
+      zsh.profileExtra =
+        lib.mkIf isDarwin
+        # Preserve the line that OrbStack installs in this file for its own
+        # integration when Home Manager writes the rest of the file for us.
+        ''
+          source ~/.orbstack/shell/init.zsh 2>/dev/null || :
+        '';
     };
 
     dotfiles = {
