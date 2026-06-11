@@ -205,6 +205,7 @@ flakeLib.mkFeature "model-agent/claude" {
           permissions = {
             defaultMode = "auto";
           };
+          remoteControlAtStartup = true;
         }
         // lib.optionalAttrs (enabledPluginIDs != []) {
           enabledPlugins = lib.genAttrs enabledPluginIDs (_: true);
