@@ -107,7 +107,7 @@ flakeLib.mkFeature "model-agent/claude" {
       settings =
         {
           includeCoAuthoredBy = false;
-          model = "claude-opus-4-7";
+          model = "claude-opus-4-8";
           hooks = {
             PostToolUse = let
               jq = lib.getExe pkgs.jq;
