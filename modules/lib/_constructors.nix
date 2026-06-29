@@ -64,6 +64,8 @@
   # applied. This is a fresh instantiation, independent of whatever
   # the consumer's flake-parts "perSystem" may have produced.
   #
+  # Pass "applyOverlays = false" to omit that overlay.
+  #
   # Road not taken: accept flake-parts' "getSystem" as a function
   # argument and read "(getSystem system).allModuleArgs.pkgs"
   # instead. That would reuse the consumer's already-instantiated
@@ -71,13 +73,16 @@
   # these constructors back to flake-parts, defeating the point of
   # the relocation. Revisit only if repeated nixpkgs instantiation
   # becomes a measurable cost.
-  pkgsFor = system:
+  pkgsFor = {
+    system,
+    applyOverlays ? true,
+  }:
     import inputs.nixpkgs (
       {
         inherit system;
       }
       // nixpkgsDefaults
-      // {
+      // lib.optionalAttrs applyOverlays {
         overlays = [dotfilesFlake.overlays.nixpkgs];
       }
     );
@@ -233,7 +238,11 @@
 
   mkDarwin = {
     hostPlatform ? "aarch64-darwin",
-    pkgs ? pkgsFor hostPlatform,
+    pkgs ?
+      pkgsFor {
+        system = hostPlatform;
+        applyOverlays = false;
+      },
     overlays ? [],
     modules ? [],
     ...
@@ -284,7 +293,11 @@
 
   mkNixOS = {
     hostPlatform ? "aarch64-linux",
-    pkgs ? pkgsFor hostPlatform,
+    pkgs ?
+      pkgsFor {
+        system = hostPlatform;
+        applyOverlays = false;
+      },
     overlays ? [],
     modules ? [],
     ...
