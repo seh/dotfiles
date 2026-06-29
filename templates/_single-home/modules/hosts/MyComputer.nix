@@ -14,7 +14,7 @@ in {
     # Instantiate "pkgs" once for this host so that adding
     # further users below reuses the same package set rather
     # than instantiating nixpkgs again per user.
-    pkgs = inputs.dotfiles.lib.pkgsFor hostPlatform;
+    pkgs = inputs.dotfiles.lib.pkgsFor {system = hostPlatform;};
 
     # Per-user records for this host. Each entry's key is the
     # username; each value carries that user's identity record
