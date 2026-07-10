@@ -112,11 +112,59 @@
       n: builtins.match scopedNamePattern n == null
     )
     config.dotfiles._knownFeatures;
+
+  # A profile may declare (via the "mkProfile" function's "supportedPlatforms"
+  # argument) the platforms on which it may activate; a host
+  # qualifies when its platform is one of them. The "all" umbrella
+  # already omits unsupported profiles (see "cascadesFor" in
+  # "modules/lib/_cascades.nix"); this assertion rejects a host
+  # whose resolved closure reaches one anyway, such as by declaring
+  # it directly in "dotfiles.host.profiles". A host with a null
+  # "platform" is not checked, since its operating system is
+  # unknown.
+  profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
+  unsupportedActiveProfiles =
+    if host.platform == null
+    then []
+    else
+      builtins.filter (
+        name: let
+          supported = profileSupportedPlatforms.${name} or null;
+        in
+          supported != null && !(builtins.elem host.platform supported)
+      )
+      config.dotfiles._host.activeProfiles;
+  describeUnsupported = name: ''"${name}" (supports only ${lib.concatStringsSep ", " profileSupportedPlatforms.${name}})'';
+  platformSupportAssertion = {
+    assertion = unsupportedActiveProfiles == [];
+    message = ''
+      Resolving host "${hostName}": the profile(s) ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveProfiles} may not activate on this host's platform, "${toString host.platform}". Remove the name(s) from "dotfiles.host.profiles".
+    '';
+  };
+
+  # A declared host must know its platform: "modules/_tags.nix"
+  # detects one from the evaluating package set, and a host may
+  # assign one explicitly, so this fires only when both sources are
+  # absent (for example, in a bare instantiation of these modules).
+  # Without a platform, the platform-support checks above cannot
+  # judge anything.
+  platformDeclaredAssertion = {
+    assertion = host.name == null || host.platform != null;
+    message = ''
+      Resolving host "${hostName}": the host declares no platform, and none could be detected from the evaluator's package set. Assign "dotfiles.host.platform" (e.g. "aarch64-darwin").
+    '';
+  };
 in {
   # Mismatch assertions run before unknown-name assertions so that
   # a misplaced name produces the more actionable diagnosis.
   assertions =
-    map mismatchAssertion crossPairs ++ map unknownAssertion roles ++ map unknownExcludeAssertion roles;
+    map mismatchAssertion crossPairs
+    ++ map unknownAssertion roles
+    ++ map unknownExcludeAssertion roles
+    ++ [
+      platformDeclaredAssertion
+      platformSupportAssertion
+    ];
 
   warnings = lib.optional (badFeatureNames != []) ''
     These known feature names do not follow the scoped naming

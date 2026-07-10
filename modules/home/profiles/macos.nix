@@ -1,5 +1,13 @@
-{flakeLib, ...}:
+{
+  flakeLib,
+  lib,
+  ...
+}:
 flakeLib.mkProfile "macos" {
+  # This profile configures macOS itself, so a host qualifies for
+  # it only when its platform is one of the Darwin systems.
+  supportedPlatforms = lib.platforms.darwin;
+
   homeManager = {lib, ...}: let
     inherit (lib) mkDefault;
   in {

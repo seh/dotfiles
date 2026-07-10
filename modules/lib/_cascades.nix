@@ -6,9 +6,16 @@
   # and extend "expandClosure" nowhere — the closure walk iterates
   # over whatever roles the table advertises.
   #
-  # Evaluated per-host so that platform-conditional rules (e.g.
-  # "desktop" implies "macos" only on Darwin hosts) can vary with
-  # the host's framework.
+  # Evaluated per-host so that the per-profile platform filtering
+  # described below can vary with the host's platform.
+  #
+  # Every entry's "profiles" list is filtered against the profiles'
+  # declared "supportedPlatforms" (see the "mkProfile" function): a profile the
+  # host's platform does not support never arrives through the
+  # cascade, whether via the "all" entry or via a narrower one such
+  # as "desktop". The assertion in "modules/_assertions.nix" rejects
+  # a host that would activate such a profile anyway (e.g. by
+  # declaring it directly).
   #
   # The "all" umbrella's targets are computed from "knownProfiles"
   # rather than enumerated, so that introducing a new profile folds
@@ -18,12 +25,29 @@
   # The graph across all roles MUST form a DAG; cycles are rejected
   # at runtime by "expandClosure".
   cascadesFor = {
-    framework,
     knownProfiles,
-    isDarwin ? framework == "nixDarwin",
+    # Nixpkgs system string (e.g. "aarch64-darwin"), or null when
+    # the host record does not carry one.
+    platform ? null,
+    # Per-profile platform support, keyed by profile name; each
+    # value lists the platforms on which that profile may activate.
+    # A profile absent from this record may activate anywhere; a
+    # profile present in it requires the host's platform to be one
+    # of the listed values, so a null platform errs toward omitting
+    # every platform-constrained profile.
+    profileSupportedPlatforms ? {},
     ...
-  }: {
-    profiles = {
+  }: let
+    availableOnHost = name: let
+      supported = profileSupportedPlatforms.${name} or null;
+    in
+      supported == null || (platform != null && builtins.elem platform supported);
+    filterEntryProfiles = entry:
+      entry
+      // lib.optionalAttrs (entry ? profiles) {
+        profiles = builtins.filter availableOnHost entry.profiles;
+      };
+    profileEntries = {
       all = {
         profiles = lib.subtractLists ["all"] knownProfiles;
         features = [];
@@ -67,20 +91,22 @@
         ];
       };
       desktop = {
-        profiles =
-          [
-            "fonts"
-          ]
-          ++ lib.optionals isDarwin [
-            "apps"
-            "macos"
-          ];
+        # NB: The per-entry platform filtering above keeps "apps"
+        # and "macos" from reaching hosts whose platforms they do
+        # not support.
+        profiles = [
+          "apps"
+          "fonts"
+          "macos"
+        ];
       };
       web = {
         profiles = [];
         features = ["web/firefox"];
       };
     };
+  in {
+    profiles = lib.mapAttrs (_name: filterEntryProfiles) profileEntries;
     features = {
       # NB: Feature-to-profile cascades are forbidden, but
       # feature-to-feature cascades are allowed.

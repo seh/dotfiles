@@ -107,6 +107,11 @@
           bodies;
       };
   };
+  mkProfileRegistration = mk {
+    knownKey = "knownProfiles";
+    modulesKey = "profileModules";
+    predicate = host: name: host.activatesProfile name;
+  };
 in {
   mkFeature = mk {
     knownKey = "knownFeatures";
@@ -114,9 +119,27 @@ in {
     predicate = host: name: host.activatesFeature name;
   };
 
-  mkProfile = mk {
-    knownKey = "knownProfiles";
-    modulesKey = "profileModules";
-    predicate = host: name: host.activatesProfile name;
-  };
+  # In addition to the per-class bodies that the "mkFeature" function accepts,
+  # the "mkProfile" function recognizes one reserved key:
+  #
+  #   supportedPlatforms: a list of Nixpkgs system identifiers
+  #   (e.g. ["aarch64-darwin" "x86_64-darwin"]) on which this
+  #   profile may activate. A host qualifies when its platform is
+  #   one of them. Omit the key for a profile that may activate on
+  #   every platform. The cascade table filters every profile list
+  #   by this support, and an assertion rejects a host that would
+  #   activate an unsupported profile anyway.
+  mkProfile = name: args: let
+    bodies = builtins.removeAttrs args ["supportedPlatforms"];
+    registration = mkProfileRegistration name bodies;
+  in
+    registration
+    // lib.optionalAttrs (args ? supportedPlatforms) {
+      dotfiles =
+        registration.dotfiles
+        // {
+          profileSupportedPlatforms.${name} =
+            lib.sort lib.lessThan (lib.unique args.supportedPlatforms);
+        };
+    };
 }

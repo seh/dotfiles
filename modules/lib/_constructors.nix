@@ -113,9 +113,9 @@
   multiUserPropagationModule = userDir: {config, ...}: let
     inherit (config.dotfiles) host;
     cascades = cascadesFor {
-      inherit (host) framework;
-      isDarwin = host.framework == "nixDarwin";
+      inherit (host) platform;
       knownProfiles = config.dotfiles._knownProfiles;
+      profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
     };
     knownByRole = {
       profiles = config.dotfiles._knownProfiles;

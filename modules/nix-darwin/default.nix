@@ -15,6 +15,7 @@
           dotfiles = {
             _knownProfiles = flake.config.dotfiles.knownProfiles;
             _knownFeatures = flake.config.dotfiles.knownFeatures;
+            _profileSupportedPlatforms = flake.config.dotfiles.profileSupportedPlatforms;
             _flakeLib = flake.config.flake.lib;
           };
         }

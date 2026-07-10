@@ -10,6 +10,11 @@
 {
   lib,
   config,
+  # Nullable so that direct instantiations of this module (e.g. for
+  # tests) remain possible outside an evaluator that provides a
+  # package set. When present, it supplies the default for
+  # "dotfiles.host.platform" below.
+  pkgs ? null,
   ...
 }: let
   inherit (lib) mkOption types;
@@ -198,9 +203,9 @@ in {
             if hasCascadeLib
             then
               flakeLib.cascadesFor {
-                inherit (host) framework;
-                isDarwin = host.framework == "nixDarwin";
+                inherit (host) platform;
                 knownProfiles = config.dotfiles._knownProfiles;
+                profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
               }
             else null;
           knownByRole = {
@@ -285,6 +290,20 @@ in {
       '';
     };
 
+    _profileSupportedPlatforms = mkOption {
+      type = types.attrsOf (types.listOf types.str);
+      default = {};
+      description = ''
+        Per-profile platform support, keyed by profile name; each
+        value lists the platforms on which that profile may
+        activate. Mirrored from the flake-level
+        "dotfiles.profileSupportedPlatforms" registry by each class
+        aggregator. Consulted by the cascade computation (the "all"
+        umbrella skips unsupported profiles) and by the
+        platform-support assertion in "modules/_assertions.nix".
+      '';
+    };
+
     _flakeLib = mkOption {
       type = with types; nullOr (lazyAttrsOf raw);
       default = null;
@@ -321,9 +340,9 @@ in {
       if hasCascadeLib
       then
         flakeLib.cascadesFor {
-          inherit (host) framework;
-          isDarwin = host.framework == "nixDarwin";
+          inherit (host) platform;
           knownProfiles = config.dotfiles._knownProfiles;
+          profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
         }
       else null;
     seed = {
@@ -370,6 +389,16 @@ in {
       Resolving host "${hostLabel}": ${option} entry "${name}" names a known ${role} that is already unreachable in the cascade closure; the exclusion has no effect and may be removed.
     '';
   in {
+    # Detect the host's platform from the evaluating package set, so
+    # that host records need not state it. A host may still assign
+    # its platform explicitly; that assignment wins over this
+    # default. The assertion in "modules/_assertions.nix" catches a
+    # declared host that ends up with no platform from either
+    # source.
+    dotfiles.host.platform = lib.mkIf (pkgs != null) (
+      lib.mkDefault pkgs.stdenv.hostPlatform.system
+    );
+
     warnings = lib.seq _unprunedSideEffect (
       map (mkWarning "profile" "excludeProfiles") redundantProfiles
       ++ map (mkWarning "feature" "excludeFeatures") redundantFeatures
