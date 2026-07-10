@@ -1,7 +1,15 @@
 # Basis of inspiration:
 #  https://github.com/midchildan/dotfiles/blob/7cdd097dd01e0678b6ff56487689c78469237722/nix/darwin/profiles/apps.nix
-{flakeLib, ...}:
+{
+  flakeLib,
+  lib,
+  ...
+}:
 flakeLib.mkProfile "apps" {
+  # Homebrew exists only on macOS, so a host qualifies for this
+  # profile only when its platform is one of the Darwin systems.
+  supportedPlatforms = lib.platforms.darwin;
+
   nixDarwin = {lib, ...}: {
     # Manage Homebrew with nix-darwin. Mainly useful for managing casks and
     # App Store installations. Any formula or cask not specified in the config
