@@ -106,7 +106,14 @@ flakeLib.mkFeature "model-agent/claude" {
       ];
       settings =
         {
-          includeCoAuthoredBy = false;
+          # Write no attribution text of any kind into commit messages
+          # or GitHub pull request descriptions: neither the
+          # co-authorship byline nor the "Claude-Session" URL trailer.
+          attribution = {
+            commit = "";
+            pr = "";
+            sessionUrl = false;
+          };
           model = "claude-opus-4-8";
           hooks = {
             PostToolUse = let
