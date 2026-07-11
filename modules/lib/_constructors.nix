@@ -38,11 +38,12 @@
 # assigned under "dotfiles.users" is mirrored into
 # "home-manager.users.<name>.dotfiles" in two places: the user's
 # identity fields under "dotfiles.identity", and the system-level
-# "dotfiles.host" extended with the user's cascade inputs (profiles,
-# features, excludeProfiles, excludeFeatures) under "dotfiles.host".
-# The latter arrangement lets the existing "dotfiles._host" derivation
-# in "modules/_activation.nix" continue to read its inputs from one
-# place inside the nested home-manager evaluator without modification.
+# "dotfiles.host" extended with the user's selected profiles and
+# features and their exclusions (profiles, features,
+# excludeProfiles, excludeFeatures) under "dotfiles.host". The
+# latter arrangement lets the existing "dotfiles._host" derivation in
+# "modules/_activation.nix" continue to read its inputs from one place
+# inside the nested home-manager evaluator without modification.
 {
   lib,
   inputs,
@@ -52,8 +53,6 @@
   inherit (inputs.home-manager.lib) homeManagerConfiguration;
   inherit (inputs.nix-darwin.lib) darwinSystem;
   inherit (inputs.nixos.lib) nixosSystem;
-
-  inherit (import ./_cascades.nix {inherit lib;}) cascadesFor expandClosure pruneCascades;
 
   nixpkgsDefaults = import ../_nixpkgs-defaults.nix;
 
@@ -86,75 +85,27 @@
     );
 
   # System-level module that, for each user assigned under
-  # "config.dotfiles.users", mirrors the user's identity and the
-  # combined host record into that user's nested home-manager
-  # evaluator, and assigns the user's home directory.
+  # "config.dotfiles.users", creates the user's operating-system
+  # account, spawns the user's nested home-manager evaluator, and
+  # mirrors the user's identity and the combined host record into
+  # that evaluator.
   #
-  # Also computes the system-level cascade as the union of each
-  # user's resolved active sets. NixOS profile/feature modules
-  # contribute system-level configuration (for example, an "essential"
-  # profile that sets "programs.zsh.enable = true;" so that
-  # "/etc/shells" registers zsh as a legitimate login shell). A
-  # profile that any user activates must therefore reach the
-  # system-level evaluator. The cascade walk runs once per user,
-  # using that user's seed and exclusions; the deduplicated union
-  # of those active sets is assigned to the system-level
-  # "dotfiles.host.{profiles,features}". Per-user exclusions are
-  # already applied before unioning, so the system-level
-  # "excludeProfiles" / "excludeFeatures" are left empty.
+  # The per-user activation walks and the union of their results —
+  # the system-level "dotfiles.host.{profiles,features}" default —
+  # are computed in place by the "_computedHostSelections" option in
+  # "modules/_activation.nix"; see that option's description.
   #
   # The nested home-manager evaluator sees:
   #   dotfiles.identity = <user>.identity
   #   dotfiles.host = (system-level) config.dotfiles.host
-  #                 // <user>'s cascade inputs
+  #                 // <user>'s selected profiles and features
+  #                    and their exclusions
   # so the existing "dotfiles._host" derivation logic (which reads
   # "config.dotfiles.host.{profiles,features,excludeProfiles,excludeFeatures}"
   # from inside the home-manager evaluator) works unchanged.
   multiUserPropagationModule = userDir: {config, ...}: let
     inherit (config.dotfiles) host;
-    cascades = cascadesFor {
-      inherit (host) platform;
-      knownProfiles = config.dotfiles._knownProfiles;
-      profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
-    };
-    knownByRole = {
-      profiles = config.dotfiles._knownProfiles;
-      features = config.dotfiles._knownFeatures;
-    };
-    # Per-user effective active sets: prune the cascade by the
-    # user's exclusions, filter the seed of those same names, and
-    # walk the closure on the pruned graph. A feature reachable
-    # only through an excluded profile drops out automatically;
-    # a feature reachable through a non-excluded path remains.
-    activePerUser =
-      lib.mapAttrs (
-        _: userCfg: let
-          prunedCascades = pruneCascades cascades {
-            profiles = userCfg.excludeProfiles;
-            features = userCfg.excludeFeatures;
-          };
-          prunedSeed = {
-            profiles = lib.subtractLists userCfg.excludeProfiles userCfg.profiles;
-            features = lib.subtractLists userCfg.excludeFeatures userCfg.features;
-          };
-          expanded = expandClosure prunedCascades knownByRole prunedSeed;
-        in {
-          inherit (expanded) profiles features;
-        }
-      )
-      config.dotfiles.users;
-    # Union of every user's active profiles / features. Stable
-    # order via "lib.unique" applied after concatenation.
-    unionActive = {
-      profiles = lib.unique (lib.concatMap (a: a.profiles) (lib.attrValues activePerUser));
-      features = lib.unique (lib.concatMap (a: a.features) (lib.attrValues activePerUser));
-    };
   in {
-    dotfiles.host = {
-      profiles = lib.mkDefault unionActive.profiles;
-      features = lib.mkDefault unionActive.features;
-    };
-
     home-manager.users =
       lib.mapAttrs (_: userCfg: {
         imports = [userCfg.homeManagerConfig];
@@ -259,14 +210,11 @@
     };
     machineDefaultsModule = {config, ...}: {
       nixpkgs.hostPlatform = hostPlatform;
-      # See the following GitHub issues for what makes this
+      # See the following GitHub issues for what makes this assignment
       # necessary, perhaps only temporarily:
       #   https://github.com/nix-darwin/nix-darwin/issues/1462
       #   https://github.com/nix-darwin/nix-darwin/issues/1457
-      system = {
-        primaryUser = lib.mkDefault config.dotfiles.primaryUser;
-        stateVersion = lib.mkDefault 6;
-      };
+      system.primaryUser = lib.mkDefault config.dotfiles.primaryUser;
     };
   in
     darwinSystem (

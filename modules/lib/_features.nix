@@ -14,12 +14,15 @@
 #
 # The "bodies" attrset is keyed by class name as recognized by this
 # flake's class aggregators ("homeManager", "nixDarwin", "nixOS").
-# Each value is one of two forms:
+# That key set is closed: a key naming no class (and not one of the
+# constructors' reserved keys) throws at registration rather than
+# storing a body that nothing ever reads. Each value is one of two
+# forms:
 #
 #   1. A deferred module returning the *contents* of a "config"
 #      block — not a full module with its own "config = {...}" key.
 #      The helper inserts the
-#      "config = lib.mkIf (activatesFeature name) (...)" wrapper, so
+#      "config = lib.mkIf (inEffect name) (...)" wrapper, so
 #      a body that itself wraps in "config = {...}" would produce
 #      "config.config = {...}" and silently drop its contributions.
 #
@@ -40,10 +43,9 @@
 # with no module contributions. Useful when a name is meaningful
 # only as a cross-feature reference.
 {lib}: let
-  # Build a deferred module that gates "body" on
-  # "host.<predicate> name", where "host" is the resolved
-  # "config.dotfiles._host" and "predicate" is one of
-  # "activatesFeature" / "activatesProfile".
+  # Build a deferred module that gates "body" on "host.<predicate>
+  # name", where "host" is the resolved "config.dotfiles._host" and
+  # "predicate" is one of "inEffect" / "activatesProfile".
   #
   # The wrapper's outer function destructures every module argument
   # that bodies might rely on, so the module system's argument
@@ -71,18 +73,22 @@
   # Build the per-class deferred module for one body, dispatching
   # on its form. A function body is the plain form (config-only,
   # gated). An attrset with at least one of "options"/"config" is
-  # the structured form (options pass through, config gated). The
-  # result is "lib.mkMerge" of the parts so the module evaluator
-  # sees one contribution per class.
+  # the structured form (options pass through, config gated); its
+  # parts combine through a single "imports"-bearing module. The
+  # module system expands a merge-valued definition into multiple
+  # definition values before the option type's merge runs, so the
+  # single-imports-module form keeps one registration counting as
+  # one definition under the "uniq"-wrapped registry options in
+  # "modules/module-schema.nix".
   buildClassModule = predicate: name: body:
     if lib.isFunction body
     then wrap predicate name body
     else if lib.isAttrs body && (body ? options || body ? config)
-    then
-      lib.mkMerge (
+    then {
+      imports =
         lib.optional (body ? options) body.options
-        ++ lib.optional (body ? config) (wrap predicate name body.config)
-      )
+        ++ lib.optional (body ? config) (wrap predicate name body.config);
+    }
     else throw "mkFeature/mkProfile: body for \"${name}\" must be a function or an attrset with \"options\" and/or \"config\"";
 
   # Common builder for both helpers. "knownKey" is the
@@ -112,12 +118,181 @@
     modulesKey = "profileModules";
     predicate = host: name: host.activatesProfile name;
   };
-in {
-  mkFeature = mk {
+  mkFeatureRegistration = mk {
     knownKey = "knownFeatures";
     modulesKey = "featureModules";
-    predicate = host: name: host.activatesFeature name;
+    predicate = host: name: host.inEffect name;
   };
+
+  # Argument validation shared by the constructors below. Each
+  # rejected argument throws in the author's vocabulary, naming the
+  # offending registration, so that no bare Nix coercion error
+  # escapes without naming the culprit.
+  checkName = constructor: name:
+    if !(builtins.isString name)
+    then throw ''${constructor}: a registration's name must be a string, but a value of type "${builtins.typeOf name}" was passed.''
+    else if name == ""
+    then throw ''${constructor}: a registration's name must not be the empty string; a nameless registration could never be selected, named as a precondition, or excluded.''
+    else null;
+  isListOfStrings = value: builtins.isList value && lib.all builtins.isString value;
+
+  # Format a list of names as a quoted, comma-separated English
+  # enumeration with a serial comma, matching the "enumerateNames"
+  # helper in the "modules/lib/_implications.nix" file: one name
+  # renders as "a", two as "a" and "b", and three or more as "a",
+  # "b", and "c".
+  enumerateNames = names: let
+    quoted = map (n: "\"${n}\"") names;
+    count = lib.length quoted;
+  in
+    if count == 1
+    then lib.head quoted
+    else if count == 2
+    then "${lib.head quoted} and ${lib.last quoted}"
+    else "${lib.concatStringsSep ", " (lib.init quoted)}, and ${lib.last quoted}";
+
+  # The module-class names that this flake's class aggregators
+  # recognize. The set of keys a registration accepts is closed:
+  # once a constructor splits its reserved key off, every remaining
+  # key of the argument attrset must be one of these names. A key
+  # outside the set — a misspelled class name, most likely — would
+  # otherwise register a body under a name that nothing ever reads,
+  # silently discarding the whole body.
+  classNames = ["homeManager" "nixDarwin" "nixOS"];
+  checkBodyKeys = constructor: kind: reservedKey: name: bodies: let
+    unknownKeys = builtins.filter (key: !(builtins.elem key classNames)) (builtins.attrNames bodies);
+  in
+    if unknownKeys == []
+    then null
+    else throw ''${constructor}: the ${kind} "${name}" passes ${
+        if lib.length unknownKeys == 1
+        then "the key ${enumerateNames unknownKeys}, which names no module class"
+        else "the keys ${enumerateNames unknownKeys}, which name no module classes"
+      }; a body stored under such a key would never be read. The accepted keys are ${enumerateNames classNames}, plus the reserved "${reservedKey}" key.'';
+in {
+  # In addition to the per-class bodies described in this file's
+  # header, the "mkFeature" function recognizes one reserved key:
+  #
+  #   preconditions: a list of feature or interest names whose joint
+  #   activation this feature's activation is conditioned on; listing
+  #   a name here never activates it. A feature carrying this key is a
+  #   "contingent feature": it activates automatically exactly when
+  #   all of its preconditions are met, and that is its only
+  #   activation path—no host, profile, or implied edge may name it
+  #   directly (an assertion in "modules/_assertions.nix" enforces
+  #   this). The registry option's type treats the list as a set — its
+  #   merge normalizes each definition — so order and duplication are
+  #   immaterial, equal declarations merge, and unequal ones are
+  #   rejected. A null value is identical to omitting the key — an
+  #   explicit "no preconditions" — so callers building the value
+  #   programmatically need no special case. An empty list is an
+  #   error: a contingent feature with no preconditions would be
+  #   unconditionally active.
+  #
+  # The "supportedPlatforms" key belongs to the "mkProfile" function
+  # alone; passing it here is an error rather than a silently
+  # discarded class body.
+  mkFeature = name: args: let
+    bodies = builtins.removeAttrs args ["preconditions"];
+    checks = lib.seq (checkName "mkFeature" name) (
+      if args ? supportedPlatforms
+      then throw ''mkFeature: the feature "${name}" passes a "supportedPlatforms" key, but the "mkProfile" function reserves that key; features carry no platform constraint.''
+      else if args ? preconditions && args.preconditions != null && !(isListOfStrings args.preconditions)
+      then throw ''mkFeature: the feature "${name}" passes a "preconditions" value that is not a list of strings. Pass the feature or interest names whose joint activation this feature's activation is conditioned on, or null for no preconditions.''
+      else checkBodyKeys "mkFeature" "feature" "preconditions" name bodies
+    );
+    registration = mkFeatureRegistration name bodies;
+  in
+    lib.seq checks (
+      registration
+      // lib.optionalAttrs (args ? preconditions && args.preconditions != null) {
+        dotfiles =
+          registration.dotfiles
+          // {
+            featurePreconditions.${name} =
+              if args.preconditions == []
+              then throw ''mkFeature: the feature "${name}" passes an empty "preconditions" list, but a contingent feature with no preconditions would be unconditionally active. Omit the "preconditions" key (or set it to null) to define an ordinary feature.''
+              else args.preconditions;
+          };
+      }
+    );
+
+  # Register an interest: a named want that participates in activation
+  # exactly as a feature does — a host may select or exclude it, and a
+  # contingent feature may name it as a precondition — but that
+  # carries no configuration of its own. Called with a closed attrset
+  # pattern:
+  #
+  #   flakeLib.mkInterest {
+  #     name = "dev/language-servers";
+  #     # Optional prose for future diagnostic or documentation
+  #     # surfaces; nothing consumes it yet.
+  #     description = "Editor-facing language servers.";
+  #   }
+  #
+  # The closed pattern lets Nix itself reject any unexpected
+  # attribute — a "homeManager" body, say — with its precise
+  # unexpected-argument error, keeping configuration out of
+  # interests by construction. The name enters the "knownInterests"
+  # registry, which the activation machinery folds into the same
+  # universe as feature names; a non-null description enters the
+  # "interestDescriptions" registry.
+  mkInterest = {
+    name,
+    description ? null,
+  }:
+    lib.seq (checkName "mkInterest" name) {
+      dotfiles =
+        {
+          knownInterests = [name];
+        }
+        // lib.optionalAttrs (description != null) {
+          interestDescriptions.${name} = description;
+        };
+    };
+
+  # Value-level combinator for a fragment INSIDE a feature body that
+  # applies only when some further features or interests are active,
+  # beyond the file's own activation gate. Intended use:
+  #
+  #   flakeLib.mkFeature "zsh" {
+  #     homeManager = {config, ...}: {
+  #       programs.zsh.enable = true;
+  #       programs.zsh.initContent = flakeLib.onlyWhen config ["kubernetes"] ''
+  #         # ... kubernetes-flavored shell additions ...
+  #       '';
+  #     };
+  #   }
+  #
+  # The result is a "lib.mkIf"-wrapped value, so it composes with the
+  # "inEffect" gate that the "mkFeature" function already wraps around
+  # the whole body: the fragment takes effect exactly when the
+  # enclosing feature AND every named feature or interest are active.
+  # Reach for a contingent feature (the "preconditions" argument of
+  # the "mkFeature" function) instead when the pairing deserves its
+  # own name, file, and excludability; this combinator suits pairings
+  # too slight for that.
+  #
+  # Every name is validated against the registries reachable from the
+  # caller's "config": a name registered as a profile, or registered
+  # nowhere, throws — with the same wording as the
+  # precondition-hygiene assertions in
+  # "modules/_assertions.nix" — rather than leaving a fragment that
+  # never applies. The validation runs whenever the gate is consulted,
+  # so it does not stop at the first inactive name.
+  onlyWhen = config: names: fragment: let
+    checkOne = name:
+      if builtins.elem name config.dotfiles._featureUniverse
+      then null
+      else if builtins.elem name config.dotfiles._knownProfiles
+      then throw ''onlyWhen: the fragment's precondition "${name}" names a known profile, but a precondition may name only a feature or an interest.''
+      else throw ''onlyWhen: the fragment names the precondition "${name}", but no imported module advertises that name as a feature or an interest.'';
+    checks =
+      if !(isListOfStrings names)
+      then throw "onlyWhen: the names argument must be a list of feature or interest names."
+      else lib.foldl' (acc: name: lib.seq (checkOne name) acc) null names;
+  in
+    lib.mkIf (lib.seq checks (lib.all config.dotfiles._host.inEffect names)) fragment;
 
   # In addition to the per-class bodies that the "mkFeature" function accepts,
   # the "mkProfile" function recognizes one reserved key:
@@ -126,20 +301,46 @@ in {
   #   (e.g. ["aarch64-darwin" "x86_64-darwin"]) on which this
   #   profile may activate. A host qualifies when its platform is
   #   one of them. Omit the key for a profile that may activate on
-  #   every platform. The cascade table filters every profile list
+  #   every platform. The implication graph filters every profile list
   #   by this support, and an assertion rejects a host that would
-  #   activate an unsupported profile anyway.
+  #   activate an unsupported profile anyway. Every entry must be a
+  #   platform that nixpkgs recognizes — a member of the
+  #   "lib.systems.doubles.all" list — so a misspelled identifier
+  #   fails here at registration instead of silently constraining
+  #   the profile away on every host.
+  #
+  # The "preconditions" key belongs to the "mkFeature" function alone;
+  # passing it here is an error rather than a silently discarded class
+  # body.
   mkProfile = name: args: let
     bodies = builtins.removeAttrs args ["supportedPlatforms"];
+    unknownPlatforms =
+      if args ? supportedPlatforms && isListOfStrings args.supportedPlatforms
+      then builtins.filter (p: !(builtins.elem p lib.systems.doubles.all)) args.supportedPlatforms
+      else [];
+    checks = lib.seq (checkName "mkProfile" name) (
+      if args ? preconditions
+      then throw ''mkProfile: the profile "${name}" passes a "preconditions" key, but the "mkFeature" function reserves that key; only features may be contingent.''
+      else if args ? supportedPlatforms && !(isListOfStrings args.supportedPlatforms)
+      then throw ''mkProfile: the profile "${name}" passes a "supportedPlatforms" value that is not a list of strings. Pass the Nixpkgs system identifiers on which the profile may activate.''
+      else if unknownPlatforms != []
+      then throw ''mkProfile: the profile "${name}" declares support for ${enumerateNames unknownPlatforms}, which ${
+          if lib.length unknownPlatforms == 1
+          then "names no platform"
+          else "name no platforms"
+        } that nixpkgs recognizes (the "lib.systems.doubles.all" list).''
+      else checkBodyKeys "mkProfile" "profile" "supportedPlatforms" name bodies
+    );
     registration = mkProfileRegistration name bodies;
   in
-    registration
-    // lib.optionalAttrs (args ? supportedPlatforms) {
-      dotfiles =
-        registration.dotfiles
-        // {
-          profileSupportedPlatforms.${name} =
-            lib.sort lib.lessThan (lib.unique args.supportedPlatforms);
-        };
-    };
+    lib.seq checks (
+      registration
+      // lib.optionalAttrs (args ? supportedPlatforms) {
+        dotfiles =
+          registration.dotfiles
+          // {
+            profileSupportedPlatforms.${name} = args.supportedPlatforms;
+          };
+      }
+    );
 }

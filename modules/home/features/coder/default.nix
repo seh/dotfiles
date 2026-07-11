@@ -24,7 +24,7 @@ flakeLib.mkFeature "coder" {
         cfg.package
       ];
       programs.ssh.settings =
-        lib.mkIf (cfg.enableSSHIntegration && config.dotfiles._host.activatesFeature "ssh")
+        lib.mkIf (cfg.enableSSHIntegration && config.dotfiles._host.inEffect "ssh")
         {
           "coder.*.main" = {
             ConnectTimeout = "0";

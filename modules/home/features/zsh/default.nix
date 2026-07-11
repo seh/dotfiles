@@ -100,7 +100,7 @@ flakeLib.mkFeature "zsh" {
           ls = "ls --color=auto --hyperlink=auto";
         };
         siteFunctions = {
-          kuc = lib.mkIf (config.dotfiles._host.activatesFeature "kubernetes") (builtins.readFile ./kuc);
+          kuc = lib.mkIf (config.dotfiles._host.inEffect "kubernetes") (builtins.readFile ./kuc);
         };
         syntaxHighlighting = {
           enable = true;
