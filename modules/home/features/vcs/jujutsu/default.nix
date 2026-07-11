@@ -115,7 +115,7 @@ flakeLib.mkFeature "vcs/jujutsu" {
                   "committer-date"
                   "name"
                 ];
-                diff-formatter = lib.mkIf (config.dotfiles._resolved.activatesFeature "dev/difftastic") difftasticMergeToolName;
+                diff-formatter = lib.mkIf (config.dotfiles._resolved.inEffect "dev/difftastic") difftasticMergeToolName;
                 log-word-wrap = true;
                 show-cryptographic-signatures = true;
               };
@@ -150,7 +150,7 @@ flakeLib.mkFeature "vcs/jujutsu" {
                 emacsMergeToolName = "ediff-alt";
               in {
                 merge-tools = {
-                  ${difftasticMergeToolName} = lib.mkIf (config.dotfiles._resolved.activatesFeature "dev/difftastic") {
+                  ${difftasticMergeToolName} = lib.mkIf (config.dotfiles._resolved.inEffect "dev/difftastic") {
                     program = lib.getExe config.programs.difftastic.package;
                     diff-args = [
                       "--color=always"

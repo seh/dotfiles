@@ -1,14 +1,21 @@
-# Identity values for this flake. Imported as plain data by
-# "./modules/hosts/MyComputer.nix" and used to seed the per-user
-# entry under "dotfiles.users" passed into
-# "inputs.dotfiles.lib.mkNixOS" through the "modules" argument so
-# that the target NixOS and home-manager evaluators apply the
-# assignment. The schema for "dotfiles.users.<name>" is declared by
-# the "_host-users.nix" module that the nix-darwin and NixOS class
-# aggregators in the dotfiles flake import.
+# Identity record for the user defined on this host.
+#
+# We import this attribute set as plain data by the
+# "./modules/hosts/MyComputer.nix" file and assign it to the
+# "dotfiles.users.<name>.identity" attribute inside the NixOS
+# evaluator. The schema for the "dotfiles.users.<name>" record is
+# declared by the "_users.nix" module, which the "_host-users.nix"
+# module imports, and the nix-darwin and NixOS class aggregators in
+# the dotfiles flake import that one.
+#
+# Note that the "name" field is intentionally absent: the schema's
+# submodule defaults the "identity.name" attribute's value to the
+# attribute key under the "dotfiles.users" option, so the user name
+# lives at the "dotfiles.users" attribute path in the host file, where
+# the attribute namespace enforces uniqueness across users.
 #
 # Available options:
-#   https://github.com/seh/dotfiles/blob/main/modules/_host-users.nix
+#   https://github.com/seh/dotfiles/blob/main/modules/_users.nix
 {
   email = "seharris@example.com";
   fullName = "Steve Harris";
