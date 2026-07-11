@@ -32,13 +32,12 @@
         (import-tree ./modules)
       ];
 
-      # List the platforms of the hosts you define under
-      # "./modules/hosts/". Replace or extend as appropriate.
-      # Home Manager runs on all four common platforms; likely
-      # alternatives: "aarch64-darwin", "x86_64-darwin",
-      # "x86_64-linux".
+      # List the platforms of the hosts you define under the
+      # "./modules/hosts/" directory. Replace or extend as
+      # appropriate. Home Manager runs on all three common platforms;
+      # likely alternatives: "aarch64-linux", "x86_64-linux".
       systems = [
-        "aarch64-linux"
+        "aarch64-darwin"
       ];
     };
 }
