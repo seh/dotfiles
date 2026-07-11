@@ -2,7 +2,7 @@
 #
 # Imported only by the home-manager class aggregator. Inside a
 # nix-darwin or NixOS system evaluator, identity is declared per-user
-# under "dotfiles.users" (see "_host-users.nix") and the system
+# under "dotfiles.users" (see "_users.nix") and the system
 # constructor mirrors each user's fields into that user's nested
 # home-manager evaluator as "dotfiles.identity".
 #
