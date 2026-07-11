@@ -32,9 +32,9 @@
         (import-tree ./modules)
       ];
 
-      # List the platforms of the hosts you define under
-      # "./modules/hosts/". Replace or extend as appropriate.
-      # Likely alternative: "x86_64-linux"
+      # List the platforms of the hosts you define under the
+      # "./modules/hosts/" directory. Replace or extend as
+      # appropriate. Likely alternative: "x86_64-linux".
       systems = [
         "aarch64-linux"
       ];

@@ -18,8 +18,8 @@
   inputs,
   lib,
 }: let
-  cascades = import ./_cascades.nix {inherit lib;};
+  implications = import ./_implications.nix {inherit lib;};
   constructors = import ./_constructors.nix {inherit lib inputs;};
   features = import ./_features.nix {inherit lib;};
 in
-  cascades // constructors // features
+  implications // constructors // features

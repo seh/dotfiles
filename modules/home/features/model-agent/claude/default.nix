@@ -18,11 +18,11 @@ flakeLib.mkFeature "model-agent/claude" {
     };
 
     enabledPluginIDs =
-      lib.optionals (config.dotfiles._host.activatesFeature "dev/language-servers") [
+      lib.optionals (config.dotfiles._host.inEffect "dev/language-servers") [
         "gopls-lsp@claude-plugins-official"
         "typescript-lsp@claude-plugins-official"
       ]
-      ++ lib.optional (config.dotfiles._host.activatesFeature "lang/rust") "rust-analyzer-lsp@claude-plugins-official";
+      ++ lib.optional (config.dotfiles._host.inEffect "lang/rust") "rust-analyzer-lsp@claude-plugins-official";
   in {
     programs.claude-code = {
       enable = lib.mkDefault true;
@@ -32,7 +32,7 @@ flakeLib.mkFeature "model-agent/claude" {
         # "lua-lsp@claude-plugins-official" because that marketplace
         # plugin invokes "lua-language-server" (the LuaLS project),
         # while our "lang/lua" feature installs "emmylua-ls" instead.
-        (lib.mkIf (config.dotfiles._host.activatesFeature "lang/lua") {
+        (lib.mkIf (config.dotfiles._host.inEffect "lang/lua") {
           lua = {
             command = lib.getExe pkgs.emmylua-ls;
             extensionToLanguage = {
@@ -40,7 +40,7 @@ flakeLib.mkFeature "model-agent/claude" {
             };
           };
         })
-        (lib.mkIf (config.dotfiles._host.activatesFeature "dev/language-servers") {
+        (lib.mkIf (config.dotfiles._host.inEffect "dev/language-servers") {
           bash = {
             command = lib.getExe pkgs.bash-language-server;
             args = ["start"];
@@ -144,12 +144,12 @@ flakeLib.mkFeature "model-agent/claude" {
                     command = ''${lib.getExe pkgs.gofumpt} -w ${receiveInputFilePath}'';
                   }
                 ]
-                ++ lib.optional (config.dotfiles._host.activatesFeature "lang/lua") {
+                ++ lib.optional (config.dotfiles._host.inEffect "lang/lua") {
                   # Lua files
                   patterns = ["*.lua"];
                   command = ''${lib.getExe pkgs.stylua} --config-path ${config.dotfiles.lua.styluaConfigFile} -- ${receiveInputFilePath}'';
                 }
-                ++ lib.optional (config.dotfiles._host.activatesFeature "lang/markdown") {
+                ++ lib.optional (config.dotfiles._host.inEffect "lang/markdown") {
                   # Markdown files
                   patterns = ["*.md"];
                   # Specify the configuration file path explicitly, as
