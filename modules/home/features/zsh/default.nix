@@ -16,6 +16,7 @@ flakeLib.mkFeature "zsh" {
     config = {
       config,
       lib,
+      pkgs,
       ...
     }: let
       cfg = config.dotfiles.zsh;
@@ -23,13 +24,20 @@ flakeLib.mkFeature "zsh" {
       # NB: We reference this file from the "zshrc" file.
       home.file.".p10k.zsh" = lib.mkIf cfg.enablePowerlevel10k {source = ./p10k.zsh;};
 
+      # The "zsh-completions" package provides no plugin file to
+      # source; it instead installs completion functions into its
+      # "share/zsh/site-functions" directory. Adding the package to
+      # the installed set here places that directory onto zsh's
+      # "fpath" search path by way of the Home Manager profile, which
+      # the generated "zshenv" file scans for each entry in the
+      # "NIX_PROFILES" variable, so that the "compinit" function finds
+      # those completions.
+      home.packages = [pkgs.zsh-completions];
+
       programs.zsh = {
-        enable = true;
         autocd = false;
         defaultKeymap = "emacs";
-        syntaxHighlighting = {
-          enable = true;
-        };
+        enable = true;
         history = {
           expireDuplicatesFirst = true;
           extended = true;
@@ -67,32 +75,6 @@ flakeLib.mkFeature "zsh" {
           '')
           (builtins.readFile ./zshrc)
         ];
-        shellAliases = {
-          ls = "ls --color=auto --hyperlink=auto";
-        };
-        siteFunctions = {
-          kuc = lib.mkIf (config.dotfiles._host.activatesFeature "kubernetes") (builtins.readFile ./kuc);
-        };
-
-        antidote = {
-          enable = true;
-          plugins =
-            [
-              # TODO(seh): Confirm that these work when specified directly as oh-my-zsh plugins.
-              # "ohmyzsh/ohmyzsh path:lib"
-              # "ohmyzsh/ohmyzsh path:plugins/colored-man-pages"
-              # "ohmyzsh/ohmyzsh path:plugins/extract"
-              # "ohmyzsh/ohmyzsh path:plugins/git"
-              "zsh-users/zsh-autosuggestions"
-              "zsh-users/zsh-completions"
-            ]
-            ++ lib.optional cfg.enablePowerlevel10k "romkatv/powerlevel10k"
-            ++ [
-              # NB: This one needs to come last.
-              "zsh-users/zsh-syntax-highlighting"
-            ];
-          useFriendlyNames = true;
-        };
         oh-my-zsh = {
           enable = true;
           plugins = [
@@ -100,6 +82,28 @@ flakeLib.mkFeature "zsh" {
             "direnv"
             "extract"
           ];
+        };
+        plugins =
+          [
+            {
+              name = "zsh-autosuggestions";
+              src = pkgs.zsh-autosuggestions;
+              file = "share/zsh-autosuggestions/zsh-autosuggestions.zsh";
+            }
+          ]
+          ++ lib.optional cfg.enablePowerlevel10k {
+            name = "powerlevel10k";
+            src = pkgs.zsh-powerlevel10k;
+            file = "share/zsh-powerlevel10k/powerlevel10k.zsh-theme";
+          };
+        shellAliases = {
+          ls = "ls --color=auto --hyperlink=auto";
+        };
+        siteFunctions = {
+          kuc = lib.mkIf (config.dotfiles._host.activatesFeature "kubernetes") (builtins.readFile ./kuc);
+        };
+        syntaxHighlighting = {
+          enable = true;
         };
       };
     };
