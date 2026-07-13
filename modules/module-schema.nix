@@ -23,7 +23,10 @@ in {
       '';
     };
     featurePreconditions = lib.mkOption {
-      type = lib.types.attrsOf (setOfNames {merge = "agreement";});
+      type = lib.types.attrsOf (setOfNames {
+        merge = "agreement";
+        allowEmpty = false;
+      });
       default = {};
       description = ''
         Per-feature preconditions, keyed by feature name. Each value
@@ -102,7 +105,10 @@ in {
       '';
     };
     profileSupportedPlatforms = lib.mkOption {
-      type = lib.types.attrsOf (setOfNames {merge = "agreement";});
+      type = lib.types.attrsOf (setOfNames {
+        merge = "agreement";
+        allowEmpty = false;
+      });
       default = {};
       description = ''
         Per-profile platform support, keyed by profile name. Each value
