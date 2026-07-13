@@ -1,27 +1,38 @@
 {lib}: let
-  # The implication graph, describing per role the directed edges
-  # from an aggregate name to the names it implies. The graph is
-  # role-keyed so that a future role (e.g. "bundles") becomes a
-  # purely additive change: add a new top-level key alongside
-  # "profiles" / "features" and extend the "expandClosure" function
-  # nowhere—its walk iterates over whatever roles the graph
+  # Assemble the per-host implication graph from the co-located
+  # "implies" declarations that each profile and feature carries. An
+  # implied edge is a property of its source, so it lives in the
+  # source's own file; the "impliedEdges" argument carries those
+  # declarations, keyed by source name, and this function classifies
+  # every target by role to produce the role-keyed graph that the
+  # "expandClosure" function consumes.
+  #
+  # The graph is role-keyed ("profiles" / "features") so that a
+  # future role (e.g. "bundles") becomes a purely additive change:
+  # add a new top-level key and the "expandClosure" function walks it
+  # unchanged, since its walk iterates over whatever roles the graph
   # advertises.
   #
-  # Evaluated per-host so that the per-profile platform filtering
-  # described below can vary with the host's platform.
+  # This function runs per-host so that the per-profile platform
+  # filtering described below can vary with the host's platform.
   #
-  # The "implicationsFor" function filters every entry's "profiles"
-  # list against the profiles' declared "supportedPlatforms" (see
-  # the "mkProfile" function): a profile the host's platform does
-  # not support never arrives through the graph, whether via the
-  # "all" entry or via a narrower one such as "desktop". The
-  # assertion in the "modules/_assertions.nix" file rejects a host
-  # that would activate such a profile anyway (e.g. by selecting it
-  # directly).
+  # This function filters every profile entry's "profiles" list
+  # against the profiles' declared "supportedPlatforms" (see the
+  # "mkProfile" function): a profile the host's platform does not
+  # support never arrives through the graph, whether via the "all"
+  # entry or via a narrower one such as "desktop". The assertion in
+  # "modules/_assertions.nix" rejects a host that would activate
+  # such a profile anyway (e.g. by selecting it directly).
   #
-  # The "all" entry's targets are computed from "knownProfiles"
-  # rather than enumerated, so that introducing a new profile folds
-  # it into "all" automatically. Hosts that want to skip one of the
+  # This function includes a record-form edge ("{ name = "<target>";
+  # supportedPlatforms = [<systems>]; }") only when the host's
+  # platform is one of the listed systems; this is how a source
+  # reaches a target on some platforms and not others.
+  #
+  # This function computes the "all" entry's targets from
+  # "knownProfiles" rather than reading a declared edge, since "all"
+  # is not a co-located edge: introducing a new profile folds it into
+  # "all" automatically, and hosts that want to skip one of the
   # profiles it reaches list that profile under "excludeProfiles".
   #
   # The graph across all roles MUST form a DAG; the "expandClosure"
@@ -38,118 +49,73 @@
     # of the listed values, so a null platform errs toward omitting
     # every platform-constrained profile.
     profileSupportedPlatforms ? {},
+    # Co-located implied edges, keyed by source name; each value is
+    # the source's "implies" list, whose entries are bare target
+    # names or record-form platform-conditional edges. This function
+    # assembles them into the role-keyed graph below.
+    impliedEdges ? {},
     ...
   }: let
     availableOnHost = name: let
       supported = profileSupportedPlatforms.${name} or null;
     in
       supported == null || (platform != null && builtins.elem platform supported);
-    isDarwinHost = platform != null && lib.hasSuffix "-darwin" platform;
     filterEntryProfiles = entry:
       entry
       // lib.optionalAttrs (entry ? profiles) {
         profiles = builtins.filter availableOnHost entry.profiles;
       };
-    profileEntries = {
-      all = {
-        profiles = lib.subtractLists ["all"] knownProfiles;
-        features = [];
-      };
-      essential = {
-        profiles = ["minimal"];
-        features = [
-          "bash"
-          "dev/difftastic"
-          "editor/emacs"
-          "gnupg"
-          "kitty"
-          "lang/markdown"
-          "nh"
-          "nix"
-          "nushell"
-          "shell"
-          "ssh"
-          "vcs/git"
-          "vcs/jjui"
-          "vcs/jujutsu"
-          "zsh"
-        ];
-      };
-      development = {
-        profiles = [];
-        features = [
-          "cloud/aws"
-          "cloud/azure"
-          "cloud/gcp"
-          "cloud/terraform"
-          "coder"
-          "dev/bazel"
-          "dev/containers"
-          "dev/coverage"
-          "dev/diffnav"
-          "dev/editorconfig"
-          "dev/emulation"
-          "dev/language-servers"
-          "editor/helix"
-          "kubernetes"
-          "lang/common-lisp"
-          "lang/cue"
-          "lang/go"
-          "lang/javascript"
-          "lang/jsonnet"
-          "lang/lua"
-          "lang/protobuf"
-          "lang/rust"
-          "lang/shell"
-          "model-agent/claude"
-          "model-agent/copilot"
-          "model-agent/opencode"
-          "net/http-clients"
-          "net/local-tls"
-          "net/tunnels"
-          "vcs/commit-signing"
-          "vcs/git-town"
-          "vcs/github"
-        ];
-      };
-      desktop = {
-        # NB: The per-entry platform filtering above keeps "apps"
-        # and "macos" from reaching hosts whose platforms they do
-        # not support.
-        profiles = [
-          "apps"
-          "fonts"
-          "macos"
-        ];
-      };
-      web = {
-        profiles = [];
-        features = ["web/firefox"];
-      };
+    # A name among the known profiles denotes a profile; every other
+    # name denotes a feature. The same test classifies both a source
+    # (which role-bucket it declares under) and each of its targets.
+    isProfile = name: builtins.elem name knownProfiles;
+    # An entry applies when it is a bare name (an unconditional edge)
+    # or a record whose "supportedPlatforms" list contains the host's
+    # platform.
+    edgeApplies = entry:
+      builtins.isString entry
+      || (platform != null && builtins.elem platform entry.supportedPlatforms);
+    edgeName = entry:
+      if builtins.isString entry
+      then entry
+      else entry.name;
+    # Partition one source's applicable targets by role. A target
+    # among the known profiles is a profile edge; every other target
+    # is a feature edge—an unknown target falls here so that
+    # "expandClosure" reports it as a dangling feature edge, and a
+    # feature naming a profile falls under "profiles" so that the
+    # feature-to-profile check rejects it. The "profiles" key appears
+    # only when the source names a profile target, so a feature source
+    # that names none carries no "profiles" field.
+    targetsFor = entries: let
+      names = map edgeName (builtins.filter edgeApplies entries);
+      profileTargets = lib.unique (builtins.filter isProfile names);
+      featureTargets = lib.unique (builtins.filter (n: !(isProfile n)) names);
+    in
+      {features = featureTargets;}
+      // lib.optionalAttrs (profileTargets != []) {profiles = profileTargets;};
+    # Group the sources under the role of the source itself, so that
+    # a profile's edges sit under "profiles" and a feature's under
+    # "features".
+    edgesForRole = wantProfiles:
+      lib.listToAttrs (
+        map (source: {
+          name = source;
+          value = targetsFor impliedEdges.${source};
+        })
+        (builtins.filter (source: isProfile source == wantProfiles) (builtins.attrNames impliedEdges))
+      );
+    # The "all" profile reaches every other profile; this function
+    # computes its targets rather than reading a declared edge (see
+    # this function's header).
+    allEntry = {
+      profiles = lib.subtractLists ["all"] knownProfiles;
+      features = [];
     };
+    profileEntries = edgesForRole true // {all = allEntry;};
   in {
     profiles = lib.mapAttrs (_name: filterEntryProfiles) profileEntries;
-    features =
-      {
-        # NB: A feature may not imply a profile, but a feature may
-        # imply another feature.
-        "vcs/github" = {
-          features = ["vcs/git"];
-        };
-        "vcs/jjui" = {
-          features = ["vcs/jujutsu"];
-        };
-      }
-      // lib.optionalAttrs isDarwinHost {
-        # Podman, in the "dev/containers" feature, uses QEMU as its
-        # virtual-machine backend on macOS, and the "dev/emulation"
-        # feature provides QEMU; selecting containers on a Darwin
-        # host must therefore reach emulation. On Linux podman runs
-        # natively and needs no such edge.
-        "dev/containers" = {
-          features = ["dev/emulation"];
-        };
-      };
+    features = edgesForRole false;
   };
 
   # Role-parametric transitive closure over the typed implication
