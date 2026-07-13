@@ -51,7 +51,6 @@ in {
               # https://github.com/seh/dotfiles/tree/main/modules/home/features
               host = {
                 name = hostName;
-                framework = "homeManager";
                 profiles = [
                   "all"
                 ];

@@ -6,17 +6,17 @@
 # activation union in every class. This module carries the options
 # that are meaningful only where a system configuration manages the
 # host: the primary-user designation and the host-wide Lix channel,
-# shared across all users.
+# shared across all users. What nix-darwin requires of that
+# designation—a default drawn from a sole user, and an explicit
+# assignment once there are several—lives in
+# "_darwin-primary-user.nix", which the nix-darwin class aggregator
+# alone imports.
 #
 # This module is imported by the nix-darwin and NixOS class
 # aggregators, not by the home-manager class aggregator. The
 # narrowed home-manager identity schema lives in
 # "_user-identity.nix".
-{
-  lib,
-  config,
-  ...
-}: let
+{lib, ...}: let
   inherit (lib) mkOption types;
 in {
   options.dotfiles = {
@@ -40,27 +40,5 @@ in {
         The Lix package set channel to use (e.g. "stable", "latest").
       '';
     };
-  };
-
-  config = let
-    framework = config.dotfiles.host.framework or null;
-    userNames = builtins.attrNames config.dotfiles.users;
-  in {
-    # On nix-darwin with exactly one configured user, default
-    # "primaryUser" to that user's name. With more than one user,
-    # the consumer must set "primaryUser" explicitly; the
-    # assertion below catches the omission.
-    dotfiles.primaryUser = lib.mkIf (framework == "nixDarwin" && builtins.length userNames == 1) (
-      lib.mkDefault (builtins.head userNames)
-    );
-
-    assertions = lib.optionals (framework == "nixDarwin") [
-      {
-        assertion = builtins.length userNames <= 1 || config.dotfiles.primaryUser != null;
-        message = ''
-          dotfiles.primaryUser must be set when more than one user is defined on a nix-darwin host
-        '';
-      }
-    ];
   };
 }
