@@ -19,7 +19,6 @@ in {
           dotfiles = {
             host = {
               name = hostName;
-              framework = "nixDarwin";
             };
             # When more than one user is defined under "users" below,
             # "primaryUser" must be set explicitly to one of those

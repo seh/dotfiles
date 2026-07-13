@@ -9,9 +9,6 @@
 #   inputs.dotfiles.lib.mkDarwin {
 #     modules = [
 #       {
-#         dotfiles.host = {
-#           framework = "nixDarwin";
-#         };
 #         dotfiles.users.seh = {
 #           identity = {
 #             email = "seh@panix.com";
@@ -88,12 +85,11 @@
   # "config.dotfiles.users", creates the user's operating-system
   # account, spawns the user's nested home-manager evaluator, and
   # mirrors the user's identity and the combined host record into
-  # that evaluator.
-  #
-  # The per-user activation walks and the union of their results —
-  # the system-level "dotfiles.host.{profiles,features}" default —
-  # are computed in place by the "_computedHostSelections" option in
-  # "modules/_activation.nix"; see that option's description.
+  # that evaluator. It assigns nothing into
+  # "dotfiles.host.{profiles,features}": those are the machine's own
+  # selections. The system-level active set unions the machine's own
+  # activation with each user's, computed by the "_host" record in
+  # "modules/_activation.nix".
   #
   # The nested home-manager evaluator sees:
   #   dotfiles.identity = <user>.identity

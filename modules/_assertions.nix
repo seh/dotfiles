@@ -2,25 +2,34 @@
 #
 # Role-aware assertions are surfaced against the typed activation
 # surface: each role ("profiles", "features") gets an unknown-name
-# assertion, plus a cross-role mismatch assertion that catches a
-# name selected under one role but advertised under another.
+# assertion, plus a cross-role mismatch assertion that catches a name
+# selected under one role but advertised under another.
 #
 # Role-mismatch assertions run before the plain "unknown name"
-# assertions so that the more specific diagnosis wins when a name
-# was simply selected under the wrong role.
+# assertions so that the more specific diagnosis wins when a name was
+# simply selected under the wrong role.
 #
 # The "knownProfiles", "knownFeatures", and "knownInterests"
-# registries consulted here are flake-wide by design; see the
-# comment block in "modules/_activation.nix" near the declaration of
-# "dotfiles._knownProfiles" for the rationale. The preconditions
-# table ("dotfiles._featurePreconditions") is consulted as well, to
-# check contingent features' precondition edges and their possible
-# misuse in a host's selections and in the implication graph.
+# registries consulted here are flake-wide by design; see the comment
+# block in "modules/_activation.nix" near the declaration of
+# "dotfiles._knownProfiles" for the rationale. The preconditions table
+# ("dotfiles._featurePreconditions") is consulted as well, to check
+# contingent features' precondition edges and their possible misuse in
+# a host's selections and in the implication graph.
 {
   lib,
   config,
   ...
 }: let
+  # Define these bindings in the order in which the "assertions" list
+  # at the bottom applies them: namespace-disjointness first (every
+  # kind-aware check presupposes that each name denotes one kind),
+  # then the role-parametric name checks, then the precondition,
+  # contingent-feature, and implied-edge checks, then the platform
+  # checks. The shared helpers come first, and each assertion's own
+  # helpers sit just before it.
+  #
+  # Shared inputs, used by several assertions below.
   inherit (config.dotfiles) host;
   hostName = toString host.name;
   # The platform is detection-only: "modules/_activation.nix" computes
@@ -36,126 +45,15 @@
   featurePreconditions = config.dotfiles._featurePreconditions;
   contingentNames = builtins.attrNames featurePreconditions;
 
-  # Role-parametric driver. Iterating over this list (rather than
-  # hard-coding "profiles" and "features") means that adding a third
-  # role later—say, "bundles"—reduces to a single new entry.
-  roles = [
-    {
-      name = "profiles";
-      selected = host.profiles;
-      excluded = host.excludeProfiles;
-      known = knownProfiles;
-      humanSingular = "profile";
-      humanPlural = "profile(s)";
-      selectOption = "dotfiles.host.profiles";
-      excludeOption = "dotfiles.host.excludeProfiles";
-    }
-    {
-      name = "features";
-      selected = host.features;
-      excluded = host.excludeFeatures;
-      known = featureUniverse;
-      humanSingular = "feature";
-      humanPlural = "feature(s)";
-      selectOption = "dotfiles.host.features";
-      excludeOption = "dotfiles.host.excludeFeatures";
-    }
-  ];
-
-  # Pair each role with "the other roles", so that each role's
-  # selections can be checked against every other role's known
-  # set. For the two-role case this degenerates to one pair per
-  # direction.
-  crossPairs =
-    lib.concatMap (
-      here: map (there: {inherit here there;}) (builtins.filter (r: r.name != here.name) roles)
-    )
-    roles;
-
-  # Role-mismatch assertion: names selected under "here.name" that
-  # are actually known as "there.name".
-  mismatchAssertion = {
-    here,
-    there,
-  }: let
-    misplaced = builtins.filter (n: builtins.elem n there.known) here.selected;
-  in {
-    assertion = misplaced == [];
-    message = ''
-      Resolving host "${hostName}": selecting ${lib.concatStringsSep ", " misplaced} under "${here.name}", but these are known ${there.humanPlural}. Move them to "${there.selectOption}".
-    '';
-  };
-
-  # Unknown-name assertion for a single role. Elements that are
-  # neither in "role.known" nor in any other role's "known" set
-  # count as unknown; elements present in another role's "known"
-  # set are instead caught by the role-mismatch assertion above.
-  unknownAssertion = role: let
-    otherKnown = lib.concatLists (map (r: r.known) (builtins.filter (r: r.name != role.name) roles));
-    unknown =
-      builtins.filter (
-        n: !(builtins.elem n role.known) && !(builtins.elem n otherKnown)
-      )
-      role.selected;
-  in {
-    assertion = unknown == [];
-    message = ''
-      Resolving host "${hostName}": selecting ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Add the corresponding ${role.humanSingular} module or remove the name(s) from "${role.selectOption}".
-    '';
-  };
-
-  # Unknown-exclude assertion: any name listed under a role's
-  # "exclude" option must also appear in that role's known set.
-  # A misspelled exclusion would otherwise silently fail to
-  # suppress, leaving the host with an unintended activation set.
-  unknownExcludeAssertion = role: let
-    unknown = builtins.filter (n: !(builtins.elem n role.known)) role.excluded;
-  in {
-    assertion = unknown == [];
-    message = ''
-      Resolving host "${hostName}": excluding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${role.excludeOption}".
-    '';
-  };
-
-  # A profile may declare (via the "mkProfile" function's
-  # "supportedPlatforms" argument) the platforms on which it may
-  # activate; a host qualifies when its platform is one of them. The
-  # "all" entry already omits unsupported profiles (see the
-  # "implicationsFor" function in "modules/lib/_implications.nix");
-  # this assertion rejects a host whose resolved activation reaches
-  # one anyway, such as by selecting it directly in
-  # "dotfiles.host.profiles". A host whose platform could not be
-  # detected (no package set) is not checked, since its operating
-  # system is unknown.
-  profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
-  unsupportedActiveProfiles =
-    if platform == null
-    then []
-    else
-      builtins.filter (
-        name: let
-          supported = profileSupportedPlatforms.${name} or null;
-        in
-          supported != null && !(builtins.elem platform supported)
-      )
-      config.dotfiles._host.activeProfiles;
-  describeUnsupported = name: ''"${name}" (supports only ${lib.concatStringsSep ", " profileSupportedPlatforms.${name}})'';
-  platformSupportAssertion = {
-    assertion = unsupportedActiveProfiles == [];
-    message = ''
-      Resolving host "${hostName}": the profile(s) ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveProfiles} may not activate on this host's platform, "${toString platform}". Remove the name(s) from "dotfiles.host.profiles".
-    '';
-  };
-
   # Quote and join names for the messages below.
   quoteNames = names: lib.concatMapStringsSep ", " (n: "\"${n}\"") names;
 
-  # Profiles, features, and interests share one namespace: a name
-  # may denote only one kind. The pairwise checks below name the
-  # offender and both kinds. An interest-versus-feature collision is
-  # the case the "uniq" guard on the module registries cannot catch
-  # (an interest contributes no module body, so a body under its
-  # name would count as a first definition, not a duplicate).
+  # Profiles, features, and interests share one namespace: a name may
+  # denote only one kind. The pairwise checks below name the offender
+  # and both kinds. An interest-versus-feature collision is the case
+  # the "uniq" guard on the module registries cannot catch (an
+  # interest contributes no module body, so a body under its name
+  # would count as a first definition, not a duplicate).
   namespacePairs = [
     {
       here = {
@@ -204,8 +102,108 @@
     '';
   };
 
-  # Every precondition must name a known feature or interest—never
-  # a profile, and never a name nothing advertises.
+  # Role-parametric driver. Iterating over this list (rather than
+  # hard-coding "profiles" and "features") means that adding a third
+  # role later—say, "bundles"—reduces to a single new entry.
+  roles = [
+    {
+      name = "profiles";
+      selected = host.profiles;
+      excluded = host.excludeProfiles;
+      forbidden = host.forbidProfiles;
+      known = knownProfiles;
+      humanSingular = "profile";
+      humanPlural = "profile(s)";
+      selectOption = "dotfiles.host.profiles";
+      excludeOption = "dotfiles.host.excludeProfiles";
+      forbidOption = "dotfiles.host.forbidProfiles";
+    }
+    {
+      name = "features";
+      selected = host.features;
+      excluded = host.excludeFeatures;
+      forbidden = host.forbidFeatures;
+      known = featureUniverse;
+      humanSingular = "feature";
+      humanPlural = "feature(s)";
+      selectOption = "dotfiles.host.features";
+      excludeOption = "dotfiles.host.excludeFeatures";
+      forbidOption = "dotfiles.host.forbidFeatures";
+    }
+  ];
+
+  # Pair each role with "the other roles", so that each role's
+  # selections can be checked against every other role's known set.
+  # For the two-role case this degenerates to one pair per direction.
+  crossPairs =
+    lib.concatMap (
+      here: map (there: {inherit here there;}) (builtins.filter (r: r.name != here.name) roles)
+    )
+    roles;
+
+  # Role-mismatch assertion: names selected under "here.name" that are
+  # actually known as "there.name".
+  mismatchAssertion = {
+    here,
+    there,
+  }: let
+    misplaced = builtins.filter (n: builtins.elem n there.known) here.selected;
+  in {
+    assertion = misplaced == [];
+    message = ''
+      Resolving host "${hostName}": selecting ${lib.concatStringsSep ", " misplaced} under "${here.name}", but these are known ${there.humanPlural}. Move them to "${there.selectOption}".
+    '';
+  };
+
+  # Unknown-name assertion for a single role. Elements that are
+  # neither in "role.known" nor in any other role's "known" set count
+  # as unknown; elements present in another role's "known" set are
+  # instead caught by the role-mismatch assertion above.
+  unknownAssertion = role: let
+    otherKnown = lib.concatLists (map (r: r.known) (builtins.filter (r: r.name != role.name) roles));
+    unknown =
+      builtins.filter (
+        n: !(builtins.elem n role.known) && !(builtins.elem n otherKnown)
+      )
+      role.selected;
+  in {
+    assertion = unknown == [];
+    message = ''
+      Resolving host "${hostName}": selecting ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Add the corresponding ${role.humanSingular} module or remove the name(s) from "${role.selectOption}".
+    '';
+  };
+
+  # Unknown-exclude assertion: any name listed under a role's
+  # "exclude" option must also appear in that role's known set. A
+  # misspelled exclusion would otherwise silently fail to suppress,
+  # leaving the host with an unintended activation set.
+  unknownExcludeAssertion = role: let
+    unknown = builtins.filter (n: !(builtins.elem n role.known)) role.excluded;
+  in {
+    assertion = unknown == [];
+    message = ''
+      Resolving host "${hostName}": excluding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${role.excludeOption}".
+    '';
+  };
+
+  # Unknown-forbid assertion: any name listed under a role's
+  # machine-wide "forbid" option must also appear in that role's known
+  # set. Forbidding is an exclusion applied to every selector, so a
+  # misspelled name would silently veto nothing, just as a misspelled
+  # exclusion would fail to suppress. A contingent feature may be
+  # forbidden (it simply never activates), so no separate check
+  # objects to that.
+  unknownForbidAssertion = role: let
+    unknown = builtins.filter (n: !(builtins.elem n role.known)) role.forbidden;
+  in {
+    assertion = unknown == [];
+    message = ''
+      Resolving host "${hostName}": forbidding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${role.forbidOption}".
+    '';
+  };
+
+  # Every precondition must name a known feature or interest—never a
+  # profile, and never a name nothing advertises.
   preconditionEdges =
     lib.concatMap (
       name:
@@ -268,15 +266,15 @@
   # A contingent feature activates only through its preconditions, so
   # naming one in the selected features would activate it in an
   # inconsistent state, without the guarantee its body is written
-  # against. The check stands down for selections computed from the
-  # "dotfiles.users" registry; the "_hostSelectionsComputed" option's
-  # description in "modules/_activation.nix" explains why. Inside a nested
-  # per-user evaluator the selections arrive from
-  # "dotfiles.users.<name>.features", so the message names both
-  # surfaces.
+  # against. Every selector's "features" list is authored, so the
+  # check applies uniformly, with nothing suppressing it: the
+  # machine's own "dotfiles.host.features" here, and each user's
+  # "features" inside that user's nested evaluator. The message names
+  # both surfaces because the nested per-user evaluator sees the
+  # selection arrive from "dotfiles.users.<name>.features".
   selectedContingent = builtins.filter (n: builtins.elem n contingentNames) host.features;
   contingentSelectionAssertion = {
-    assertion = config.dotfiles._hostSelectionsComputed || selectedContingent == [];
+    assertion = selectedContingent == [];
     message = ''
       Resolving host "${hostName}": the selected features name the contingent feature(s) ${quoteNames selectedContingent} (written in "dotfiles.host.features" or, on a multi-user host, in "dotfiles.users.<name>.features"), but a contingent feature activates automatically exactly when all of its preconditions are met and may not be selected directly. Select its preconditions instead.
     '';
@@ -305,28 +303,60 @@
     '';
   };
 
-  # A host with a name must know its platform, and detection from
-  # the evaluating package set is the only source: host records
-  # carry no platform attribute. This assertion fails only when a
-  # named host is evaluated without a package set (for example, in a
-  # bare instantiation of these modules). Without a platform, the
-  # platform-support check above cannot judge anything.
+  # A host with a name must know its platform, and detection from the
+  # evaluating package set is the only source: host records carry no
+  # platform attribute. This assertion fails only when a named host is
+  # evaluated without a package set (for example, in a bare
+  # instantiation of these modules). Without a platform, the
+  # platform-support check below cannot judge anything.
   platformDetectedAssertion = {
     assertion = host.name == null || platform != null;
     message = ''
       Resolving host "${hostName}": the host has a name, but no platform could be detected because this evaluator provides no package set. Evaluate these modules with a package set, as the "mkHome", "mkDarwin", and "mkNixOS" constructors do.
     '';
   };
+
+  # A profile may declare (via the "mkProfile" function's
+  # "supportedPlatforms" argument) the platforms on which it may
+  # activate; a host qualifies when its platform is one of them. The
+  # "all" entry already omits unsupported profiles (see the
+  # "implicationsFor" function in "modules/lib/_implications.nix");
+  # this assertion rejects a host whose resolved activation reaches
+  # one anyway, such as by selecting it directly in
+  # "dotfiles.host.profiles". A host whose platform could not be
+  # detected (no package set) is not checked, since its operating
+  # system is unknown.
+  profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
+  unsupportedActiveProfiles =
+    if platform == null
+    then []
+    else
+      builtins.filter (
+        name: let
+          supported = profileSupportedPlatforms.${name} or null;
+        in
+          supported != null && !(builtins.elem platform supported)
+      )
+      config.dotfiles._host.activeProfiles;
+  describeUnsupported = name: ''"${name}" (supports only ${lib.concatStringsSep ", " profileSupportedPlatforms.${name}})'';
+  platformSupportAssertion = {
+    assertion = unsupportedActiveProfiles == [];
+    message = ''
+      Resolving host "${hostName}": the profile(s) ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveProfiles} may not activate on this host's platform, "${toString platform}". Remove the name(s) from "dotfiles.host.profiles".
+    '';
+  };
 in {
   # Namespace-disjointness assertions run first: every other
-  # kind-aware diagnosis presupposes that each name denotes one
-  # kind. Mismatch assertions run before unknown-name assertions so
-  # that a misplaced name produces the more actionable diagnosis.
+  # kind-aware diagnosis presupposes that each name denotes one kind.
+  # Mismatch assertions run before unknown-name assertions so that a
+  # misplaced name produces the more actionable diagnosis. The
+  # definitions above appear in this same order.
   assertions =
     map namespaceAssertion namespacePairs
     ++ map mismatchAssertion crossPairs
     ++ map unknownAssertion roles
     ++ map unknownExcludeAssertion roles
+    ++ map unknownForbidAssertion roles
     ++ [
       preconditionProfileAssertion
       preconditionUnknownAssertion

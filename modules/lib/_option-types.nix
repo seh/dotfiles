@@ -6,20 +6,25 @@
 {lib}: {
   # Build the option type for a set of names that several modules
   # may define on one option. Each definition is written as a Nix
-  # list — the only ergonomic literal for a set — and is normalized
+  # list—the only ergonomic literal for a set—and is normalized
   # (sorted, deduplicated) before combining, so order and
   # duplication carry no meaning, within one definition and across
-  # definitions. The empty list is rejected per definition: each
-  # option using this type expresses "no constraint" by omitting the
-  # attribute entirely, and an accidental "[]" would otherwise pass
-  # silently while meaning something else. A combined result may
-  # still be empty (see the "intersection" policy below): that is a
-  # computed value, not an authored one.
+  # definitions. The empty list is accepted by default: an option
+  # whose empty set is itself a meaningful value (say, "no
+  # forbidding" for a machine-wide veto that defaults empty) needs no
+  # ceremony, and the empty list then serves as both the authored
+  # value and the default. A strict option passes "allowEmpty =
+  # false" to reject the empty list per definition, expressing "no
+  # constraint" by omitting the attribute entirely so that an
+  # accidental "[]" cannot pass silently while meaning something
+  # else. A combined result may still be empty (see the
+  # "intersection" policy below) regardless of "allowEmpty": that is
+  # a computed value, not an authored one.
   #
   # The "merge" parameter selects how multiple definitions of one
   # option combine. The name deliberately echoes the module system's
-  # own term, since it selects exactly that behavior; it is
-  # provisional pending the user's naming. The accepted values:
+  # own term, since it selects exactly that behavior. The accepted
+  # values:
   #
   #   "agreement": the normalized definitions must be equal, and
   #   unequal definitions are a conflicting-definitions error rather
@@ -33,7 +38,10 @@
   # An unknown value throws at type-construction time, listing the
   # accepted values. The type's name and description carry the
   # chosen policy so that a type-mismatch error names it.
-  setOfNames = {merge}: let
+  setOfNames = {
+    merge,
+    allowEmpty ? true,
+  }: let
     normalize = value: lib.sort lib.lessThan (lib.unique value);
     policies = {
       agreement = {
@@ -61,9 +69,16 @@
       else throw ''setOfNames: unknown "merge" policy "${merge}". The accepted values are "agreement", "union", and "intersection".'';
   in
     lib.seq policy (lib.mkOptionType {
-      name = "setOfNames-${merge}";
-      description = "set of names (${policy.phrase}), written as a non-empty list of strings; order and duplication carry no meaning";
-      check = v: builtins.isList v && v != [] && lib.all builtins.isString v;
+      name =
+        if allowEmpty
+        then "setOfNames-${merge}"
+        else "nonEmptySetOfNames-${merge}";
+      description = "set of names (${policy.phrase}), written as a ${
+        if allowEmpty
+        then "list"
+        else "non-empty list"
+      } of strings; order and duplication carry no meaning";
+      check = v: builtins.isList v && (allowEmpty || v != []) && lib.all builtins.isString v;
       merge = policy.combine;
     });
 }
