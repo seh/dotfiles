@@ -1,5 +1,9 @@
 {flakeLib, ...}:
 flakeLib.mkFeature "vcs/jjui" {
+  # The jjui terminal interface drives Jujutsu, so it brings along
+  # the "vcs/jujutsu" feature.
+  implies = ["vcs/jujutsu"];
+
   homeManager = {
     lib,
     pkgs,

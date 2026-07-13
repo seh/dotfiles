@@ -51,6 +51,7 @@
         inherit platform;
         knownProfiles = config.dotfiles._knownProfiles;
         profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
+        impliedEdges = config.dotfiles._impliedEdges;
       }
     else null;
   # The machine's own selected profiles and features. See the
@@ -497,6 +498,19 @@ in {
         class aggregator. Consulted by the activation fixpoint in
         "flake.lib.expandActivation" and by the assertions in
         "modules/_assertions.nix".
+      '';
+    };
+
+    _impliedEdges = mkOption {
+      type = types.attrsOf (types.listOf types.raw);
+      default = {};
+      description = ''
+        Per-source implied edges, keyed by source profile or feature
+        name; each value is that source's "implies" list. Mirrored
+        from the flake-level "dotfiles.impliedEdges" registry by each
+        class aggregator. Passed to "flake.lib.implicationsFor", which
+        assembles the role-keyed implication graph from these
+        co-located declarations.
       '';
     };
 
