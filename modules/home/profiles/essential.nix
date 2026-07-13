@@ -1,5 +1,25 @@
 {flakeLib, ...}:
 flakeLib.mkProfile "essential" {
+  # The essential profile brings along the minimal profile and the
+  # baseline features every managed home wants.
+  implies = [
+    "minimal"
+    "bash"
+    "dev/difftastic"
+    "editor/emacs"
+    "gnupg"
+    "lang/markdown"
+    "nh"
+    "nix"
+    "nushell"
+    "shell"
+    "ssh"
+    "vcs/git"
+    "vcs/jjui"
+    "vcs/jujutsu"
+    "zsh"
+  ];
+
   homeManager = {
     lib,
     pkgs,

@@ -1,5 +1,16 @@
 {flakeLib, ...}:
 flakeLib.mkProfile "desktop" {
+  # The desktop profile brings along the graphical profiles.
+  # Listing profiles constrained to particular platforms (via their
+  # "supportedPlatforms") is safe everywhere: such a profile activates
+  # only where the host's platform qualifies.
+  implies = [
+    "apps"
+    "fonts"
+    "kitty"
+    "macos"
+  ];
+
   homeManager = {
     lib,
     pkgs,

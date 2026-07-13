@@ -303,6 +303,17 @@
     '';
   };
 
+  # An interest is a want expressed by a selector's own selection, not
+  # a fact a source can manufacture; no implied edge may target one.
+  interestImplicationTargets =
+    builtins.filter (n: builtins.elem n knownInterests) impliedFeatureTargets;
+  interestImplicationTargetAssertion = {
+    assertion = interestImplicationTargets == [];
+    message = ''
+      Resolving host "${hostName}": the implication graph targets the interest(s) ${quoteNames interestImplicationTargets}, but an interest is a want expressed by selection, not by implication, and may not be an implied target. Remove the edge(s) from the source's "implies" list.
+    '';
+  };
+
   # A host with a name must know its platform, and detection from the
   # evaluating package set is the only source: host records carry no
   # platform attribute. This assertion fails only when a named host is
@@ -363,6 +374,7 @@ in {
       contingentRegistrationAssertion
       contingentSelectionAssertion
       contingentImplicationTargetAssertion
+      interestImplicationTargetAssertion
       platformDetectedAssertion
       platformSupportAssertion
     ];
