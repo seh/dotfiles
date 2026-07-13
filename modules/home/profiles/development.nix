@@ -13,7 +13,7 @@ flakeLib.mkProfile "development" {
     home.packages = with pkgs;
       [
         bazel-buildtools
-        bazel_8
+        bazel_9
         bazelisk
         bombardier
         # TODO(seh): Enable this again after
