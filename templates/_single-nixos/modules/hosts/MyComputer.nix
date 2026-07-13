@@ -42,7 +42,6 @@ in {
           dotfiles = {
             host = {
               name = hostName;
-              framework = "nixOS";
             };
             # Activate feature modules by listing profiles and
             # features that apply to this user. The "all" profile

@@ -11,6 +11,7 @@
         ../_activation.nix
         ../_assertions.nix
         ../_host-users.nix
+        ../_darwin-primary-user.nix
         ./_reload-launch-agents.nix
         {
           dotfiles = {
