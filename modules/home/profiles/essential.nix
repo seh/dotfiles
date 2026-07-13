@@ -27,6 +27,7 @@ flakeLib.mkProfile "essential" {
           coreutils
           deadnix
           duckdb
+          fswatch
           glow
           hunspell
           hunspellDicts.en-us
@@ -92,6 +93,9 @@ flakeLib.mkProfile "essential" {
         enable = true;
       };
       jqp = {
+        enable = true;
+      };
+      ripgrep = {
         enable = true;
       };
     };

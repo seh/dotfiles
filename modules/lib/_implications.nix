@@ -44,6 +44,7 @@
       supported = profileSupportedPlatforms.${name} or null;
     in
       supported == null || (platform != null && builtins.elem platform supported);
+    isDarwinHost = platform != null && lib.hasSuffix "-darwin" platform;
     filterEntryProfiles = entry:
       entry
       // lib.optionalAttrs (entry ? profiles) {
@@ -80,17 +81,35 @@
           "cloud/aws"
           "cloud/azure"
           "cloud/gcp"
+          "cloud/terraform"
           "coder"
+          "dev/bazel"
+          "dev/containers"
+          "dev/coverage"
+          "dev/diffnav"
           "dev/editorconfig"
+          "dev/emulation"
           "dev/language-servers"
           "editor/helix"
           "kubernetes"
+          "lang/common-lisp"
+          "lang/cue"
+          "lang/go"
+          "lang/javascript"
+          "lang/jsonnet"
           "lang/lua"
+          "lang/protobuf"
           "lang/rust"
+          "lang/shell"
           "model-agent/claude"
           "model-agent/copilot"
           "model-agent/opencode"
+          "net/http-clients"
+          "net/local-tls"
+          "net/tunnels"
           "vcs/commit-signing"
+          "vcs/git-town"
+          "vcs/github"
         ];
       };
       desktop = {
@@ -110,13 +129,27 @@
     };
   in {
     profiles = lib.mapAttrs (_name: filterEntryProfiles) profileEntries;
-    features = {
-      # NB: A feature may not imply a profile, but a feature may
-      # imply another feature.
-      "vcs/jjui" = {
-        features = ["vcs/jujutsu"];
+    features =
+      {
+        # NB: A feature may not imply a profile, but a feature may
+        # imply another feature.
+        "vcs/github" = {
+          features = ["vcs/git"];
+        };
+        "vcs/jjui" = {
+          features = ["vcs/jujutsu"];
+        };
+      }
+      // lib.optionalAttrs isDarwinHost {
+        # Podman, in the "dev/containers" feature, uses QEMU as its
+        # virtual-machine backend on macOS, and the "dev/emulation"
+        # feature provides QEMU; selecting containers on a Darwin
+        # host must therefore reach emulation. On Linux podman runs
+        # natively and needs no such edge.
+        "dev/containers" = {
+          features = ["dev/emulation"];
+        };
       };
-    };
   };
 
   # Role-parametric transitive closure over the typed implication
