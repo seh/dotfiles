@@ -20,7 +20,6 @@ flakeLib.mkFeature "lang/lua" {
       ...
     }: {
       home.packages = with pkgs; [
-        emmylua-ls
         stylua
       ];
       xdg.configFile."stylua/stylua.toml".source = config.dotfiles.lua.styluaConfigFile;
