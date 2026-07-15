@@ -303,14 +303,51 @@
     '';
   };
 
-  # An interest is a want expressed by a selector's own selection, not
-  # a fact a source can manufacture; no implied edge may target one.
-  interestImplicationTargets =
-    builtins.filter (n: builtins.elem n knownInterests) impliedFeatureTargets;
-  interestImplicationTargetAssertion = {
-    assertion = interestImplicationTargets == [];
+  # An interest edge joins the same implication graph as a feature or
+  # profile edge, so the interest-target rule reads that assembled
+  # graph directly. Derive every source→target implied-edge pair from
+  # it, across each role, each source under a role, and each target
+  # under each of that source's target roles.
+  impliedEdgePairs =
+    if implications != null
+    then
+      lib.concatMap (
+        role:
+          lib.concatMap (
+            source:
+              lib.concatMap (
+                targetRole:
+                  map (target: {
+                    inherit source target;
+                  })
+                  implications.${role}.${source}.${targetRole}
+              ) (builtins.attrNames implications.${role}.${source})
+          ) (builtins.attrNames implications.${role})
+      ) (builtins.attrNames implications)
+    else [];
+  isInterest = n: builtins.elem n knownInterests;
+
+  # A feature or a profile may not imply an interest: a want is
+  # expressed by a selector, not manufactured by a configuration unit.
+  # Another interest may, so the source is exempted here.
+  fabricatedInterestEdges =
+    builtins.filter (e: isInterest e.target && !(isInterest e.source)) impliedEdgePairs;
+  fabricatedInterestTargetAssertion = {
+    assertion = fabricatedInterestEdges == [];
     message = ''
-      Resolving host "${hostName}": the implication graph targets the interest(s) ${quoteNames interestImplicationTargets}, but an interest is a want expressed by selection, not by implication, and may not be an implied target. Remove the edge(s) from the source's "implies" list.
+      Resolving host "${hostName}": the implication graph has a feature or profile imply the interest(s) ${quoteNames (lib.unique (map (e: e.target) fabricatedInterestEdges))}, but only another interest may imply an interest — a want is expressed by selection, not manufactured by a configuration unit. Remove the edge(s) from the source's "implies" list.
+    '';
+  };
+
+  # An interest may imply only interests, never a feature or a profile,
+  # so the want-world and the configuration-world do not cross through
+  # implication.
+  interestCrossingEdges =
+    builtins.filter (e: isInterest e.source && !(isInterest e.target)) impliedEdgePairs;
+  interestCrossingAssertion = {
+    assertion = interestCrossingEdges == [];
+    message = ''
+      Resolving host "${hostName}": the interest(s) ${quoteNames (lib.unique (map (e: e.source) interestCrossingEdges))} imply non-interest names ${quoteNames (lib.unique (map (e: e.target) interestCrossingEdges))}, but an interest may imply only other interests, never a feature or a profile. Remove the crossing edge(s).
     '';
   };
 
@@ -374,7 +411,8 @@ in {
       contingentRegistrationAssertion
       contingentSelectionAssertion
       contingentImplicationTargetAssertion
-      interestImplicationTargetAssertion
+      fabricatedInterestTargetAssertion
+      interestCrossingAssertion
       platformDetectedAssertion
       platformSupportAssertion
     ];

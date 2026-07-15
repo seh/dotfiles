@@ -48,17 +48,18 @@ in {
       default = {};
       description = ''
         Per-source implied edges, keyed by the name of the source
-        profile or feature that brings the targets along. Each value
-        is that source's "implies" list: an entry is either a bare
-        target name or a record "{ name = "<target>";
+        profile, feature, or interest that brings the targets along.
+        Each value is that source's "implies" list: an entry is
+        either a bare target name or a record "{ name = "<target>";
         supportedPlatforms = [<systems>]; }" naming an edge present
         only when the host's platform is one of the listed systems.
-        Populated by the "mkFeature" and "mkProfile" functions from
-        their "implies" argument. Definitions accumulate, so several
-        modules may extend one source's edges. The "implicationsFor"
-        function in "modules/lib/_implications.nix" assembles these
-        into the role-keyed implication graph. Populates
-        "dotfiles._impliedEdges" in each class aggregator.
+        An interest source lists only bare interest names. Populated
+        by the "mkFeature", "mkProfile", and "mkInterest" functions
+        from their "implies" argument. Definitions accumulate, so
+        several modules may extend one source's edges. The
+        "implicationsFor" function in "modules/lib/_implications.nix"
+        assembles these into the role-keyed implication graph.
+        Populates "dotfiles._impliedEdges" in each class aggregator.
       '';
     };
     interestDescriptions = lib.mkOption {
