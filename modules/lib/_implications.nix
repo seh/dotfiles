@@ -1,11 +1,11 @@
 {lib}: let
   # Assemble the per-host implication graph from the co-located
-  # "implies" declarations that each profile and feature carries. An
-  # implied edge is a property of its source, so it lives in the
-  # source's own file; the "impliedEdges" argument carries those
-  # declarations, keyed by source name, and this function classifies
-  # every target by role to produce the role-keyed graph that the
-  # "expandClosure" function consumes.
+  # "implies" declarations that each profile, feature, and interest
+  # carries. An implied edge is a property of its source, so it
+  # lives in the source's own file; the "impliedEdges" argument
+  # carries those declarations, keyed by source name, and this
+  # function classifies every target by role to produce the
+  # role-keyed graph that the "expandClosure" function consumes.
   #
   # The graph is role-keyed ("profiles" / "features") so that a
   # future role (e.g. "bundles") becomes a purely additive change:

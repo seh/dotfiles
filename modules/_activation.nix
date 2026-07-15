@@ -505,12 +505,12 @@ in {
       type = types.attrsOf (types.listOf types.raw);
       default = {};
       description = ''
-        Per-source implied edges, keyed by source profile or feature
-        name; each value is that source's "implies" list. Mirrored
-        from the flake-level "dotfiles.impliedEdges" registry by each
-        class aggregator. Passed to "flake.lib.implicationsFor", which
-        assembles the role-keyed implication graph from these
-        co-located declarations.
+        Per-source implied edges, keyed by source profile, feature,
+        or interest name; each value is that source's "implies"
+        list. Mirrored from the flake-level "dotfiles.impliedEdges"
+        registry by each class aggregator. Passed to
+        "flake.lib.implicationsFor", which assembles the role-keyed
+        implication graph from these co-located declarations.
       '';
     };
 
