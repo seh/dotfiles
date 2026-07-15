@@ -24,15 +24,15 @@ flakeLib.mkFeature "coder" {
         cfg.package
       ];
       programs.ssh.settings =
-        lib.mkIf (cfg.enableSSHIntegration && config.dotfiles._host.inEffect "ssh")
-        {
+        lib.mkIf cfg.enableSSHIntegration
+        (flakeLib.onlyWhen config ["ssh"] {
           "coder.*.main" = {
             ConnectTimeout = "0";
             LogLevel = "ERROR";
             ProxyCommand = "${lib.getExe cfg.package} ssh --stdio --ssh-host-prefix 'coder.' %h";
             UserKnownHostsFile = "/dev/null";
           };
-        };
+        });
     };
   };
 }
