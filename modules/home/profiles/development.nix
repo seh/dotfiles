@@ -16,7 +16,6 @@ flakeLib.mkProfile "development" {
     "dev/diffnav"
     "dev/editorconfig"
     "dev/emulation"
-    "dev/language-servers"
     "editor/helix"
     "kubernetes"
     "lang/common-lisp"
