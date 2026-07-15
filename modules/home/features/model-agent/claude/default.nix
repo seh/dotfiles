@@ -32,7 +32,7 @@ flakeLib.mkFeature "model-agent/claude" {
         # "lua-lsp@claude-plugins-official" because that marketplace
         # plugin invokes "lua-language-server" (the LuaLS project),
         # while our "lang/lua" feature installs "emmylua-ls" instead.
-        (lib.mkIf (config.dotfiles._host.inEffect "lang/lua") {
+        (flakeLib.onlyWhen config ["lang/lua"] {
           lua = {
             command = lib.getExe pkgs.emmylua-ls;
             extensionToLanguage = {
@@ -40,7 +40,7 @@ flakeLib.mkFeature "model-agent/claude" {
             };
           };
         })
-        (lib.mkIf (config.dotfiles._host.inEffect "dev/language-servers") {
+        (flakeLib.onlyWhen config ["dev/language-servers"] {
           bash = {
             command = lib.getExe pkgs.bash-language-server;
             args = ["start"];
