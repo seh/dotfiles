@@ -305,17 +305,39 @@ in {
   # registry, which the activation machinery folds into the same
   # universe as feature names; a non-null description enters the
   # "interestDescriptions" registry.
+  #
+  # The optional "implies" key names other interests this interest
+  # brings along — a bundle. Selecting the bundle activates its
+  # members through the implication closure, the way a profile fans
+  # out to its features; the edges join the "impliedEdges" registry
+  # beside those a feature or a profile declares. Each entry is a
+  # bare interest name — the record form that the "mkFeature" and
+  # "mkProfile" functions accept for a platform-conditional edge has
+  # no place here. An interest may imply only interests, never a
+  # feature or a profile, which an assertion in the
+  # "modules/_assertions.nix" file enforces at resolve time. A null
+  # or omitted value, or an empty list, brings nothing along.
   mkInterest = {
     name,
     description ? null,
-  }:
-    lib.seq (checkName "mkInterest" name) {
+    implies ? null,
+  }: let
+    checks = lib.seq (checkName "mkInterest" name) (
+      if implies != null && !(isListOfStrings implies)
+      then throw ''mkInterest: the interest "${name}" passes an "implies" value that is not a list of interest names. Pass the names of the interests this interest brings along, or null for none.''
+      else null
+    );
+  in
+    lib.seq checks {
       dotfiles =
         {
           knownInterests = [name];
         }
         // lib.optionalAttrs (description != null) {
           interestDescriptions.${name} = description;
+        }
+        // lib.optionalAttrs (implies != null && implies != []) {
+          impliedEdges.${name} = implies;
         };
     };
 
