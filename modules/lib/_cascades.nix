@@ -79,6 +79,7 @@
           "cloud/azure"
           "cloud/gcp"
           "coder"
+          "dev/editorconfig"
           "dev/language-servers"
           "editor/helix"
           "kubernetes"
