@@ -320,10 +320,13 @@
   # implication graph brings along, plus every contingent feature
   # whose preconditions the result meets.
   #
-  # "preconditions" maps each contingent feature's name to the list of
-  # feature or interest names that must all be active for it to
-  # activate. Preconditions have no pulling power: a listed name never
-  # becomes active by being named as a precondition. Exclusion trumps
+  # "preconditions" maps each contingent feature's name to its list of
+  # precondition entries, all of which must be satisfied for it to
+  # activate. A bare-name entry is satisfied when that name is active;
+  # a group entry "{ anyOf = [...]; }" is satisfied when at least one
+  # member is active. Preconditions have no pulling power: a listed
+  # name never becomes active by being named as a precondition.
+  # Exclusion trumps
   # activation twice over: a contingent feature named in
   # "excludeFeatures" never activates even when its preconditions hold
   # (its entry is dropped from the table here), and one whose
@@ -342,13 +345,15 @@
   # features are rejected with a hard error. A member of such a cycle
   # could never activate at all — contingent features activate only
   # through their preconditions, and hosts may not select them — so
-  # the definitions themselves are invalid. Only edges between
-  # contingent features can close a cycle (an edge to a non-contingent
-  # feature or an interest terminates there), so the check walks the
-  # preconditions table alone: a contingent feature lies on a cycle
-  # exactly when it can reach itself through precondition edges. The
-  # full table is checked, before the exclusion filtering above:
-  # excluding a cycle member hides a symptom, not the defect.
+  # the definitions themselves are invalid. Only bare-name edges
+  # between contingent features can close a cycle (an edge to a
+  # non-contingent feature or an interest terminates there, and a
+  # group's members are non-contingent by rule, so a group contributes
+  # no cycle edge), so the check walks the bare-name precondition
+  # edges alone: a contingent feature lies on a cycle exactly when it
+  # can reach itself through them. The full table is checked, before
+  # the exclusion filtering above: excluding a cycle member hides a
+  # symptom, not the defect.
   #
   # A second preamble check rejects a contingent feature as the SOURCE
   # of an implied edge. The assertion in the "modules/_assertions.nix"
@@ -365,8 +370,15 @@
     selected,
   }: let
     contingentNames = builtins.attrNames preconditions;
+    # Only bare-name entries contribute cycle edges: a group's members
+    # are non-contingent by rule (an assertion in
+    # "modules/_assertions.nix" enforces it), so a group can never
+    # close a precondition cycle. Skip the group entries, then keep
+    # the bare names that name other contingent features.
     preconditionEdgesFrom = name:
-      builtins.filter (r: preconditions ? ${r}) preconditions.${name};
+      builtins.filter (r: preconditions ? ${r}) (
+        builtins.filter builtins.isString preconditions.${name}
+      );
     reachableFrom = name:
       map (entry: entry.key) (builtins.genericClosure {
         startSet = map (k: {key = k;}) (preconditionEdgesFrom name);
@@ -426,13 +438,22 @@
       else null;
     activatable =
       lib.filterAttrs (name: _: !(builtins.elem name excludeFeatures)) preconditions;
+    # One precondition entry against the currently-active names: a
+    # bare name is satisfied when it is active; a group is satisfied
+    # when at least one member is active. A feature activates when
+    # every one of its entries is satisfied. Testing membership only
+    # adds names, so the fixpoint stays monotone.
+    entrySatisfied = active: entry:
+      if builtins.isString entry
+      then builtins.elem entry active
+      else lib.any (m: builtins.elem m active) entry.anyOf;
     step = current: let
       expanded = expandClosure implications knownByRole current;
       newlyActive = builtins.attrNames (
         lib.filterAttrs (
           name: needed:
             !(builtins.elem name expanded.features)
-            && lib.all (r: builtins.elem r expanded.features) needed
+            && lib.all (entrySatisfied expanded.features) needed
         )
         activatable
       );

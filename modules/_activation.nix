@@ -24,7 +24,7 @@
 }: let
   inherit (lib) mkOption types;
   inherit (config.dotfiles) host;
-  inherit (import ./lib/_option-types.nix {inherit lib;}) setOfNames;
+  inherit (import ./lib/_option-types.nix {inherit lib;}) setOfNames preconditionSet preconditionEntry;
 
   # Detect the host's platform from the evaluating package set. Every
   # real evaluator (Home Manager, nix-darwin, NixOS) provides one, so
@@ -334,16 +334,25 @@ in {
               types.submodule {
                 options = {
                   preconditions = mkOption {
-                    type = types.listOf types.str;
+                    type = preconditionSet {};
                     description = ''
-                      The feature's full preconditions list.
+                      The feature's full preconditions list. Each
+                      entry is a bare feature or interest name, or a
+                      group "{ anyOf = [ "<name>" ... ]; }" satisfied
+                      when any one member is active.
                     '';
                   };
                   missing = mkOption {
-                    type = types.listOf types.str;
+                    type = types.listOf preconditionEntry;
                     description = ''
-                      The preconditions not present in the machine's
-                      own coherent activation.
+                      The preconditions the machine's own coherent
+                      activation does not satisfy: a bare name whose
+                      feature or interest is inactive, or an "anyOf"
+                      group none of whose members is active. A group
+                      appears as its "{ anyOf = [ ... ]; }" record so a
+                      reader sees the unsatisfied disjunction and which
+                      alternatives it wanted; a satisfied entry is
+                      absent.
                     '';
                   };
                   excluded = mkOption {
@@ -387,6 +396,13 @@ in {
           machineFeatures = machineActivation.features;
           isInterest = name: builtins.elem name config.dotfiles._knownInterests;
           contingentNames = builtins.attrNames config.dotfiles._featurePreconditions;
+          # A precondition entry the machine's own activation does not
+          # satisfy: a bare name whose feature is inactive, or a group
+          # none of whose members is active.
+          entryUnmet = entry:
+            if builtins.isString entry
+            then !(builtins.elem entry machineFeatures)
+            else !(lib.any (m: builtins.elem m machineFeatures) entry.anyOf);
         in {
           inherit activeProfiles platform;
           activeFeatures = builtins.filter (name: !(isInterest name)) namesInEffect;
@@ -401,7 +417,7 @@ in {
           latentFeatures =
             lib.mapAttrs (name: preconditions: {
               inherit preconditions;
-              missing = builtins.filter (r: !(builtins.elem r machineFeatures)) preconditions;
+              missing = builtins.filter entryUnmet preconditions;
               excluded = builtins.elem name host.excludeFeatures;
             })
             (lib.filterAttrs (name: _: !(builtins.elem name machineFeatures))
@@ -489,14 +505,17 @@ in {
     };
 
     _featurePreconditions = mkOption {
-      type = types.attrsOf (types.listOf types.str);
+      type = types.attrsOf (preconditionSet {});
       default = {};
       description = ''
-        Per-feature preconditions, keyed by feature name; each value
-        names the features or interests that must all be active for
-        the keyed contingent feature to activate. Mirrored from the
-        flake-level "dotfiles.featurePreconditions" registry by each
-        class aggregator. Consulted by the activation fixpoint in
+        Per-feature preconditions, keyed by feature name. Each value
+        is a conjunction of entries that must all be satisfied before
+        the keyed contingent feature activates. An entry is either a
+        bare feature or interest name (satisfied when that name is
+        active) or a group "{ anyOf = [ "<name>" ... ]; }" (satisfied
+        when any one member is active). Mirrored from the flake-level
+        "dotfiles.featurePreconditions" registry by each class
+        aggregator. Consulted by the activation fixpoint in
         "flake.lib.expandActivation" and by the assertions in
         "modules/_assertions.nix".
       '';

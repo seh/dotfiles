@@ -5,7 +5,7 @@
   # in the "modules/lib/_option-types.nix" file for the value form and
   # the accepted policies. Both registries below demand agreement:
   # differing sets are an error rather than a union.
-  inherit (import ./lib/_option-types.nix {inherit lib;}) setOfNames;
+  inherit (import ./lib/_option-types.nix {inherit lib;}) setOfNames preconditionSet;
 in {
   options.dotfiles = {
     featureModules = lib.mkOption {
@@ -23,22 +23,22 @@ in {
       '';
     };
     featurePreconditions = lib.mkOption {
-      type = lib.types.attrsOf (setOfNames {
-        merge = "agreement";
-        allowEmpty = false;
-      });
+      type = lib.types.attrsOf (preconditionSet {});
       default = {};
       description = ''
         Per-feature preconditions, keyed by feature name. Each value
-        names the features or interests whose joint activation the
-        keyed feature's activation is conditioned on; listing a name
-        here never activates it. A feature present in this registry is
-        a "contingent feature": it activates automatically exactly
-        when all of its preconditions are met, and only then.
+        is a conjunction of entries that must all be satisfied before
+        keyed contingent feature activates; listing a name here
+        never activates it. An entry is either a bare feature or
+        interest name (satisfied when that name is active) or a group
+        "{ anyOf = [ "<name>" ... ]; }" (satisfied when at least one
+        member is active). A feature present in this registry is a
+        "contingent feature": it activates automatically exactly when
+        every one of its preconditions is satisfied, and only then.
         Populated by the "mkFeature" function from its "preconditions"
-        argument. The value is a set of names: the type's merge
-        normalizes each definition, so declarations denoting the same
-        set merge and ones denoting different sets are rejected.
+        argument. The value is a set of preconditions: the type's
+        merge normalizes each definition, so definitions that spell
+        the same set merge, and the merge rejects ones that differ.
         Populates "dotfiles._featurePreconditions" in each class
         aggregator.
       '';

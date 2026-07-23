@@ -136,6 +136,20 @@
     else null;
   isListOfStrings = value: builtins.isList value && lib.all builtins.isString value;
 
+  # A "preconditions" list is a conjunction whose entries are each
+  # either a bare feature or interest name, or a group
+  # "{ anyOf = [ "<name>" ... ]; }" satisfied when any one member is
+  # active. A group entry is a closed attrset: "anyOf" is its only
+  # key, holding a list of names.
+  isPreconditionEntry = entry:
+    builtins.isString entry
+    || (
+      builtins.isAttrs entry
+      && builtins.attrNames entry == ["anyOf"]
+      && isListOfStrings entry.anyOf
+    );
+  isPreconditionList = value: builtins.isList value && lib.all isPreconditionEntry value;
+
   # An "implies" list names the profiles or features a source
   # brings along. Each entry is either a bare target name or a
   # record "{ name = "<target>"; supportedPlatforms = [<systems>];
@@ -213,9 +227,18 @@ in {
   # In addition to the per-class bodies described in this file's
   # header, the "mkFeature" function recognizes two reserved keys:
   #
-  #   preconditions: a list of feature or interest names whose joint
-  #   activation this feature's activation is conditioned on; listing
-  #   a name here never activates it. A feature carrying this key is a
+  #   preconditions: a conjunction of entries whose joint satisfaction
+  #   this feature's activation is conditioned on; listing a name here
+  #   never activates it. Each entry is either a bare feature or
+  #   interest name (satisfied when that name is active) or a group
+  #   "{ anyOf = [ "<name>" ... ]; }" (satisfied when at least one
+  #   member is active); the feature activates when every entry is
+  #   satisfied, so the list reads as a conjunction of disjunctions.
+  #   Every "anyOf" member must be a non-contingent name — an ordinary
+  #   feature or an interest, never a contingent feature — which keeps
+  #   groups out of every precondition cycle; an assertion in
+  #   "modules/_assertions.nix" enforces this. A bare entry may still
+  #   name a contingent feature. A feature carrying this key is a
   #   "contingent feature": it activates automatically exactly when
   #   all of its preconditions are met, and that is its only
   #   activation path—no host, profile, or implied edge may name it
@@ -227,7 +250,9 @@ in {
   #   explicit "no preconditions" — so callers building the value
   #   programmatically need no special case. An empty list is an
   #   error: a contingent feature with no preconditions would be
-  #   unconditionally active.
+  #   unconditionally active; an empty "anyOf" group is likewise an
+  #   error. A single-member "anyOf" group is accepted and behaves as
+  #   the bare name.
   #
   #   implies: a list naming the features this feature brings
   #   along—the implied edges whose source is this feature. Each entry
@@ -251,11 +276,22 @@ in {
       if args ? implies && args.implies != null && isImpliesList args.implies
       then impliesUnknownPlatforms args.implies
       else [];
+    # The "anyOf" groups among a well-formed "preconditions" value,
+    # ready for the empty-group check below. Computed only once the
+    # value is known to be a valid precondition list, so a malformed
+    # value trips the earlier check instead.
+    preconditionGroups =
+      if args ? preconditions && args.preconditions != null && isPreconditionList args.preconditions
+      then builtins.filter builtins.isAttrs args.preconditions
+      else [];
+    emptyGroup = lib.findFirst (g: g.anyOf == []) null preconditionGroups;
     checks = lib.seq (checkName "mkFeature" name) (
       if args ? supportedPlatforms
       then throw ''mkFeature: the feature "${name}" passes a "supportedPlatforms" key, but the "mkProfile" function reserves that key; features carry no platform constraint.''
-      else if args ? preconditions && args.preconditions != null && !(isListOfStrings args.preconditions)
-      then throw ''mkFeature: the feature "${name}" passes a "preconditions" value that is not a list of strings. Pass the feature or interest names whose joint activation this feature's activation is conditioned on, or null for no preconditions.''
+      else if args ? preconditions && args.preconditions != null && !(isPreconditionList args.preconditions)
+      then throw ''mkFeature: the feature "${name}" passes a "preconditions" value that is not a list of preconditions. Each entry is either a bare feature or interest name, or a group "{ anyOf = [ "<name>" ... ]; }" satisfied when any one member is active.''
+      else if emptyGroup != null
+      then throw ''mkFeature: the feature "${name}" passes an empty "anyOf" group; a group must offer at least one alternative.''
       else if args ? implies && args.implies != null && !(isImpliesList args.implies)
       then throw ''mkFeature: the feature "${name}" passes an "implies" value that is not a list of edge declarations. Each entry names a target feature, written either as a bare name string or as a record "{ name = "<target>"; supportedPlatforms = [<systems>]; }" for an edge present only on the listed platforms.''
       else if impliesBadPlatforms != []
