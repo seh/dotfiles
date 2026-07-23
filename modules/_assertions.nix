@@ -203,7 +203,18 @@
   };
 
   # Every precondition must name a known feature or interest—never a
-  # profile, and never a name nothing advertises.
+  # profile, and never a name nothing advertises. A group's members
+  # are subject to the same hygiene, so flatten each feature's
+  # preconditions to every referenced name: each bare entry, plus
+  # every member of each "anyOf" group.
+  referencedNames = entries:
+    lib.concatMap (
+      entry:
+        if builtins.isString entry
+        then [entry]
+        else entry.anyOf
+    )
+    entries;
   preconditionEdges =
     lib.concatMap (
       name:
@@ -211,7 +222,7 @@
           feature = name;
           precondition = r;
         })
-        featurePreconditions.${name}
+        (referencedNames featurePreconditions.${name})
     )
     contingentNames;
   describePreconditionEdge = {
@@ -245,6 +256,39 @@
         )
         unknownPreconditions} Correct each misspelling or register
       each missing feature or interest.
+    '';
+  };
+
+  # Every "anyOf" group member must be non-contingent—an ordinary
+  # feature or an interest, never a contingent feature. A contingent
+  # alternative could form an unresolvable precondition cycle, so
+  # keeping groups out of every cycle is what lets the cycle check in
+  # the "modules/lib/_implications.nix" file follow only bare-name
+  # edges. A bare precondition may still cite a contingent feature;
+  # only group members are restricted.
+  anyOfMemberEdges =
+    lib.concatMap (
+      name:
+        lib.concatMap (
+          entry:
+            if builtins.isString entry
+            then []
+            else
+              map (m: {
+                feature = name;
+                member = m;
+              })
+              entry.anyOf
+        )
+        featurePreconditions.${name}
+    )
+    contingentNames;
+  contingentAnyOfMembers =
+    builtins.filter ({member, ...}: builtins.elem member contingentNames) anyOfMemberEdges;
+  anyOfMemberContingentAssertion = {
+    assertion = contingentAnyOfMembers == [];
+    message = ''
+      Resolving host "${hostName}": the feature(s) ${quoteNames (lib.unique (map (e: e.feature) contingentAnyOfMembers))} list an "anyOf" precondition group naming the contingent feature(s) ${quoteNames (lib.unique (map (e: e.member) contingentAnyOfMembers))}, but a group's alternatives must be ordinary features or interests, never contingent features. A contingent alternative could form an unresolvable cycle; name a non-contingent feature or an interest instead.
     '';
   };
 
@@ -408,6 +452,7 @@ in {
     ++ [
       preconditionProfileAssertion
       preconditionUnknownAssertion
+      anyOfMemberContingentAssertion
       contingentRegistrationAssertion
       contingentSelectionAssertion
       contingentImplicationTargetAssertion
