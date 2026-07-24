@@ -1,5 +1,10 @@
 {flakeLib, ...}:
+# The EditorConfig file, active when this configuration expresses the
+# "lang/shell" interest. The "lang/shell/tools" feature waits on that
+# same interest and installs the "shfmt" tool, which reads the
+# "[shell]" section written below.
 flakeLib.mkFeature "dev/editorconfig" {
+  preconditions = ["lang/shell"];
   homeManager = {lib, ...}: {
     # Build this file with the INI generator directly instead of
     # through Home Manager's "editorconfig" module. That module always

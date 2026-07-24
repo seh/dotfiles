@@ -9,7 +9,6 @@ flakeLib.mkProfile "essential" {
     "editor/emacs"
     "gnupg"
     "kitty"
-    "lang/markdown"
     "nh"
     "nix"
     "nushell"

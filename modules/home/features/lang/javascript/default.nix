@@ -1,10 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "lang/javascript" {
-  homeManager = {pkgs, ...}: {
-    home.packages = with pkgs; [
-      nodejs-slim
-      prettier
-      typescript
-    ];
-  };
+flakeLib.mkInterest {
+  name = "lang/javascript";
+  description = "The JavaScript programming language.";
 }

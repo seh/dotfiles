@@ -1,8 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "lang/protobuf" {
-  homeManager = {pkgs, ...}: {
-    home.packages = with pkgs; [
-      buf
-    ];
-  };
+flakeLib.mkInterest {
+  name = "lang/protobuf";
+  description = "The Protocol Buffers interface definition language.";
 }
