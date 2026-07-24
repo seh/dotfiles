@@ -1,8 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "lang/cue" {
-  homeManager = {pkgs, ...}: {
-    home.packages = with pkgs; [
-      cue
-    ];
-  };
+flakeLib.mkInterest {
+  name = "lang/cue";
+  description = "The CUE data language.";
 }

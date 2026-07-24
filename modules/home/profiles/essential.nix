@@ -8,7 +8,6 @@ flakeLib.mkProfile "essential" {
     "dev/difftastic"
     "editor/emacs"
     "gnupg"
-    "lang/markdown"
     "nh"
     "nix"
     "nushell"

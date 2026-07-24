@@ -1,8 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "lang/jsonnet" {
-  homeManager = {pkgs, ...}: {
-    home.packages = with pkgs; [
-      go-jsonnet
-    ];
-  };
+flakeLib.mkInterest {
+  name = "lang/jsonnet";
+  description = "The Jsonnet data templating language.";
 }
