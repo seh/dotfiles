@@ -548,21 +548,6 @@ in {
       '';
     };
 
-    _implications = mkOption {
-      type = with types; nullOr raw;
-      readOnly = true;
-      internal = true;
-      description = ''
-        The implication graph computed once per evaluator by
-        "flake.lib.implicationsFor" from the known profiles, the
-        host's platform, and the per-profile platform support, or null
-        when the implications library is unavailable. Read by the
-        activation computation here and by the implied-target
-        assertion in "modules/_assertions.nix", so the same evaluator
-        builds the graph once.
-      '';
-    };
-
     _flakeLib = mkOption {
       type = with types; nullOr (lazyAttrsOf raw);
       default = null;
@@ -590,9 +575,8 @@ in {
   # the machine, so the machine excluding it is genuinely redundant.
   config = let
     hostLabel = toString host.name;
-    # The unpruned walk also forces the schema-level checks inside
-    # "expandClosure" (dangling edges, feature edges that target
-    # profiles) and the precondition-cycle check inside
+    # The unpruned walk also forces the dangling-edge check inside
+    # "expandClosure" and the precondition-cycle check inside
     # "expandActivation" to run against the full tables. Pruning
     # could otherwise hide a typo in an excluded profile's
     # adjacency list, or a cycle behind an excluded member.
@@ -645,8 +629,6 @@ in {
     dotfiles._knownNames = lib.unique (
       config.dotfiles._knownFeatures ++ config.dotfiles._knownInterests
     );
-
-    dotfiles._implications = implications;
 
     warnings = lib.seq _unprunedSideEffect (
       map (mkWarning "profile" "excludeProfiles") redundantProfiles
