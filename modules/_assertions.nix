@@ -324,22 +324,44 @@
     '';
   };
 
-  # For the same reason, no implied edge—a profile's "implies" list
-  # included—may target a contingent feature. The implication graph is
-  # computed once per evaluator by "modules/_activation.nix" and shared
-  # through the "_implications" option.
-  implications = config.dotfiles._implications;
-  impliedFeatureTargets =
-    if implications != null
-    then
-      lib.unique (
-        lib.concatMap (
-          edges: lib.concatMap (targets: targets.features or []) (lib.attrValues edges)
-        ) (lib.attrValues implications)
-      )
-    else [];
+  # Kind legality is platform-independent: whether an edge crosses
+  # kinds does not depend on which platform a host runs, so an edge
+  # that is illegal on one platform is illegal on every platform.
+  # These checks therefore read the unfiltered raw edge registry
+  # "dotfiles._impliedEdges" rather than the per-host,
+  # platform-filtered implication graph. An edge hidden behind a
+  # "supportedPlatforms" record for a platform this host does not run
+  # would otherwise be dropped from the graph and escape the checks,
+  # though its structure is illegal everywhere. Each registry entry is
+  # a bare target name or a record "{ name = "<t>"; supportedPlatforms
+  # = [...]; }"; the pair derivation takes the bare string or the
+  # record's "name" field, ignoring the platform record.
+  rawImpliedEdges = config.dotfiles._impliedEdges;
+  rawEdgeName = entry:
+    if builtins.isString entry
+    then entry
+    else entry.name;
+  rawEdgePairs = lib.concatMap (
+    source:
+      map (entry: {
+        inherit source;
+        target = rawEdgeName entry;
+      })
+      rawImpliedEdges.${source}
+  ) (builtins.attrNames rawImpliedEdges);
+  # Classify a name by kind. A name among the known profiles is a
+  # profile; among the known interests, an interest; otherwise it is a
+  # feature. A contingent feature is one the preconditions registry
+  # keys.
+  isProfile = n: builtins.elem n knownProfiles;
+  isInterest = n: builtins.elem n knownInterests;
+  isContingent = n: builtins.elem n contingentNames;
+
+  # No implied edge—a profile's "implies" list included—may target a
+  # contingent feature, which activates automatically exactly when all
+  # of its preconditions are met.
   contingentImplicationTargets =
-    builtins.filter (n: builtins.elem n impliedFeatureTargets) contingentNames;
+    lib.unique (map (e: e.target) (builtins.filter (e: isContingent e.target) rawEdgePairs));
   contingentImplicationTargetAssertion = {
     assertion = contingentImplicationTargets == [];
     message = ''
@@ -347,35 +369,11 @@
     '';
   };
 
-  # An interest edge joins the same implication graph as a feature or
-  # profile edge, so the interest-target rule reads that assembled
-  # graph directly. Derive every source→target implied-edge pair from
-  # it, across each role, each source under a role, and each target
-  # under each of that source's target roles.
-  impliedEdgePairs =
-    if implications != null
-    then
-      lib.concatMap (
-        role:
-          lib.concatMap (
-            source:
-              lib.concatMap (
-                targetRole:
-                  map (target: {
-                    inherit source target;
-                  })
-                  implications.${role}.${source}.${targetRole}
-              ) (builtins.attrNames implications.${role}.${source})
-          ) (builtins.attrNames implications.${role})
-      ) (builtins.attrNames implications)
-    else [];
-  isInterest = n: builtins.elem n knownInterests;
-
   # A feature or a profile may not imply an interest: a want is
   # expressed by a selector, not manufactured by a configuration unit.
   # Another interest may, so the source is exempted here.
   fabricatedInterestEdges =
-    builtins.filter (e: isInterest e.target && !(isInterest e.source)) impliedEdgePairs;
+    builtins.filter (e: isInterest e.target && !(isInterest e.source)) rawEdgePairs;
   fabricatedInterestTargetAssertion = {
     assertion = fabricatedInterestEdges == [];
     message = ''
@@ -387,11 +385,25 @@
   # so the want-world and the configuration-world do not cross through
   # implication.
   interestCrossingEdges =
-    builtins.filter (e: isInterest e.source && !(isInterest e.target)) impliedEdgePairs;
+    builtins.filter (e: isInterest e.source && !(isInterest e.target)) rawEdgePairs;
   interestCrossingAssertion = {
     assertion = interestCrossingEdges == [];
     message = ''
       Resolving host "${hostName}": the interest(s) ${quoteNames (lib.unique (map (e: e.source) interestCrossingEdges))} imply non-interest names ${quoteNames (lib.unique (map (e: e.target) interestCrossingEdges))}, but an interest may imply only other interests, never a feature or a profile. Remove the crossing edge(s).
+    '';
+  };
+
+  # A feature may not imply a profile: profiles are coarser than
+  # features, and reversing that would make host records misleading. A
+  # profile source may imply a profile, and an interest source is
+  # judged by the interest-crossing rule above, so only a feature-kind
+  # source (neither profile nor interest) is caught here.
+  featureImpliesProfileEdges =
+    builtins.filter (e: !(isProfile e.source) && !(isInterest e.source) && isProfile e.target) rawEdgePairs;
+  featureImpliesProfileAssertion = {
+    assertion = featureImpliesProfileEdges == [];
+    message = ''
+      Resolving host "${hostName}": the feature(s) ${quoteNames (lib.unique (map (e: e.source) featureImpliesProfileEdges))} imply the profile(s) ${quoteNames (lib.unique (map (e: e.target) featureImpliesProfileEdges))}, but a feature may not imply a profile — profiles are coarser than features, and reversing that would make host records misleading. Remove the edge(s) or make ${quoteNames (lib.unique (map (e: e.source) featureImpliesProfileEdges))} a profile.
     '';
   };
 
@@ -458,6 +470,7 @@ in {
       contingentImplicationTargetAssertion
       fabricatedInterestTargetAssertion
       interestCrossingAssertion
+      featureImpliesProfileAssertion
       platformDetectedAssertion
       platformSupportAssertion
     ];

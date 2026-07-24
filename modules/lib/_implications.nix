@@ -83,11 +83,13 @@
     # Partition one source's applicable targets by role. A target
     # among the known profiles is a profile edge; every other target
     # is a feature edge—an unknown target falls here so that
-    # "expandClosure" reports it as a dangling feature edge, and a
-    # feature naming a profile falls under "profiles" so that the
-    # feature-to-profile check rejects it. The "profiles" key appears
-    # only when the source names a profile target, so a feature source
-    # that names none carries no "profiles" field.
+    # "expandClosure" reports it as a dangling feature edge. A feature
+    # naming a profile also falls under "profiles"; the feature-to-
+    # profile rule is judged not here but by an assertion in
+    # "modules/_assertions.nix" against the raw edge registry, so such
+    # an edge is inert in this graph. The "profiles" key appears only
+    # when the source names a profile target, so a feature source that
+    # names none carries no "profiles" field.
     targetsFor = entries: let
       names = map edgeName (builtins.filter edgeApplies entries);
       profileTargets = lib.unique (builtins.filter isProfile names);
@@ -132,16 +134,20 @@
   # implications" rather than hard-coding role names, so adding a
   # new role is a pure data-level change.
   #
-  # Two static checks run before the transitive-closure walk:
-  #   1. Every edge target named in "implications.<role>.<source>"
-  #      under a "<targetRole>" key must appear in
-  #      "knownByRole.<targetRole>". Dangling edges (typically
-  #      typos) are rejected with a message that names the edge.
-  #   2. Edges emanating from a feature source may not target
-  #      profiles. Profiles are coarser than features; reversing
-  #      the hierarchy would render host records misleading. This
-  #      is the one role-specific rule inside otherwise
-  #      role-parametric machinery.
+  # One static check runs before the transitive-closure walk: every
+  # edge target named in "implications.<role>.<source>" under a
+  # "<targetRole>" key must appear in "knownByRole.<targetRole>".
+  # Dangling edges (typically typos) are rejected with a message that
+  # names the edge.
+  #
+  # This function does not judge kind legality — that a feature may
+  # not imply a profile, most relevantly. Kind-crossing is
+  # platform-independent, so the assertions in
+  # "modules/_assertions.nix" judge it against the unfiltered raw edge
+  # registry; judging it against this per-host, platform-filtered
+  # graph would let an edge hidden behind a "supportedPlatforms"
+  # record for another platform escape. A feature-source "profiles"
+  # edge is therefore inert here rather than an error.
   expandClosure = implications: knownByRole: selected: let
     roles = builtins.attrNames implications;
     # "Profiles" from "profiles", "Features" from "features", etc.
@@ -164,9 +170,6 @@
             source: let
               targetsByRole = edgeRecord.${source};
               targetRoles = builtins.attrNames targetsByRole;
-              featureToProfileError = lib.optional (role == "features" && builtins.elem "profiles" targetRoles) ''
-                implicationsFor: feature "${source}" has a "profiles" edge field, but a feature may not imply a profile. Remove the field or promote "${source}" to a profile.
-              '';
               danglingErrors =
                 lib.concatMap (
                   targetRole: let
@@ -181,7 +184,7 @@
                 )
                 targetRoles;
             in
-              featureToProfileError ++ danglingErrors
+              danglingErrors
           )
           sources
       )
