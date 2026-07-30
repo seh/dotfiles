@@ -11,6 +11,7 @@
         ../_tags.nix
         ../_assertions.nix
         ../_host-users.nix
+        ./_reload-launch-agents.nix
         {
           dotfiles = {
             _knownProfiles = flake.config.dotfiles.knownProfiles;
