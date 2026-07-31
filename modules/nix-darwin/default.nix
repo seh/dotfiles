@@ -21,6 +21,7 @@
             _featureClasses = flake.config.dotfiles.featureClasses;
             _featurePreconditions = flake.config.dotfiles.featurePreconditions;
             _impliedEdges = flake.config.dotfiles.impliedEdges;
+            _profileClasses = flake.config.dotfiles.profileClasses;
             _profileSupportedPlatforms = flake.config.dotfiles.profileSupportedPlatforms;
             _flakeLib = flake.config.flake.lib;
           };
