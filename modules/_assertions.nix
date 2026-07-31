@@ -1,13 +1,15 @@
 # Assertions catching mis-selected host entries.
 #
-# Role-aware assertions are surfaced against the typed activation
-# surface: each role ("profiles", "features") gets an unknown-name
-# assertion, plus a cross-role mismatch assertion that catches a name
-# selected under one role but advertised under another.
+# Role-aware assertions are surfaced against the typed authoring
+# surface: each role ("profiles", "features", "interests") gets an
+# unknown-name assertion for each of the three lists a machine or user
+# writes under it—its selections, its exclusions, and the machine-wide
+# forbid list—plus a cross-role mismatch assertion that catches a name
+# written into one role's list while another role advertises it.
 #
 # Role-mismatch assertions run before the plain "unknown name"
 # assertions so that the more specific diagnosis wins when a name was
-# simply selected under the wrong role.
+# simply written under the wrong role.
 #
 # The "knownProfiles", "knownFeatures", and "knownInterests"
 # registries consulted here are flake-wide by design; see the comment
@@ -15,7 +17,11 @@
 # "dotfiles._knownProfiles" for the rationale. The preconditions table
 # ("dotfiles._featurePreconditions") is consulted as well, to check
 # contingent features' precondition edges and their possible misuse in
-# a host's selections and in the implication graph.
+# a host's selections and in the implication graph. The per-class
+# module records ("dotfiles._featureClasses" and
+# "dotfiles._profileClasses") are consulted too, to hold each feature
+# to one side of the home/system divide and to catch a user selecting
+# a name that configures the machine alone.
 {
   lib,
   config,
@@ -102,74 +108,159 @@
     '';
   };
 
+  # Every authoring list named below sits directly under
+  # "dotfiles.host" at the machine level; each one but the
+  # machine-wide forbid list also has a per-user counterpart under
+  # "dotfiles.users.<name>". The messages below build both paths from
+  # a list's bare name, since a name arriving at a managed user's
+  # nested evaluator may have been written at either surface.
+  hostOption = attr: "dotfiles.host.${attr}";
+  userOption = attr: "dotfiles.users.<name>.${attr}";
+
   # Role-parametric driver. Iterating over this list (rather than
-  # hard-coding "profiles" and "features") means that adding a third
-  # role later—say, "bundles"—reduces to a single new entry.
+  # hard-coding "profiles", "features", and "interests") means that
+  # adding a fourth role later—say, "bundles"—reduces to a single new
+  # entry. Each role names the three lists a machine or user authors
+  # under it and the registry of names it advertises, so that each
+  # kind's own registry judges its own lists. These are the authoring
+  # roles, one per kind; the activation walk carries two roles and
+  # folds the interests into its "features" role (see
+  # "modules/_activation.nix").
   roles = [
     {
       name = "profiles";
+      excludeName = "excludeProfiles";
+      forbidName = "forbidProfiles";
       selected = host.profiles;
       excluded = host.excludeProfiles;
       forbidden = host.forbidProfiles;
       known = knownProfiles;
       humanSingular = "profile";
       humanPlural = "profile(s)";
-      selectOption = "dotfiles.host.profiles";
-      excludeOption = "dotfiles.host.excludeProfiles";
-      forbidOption = "dotfiles.host.forbidProfiles";
     }
     {
       name = "features";
+      excludeName = "excludeFeatures";
+      forbidName = "forbidFeatures";
       selected = host.features;
       excluded = host.excludeFeatures;
       forbidden = host.forbidFeatures;
-      known = knownNames;
+      known = knownFeatures;
       humanSingular = "feature";
       humanPlural = "feature(s)";
-      selectOption = "dotfiles.host.features";
-      excludeOption = "dotfiles.host.excludeFeatures";
-      forbidOption = "dotfiles.host.forbidFeatures";
+    }
+    {
+      name = "interests";
+      excludeName = "excludeInterests";
+      forbidName = "forbidInterests";
+      selected = host.interests;
+      excluded = host.excludeInterests;
+      forbidden = host.forbidInterests;
+      known = knownInterests;
+      humanSingular = "interest";
+      humanPlural = "interest(s)";
     }
   ];
 
-  # Pair each role with "the other roles", so that each role's
-  # selections can be checked against every other role's known set.
-  # For the two-role case this degenerates to one pair per direction.
+  # Pair each role with "the other roles", so that each role's lists
+  # can be checked against every other role's known set.
   crossPairs =
     lib.concatMap (
       here: map (there: {inherit here there;}) (builtins.filter (r: r.name != here.name) roles)
     )
     roles;
 
-  # Role-mismatch assertion: names selected under "here.name" that are
-  # actually known as "there.name".
-  mismatchAssertion = {
+  # The three lists each role carries: the names a machine or user
+  # selects, the names it prunes from its own walk, and the names a
+  # machine forbids outright. Each entry reads its list off a role
+  # and spells that list's bare name, so the kind-mismatch check
+  # covers all three lists from one definition. Forbidding is
+  # machine-wide, so that list alone has no per-user counterpart to
+  # name.
+  listFamilies = [
+    {
+      entriesOf = role: role.selected;
+      nameOf = role: role.name;
+      perUser = true;
+    }
+    {
+      entriesOf = role: role.excluded;
+      nameOf = role: role.excludeName;
+      perUser = true;
+    }
+    {
+      entriesOf = role: role.forbidden;
+      nameOf = role: role.forbidName;
+      perUser = false;
+    }
+  ];
+
+  # Role-mismatch assertion: names written into one of "here"'s lists
+  # that are actually known as "there.name". The kinds are not
+  # interchangeable—a feature carries configuration and may be
+  # implied, while an interest carries none and is only selected or
+  # entailed—so a misfiled name is an error naming the list it belongs
+  # in.
+  #
+  # A contingent feature misfiled into an exclusion list draws advice
+  # of its own. A machine-level entry in the "excludeFeatures" list is
+  # a default an affected user overrides by selecting the same name,
+  # and selecting a contingent feature is refused, so no user could
+  # ever countermand that entry. A user excludes one in that user's
+  # own list; a machine that wants one never to activate forbids it
+  # instead.
+  mismatchAssertion = family: {
     here,
     there,
   }: let
-    misplaced = builtins.filter (n: builtins.elem n there.known) here.selected;
+    misplaced = builtins.filter (n: builtins.elem n there.known) (family.entriesOf here);
+    # Contingent features draw the separate advice above only in the
+    # exclusion family, the one whose list under the destination role
+    # is that role's own "excludeName" field.
+    contingent =
+      if family.nameOf there == there.excludeName
+      then builtins.filter (n: builtins.elem n contingentNames) misplaced
+      else [];
+    ordinary = lib.subtractLists contingent misplaced;
+    destination = let
+      attr = family.nameOf there;
+    in
+      if family.perUser
+      then ''"${hostOption attr}" or, on a multi-user host, "${userOption attr}"''
+      else ''"${hostOption attr}"'';
+    advice =
+      lib.optional (ordinary != []) (
+        if contingent == []
+        then "Move them to ${destination}."
+        else "Move ${lib.concatStringsSep ", " ordinary} to ${destination}."
+      )
+      ++ lib.optional (contingent != []) ''A contingent feature does not belong in a machine's "${hostOption there.excludeName}". A machine-level exclusion yields to a user who selects the same name, and no user may select a contingent feature, so the entry could never yield. Move ${lib.concatStringsSep ", " contingent} to the excluding user's own list ("${hostOption there.excludeName}" where home-manager alone manages the host, "${userOption there.excludeName}" on a multi-user host) or, to keep each name inactive everywhere, to "${hostOption there.forbidName}".'';
   in {
     assertion = misplaced == [];
     message = ''
-      Resolving host "${hostName}": selecting ${lib.concatStringsSep ", " misplaced} under "${here.name}", but these are known ${there.humanPlural}. Move them to "${there.selectOption}".
+      Resolving host "${hostName}": "${family.nameOf here}" lists ${lib.concatStringsSep ", " misplaced}, but each of these names is a known ${there.humanSingular}. ${lib.concatStringsSep " " advice}
     '';
   };
 
-  # Unknown-name assertion for a single role. Elements that are
-  # neither in "role.known" nor in any other role's "known" set count
-  # as unknown; elements present in another role's "known" set are
-  # instead caught by the role-mismatch assertion above.
+  # The names every role other than the given one advertises. A name
+  # in one of a role's lists that another role knows is misfiled, not
+  # unknown, so the three checks below leave it to the role-mismatch
+  # assertions above and report only names nothing advertises.
+  otherKnown = role:
+    lib.concatLists (map (r: r.known) (builtins.filter (r: r.name != role.name) roles));
+
+  # Unknown-name assertion for a single role.
   unknownAssertion = role: let
-    otherKnown = lib.concatLists (map (r: r.known) (builtins.filter (r: r.name != role.name) roles));
+    others = otherKnown role;
     unknown =
       builtins.filter (
-        n: !(builtins.elem n role.known) && !(builtins.elem n otherKnown)
+        n: !(builtins.elem n role.known) && !(builtins.elem n others)
       )
       role.selected;
   in {
     assertion = unknown == [];
     message = ''
-      Resolving host "${hostName}": selecting ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Add the corresponding ${role.humanSingular} module or remove the name(s) from "${role.selectOption}".
+      Resolving host "${hostName}": selecting ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Add the corresponding ${role.humanSingular} module or remove the name(s) from "${hostOption role.name}".
     '';
   };
 
@@ -178,11 +269,16 @@
   # misspelled exclusion would otherwise silently fail to suppress,
   # leaving the host with an unintended activation set.
   unknownExcludeAssertion = role: let
-    unknown = builtins.filter (n: !(builtins.elem n role.known)) role.excluded;
+    others = otherKnown role;
+    unknown =
+      builtins.filter (
+        n: !(builtins.elem n role.known) && !(builtins.elem n others)
+      )
+      role.excluded;
   in {
     assertion = unknown == [];
     message = ''
-      Resolving host "${hostName}": excluding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${role.excludeOption}".
+      Resolving host "${hostName}": excluding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${hostOption role.excludeName}".
     '';
   };
 
@@ -194,11 +290,16 @@
   # may be forbidden (it simply never activates), so no separate check
   # objects to that.
   unknownForbidAssertion = role: let
-    unknown = builtins.filter (n: !(builtins.elem n role.known)) role.forbidden;
+    others = otherKnown role;
+    unknown =
+      builtins.filter (
+        n: !(builtins.elem n role.known) && !(builtins.elem n others)
+      )
+      role.forbidden;
   in {
     assertion = unknown == [];
     message = ''
-      Resolving host "${hostName}": forbidding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${role.forbidOption}".
+      Resolving host "${hostName}": forbidding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${hostOption role.forbidName}".
     '';
   };
 
@@ -308,20 +409,24 @@
   };
 
   # A contingent feature activates only through its preconditions, so
-  # naming one in the selected features would activate it in an
+  # naming one among the selections would activate it in an
   # inconsistent state, without the guarantee its body is written
-  # against. Every selection is authored, so the check applies
-  # uniformly, with nothing suppressing it: the machine's own
-  # "dotfiles.host.features" in a system evaluator, and the machine's
-  # layered with that user's inside a managed user's evaluator. The
-  # message names both surfaces because a name arriving at a nested
-  # per-user evaluator may have been written either at
-  # "dotfiles.host.features" or at "dotfiles.users.<name>.features".
-  selectedContingent = builtins.filter (n: builtins.elem n contingentNames) host.features;
+  # against. Both selection lists that feed the walk's "features" role
+  # are checked, since a contingent name written under "interests"
+  # would enter the walk just the same; the role-mismatch assertion
+  # above objects to the misfiling, and this one to the selection.
+  # Every selection is authored, so the check applies uniformly, with
+  # nothing suppressing it: the machine's own lists in a system
+  # evaluator, and the machine's layered with that user's inside a
+  # managed user's evaluator. The message names both surfaces because
+  # a name arriving at a nested per-user evaluator may have been
+  # written at either.
+  selectedContingent =
+    builtins.filter (n: builtins.elem n contingentNames) (host.features ++ host.interests);
   contingentSelectionAssertion = {
     assertion = selectedContingent == [];
     message = ''
-      Resolving host "${hostName}": the selected features name the contingent feature(s) ${quoteNames selectedContingent} (written in "dotfiles.host.features" or, on a multi-user host, in "dotfiles.users.<name>.features"), but a contingent feature activates automatically exactly when all of its preconditions are met and may not be selected directly. Select its preconditions instead.
+      Resolving host "${hostName}": the selections name the contingent feature(s) ${quoteNames selectedContingent} (written in "dotfiles.host.features" or "dotfiles.host.interests" or, on a multi-user host, in the matching "dotfiles.users.<name>" list), but a contingent feature activates automatically exactly when all of its preconditions are met and may not be selected directly. Select its preconditions instead.
     '';
   };
 
@@ -460,6 +565,75 @@
     '';
   };
 
+  # A feature or profile whose every registered body is system-class
+  # configures the machine and nothing else, so a user selecting it
+  # receives nothing at all. Each user's own lists are judged, never
+  # the resolved activation in force for that user: the machine's
+  # selections layer into every user's walk, so a machine-nominated
+  # system-only name legitimately appears there. That distinction
+  # matters because the layering is an intended pattern—an
+  # administrator nominates a system-only feature and a user's
+  # contingent feature takes it as a precondition—and only the user's
+  # own authoring is at fault.
+  #
+  # A name absent from the class record carries no bodies at all: a
+  # name-only registration, an interest, or a misspelling that the
+  # unknown-name checks above already diagnose. None is flagged here.
+  profileClasses = config.dotfiles._profileClasses;
+  userRecords = config.dotfiles.users;
+  systemOnlyClassesOf = registry: name: let
+    classes = registry.${name} or [];
+  in
+    if classes != [] && !(builtins.elem homeClass classes)
+    then classes
+    else [];
+  systemOnlySelections = registry: entriesOf:
+    lib.concatMap (
+      user:
+        lib.concatMap (
+          name: let
+            classes = systemOnlyClassesOf registry name;
+          in
+            lib.optional (classes != []) {inherit user name classes;}
+        )
+        (entriesOf userRecords.${user})
+    )
+    (builtins.attrNames userRecords);
+  # Both lists that a user writes into the walk's "features" role are
+  # judged, since a system-only feature name written under "interests"
+  # enters that role just the same; the role-mismatch assertion above
+  # objects to the misfiling, and this one to the selection.
+  userSystemOnlyFeatures =
+    systemOnlySelections featureClasses (record: record.features ++ record.interests);
+  userSystemOnlyProfiles = systemOnlySelections profileClasses (record: record.profiles);
+  describeSystemOnlyClasses = classes:
+    if lib.length classes == 1
+    then ''only for the ${lib.head classes} class''
+    else ''only for the ${lib.concatStringsSep " and " classes} classes'';
+  describeSystemOnlySelection = kind: destination: {
+    user,
+    name,
+    classes,
+  }: ''the user "${user}" selects the ${kind} "${name}", which carries configuration ${describeSystemOnlyClasses classes} and so does nothing for a user; select it in "${destination}" so the machine applies it.'';
+  userSystemOnlyFeatureAssertion = {
+    assertion = userSystemOnlyFeatures == [];
+    message = ''
+      Resolving host "${hostName}": ${
+        lib.concatMapStringsSep " " (describeSystemOnlySelection "feature" (hostOption "features"))
+        userSystemOnlyFeatures
+      }
+    '';
+  };
+  userSystemOnlyProfileAssertion = {
+    assertion = userSystemOnlyProfiles == [];
+    message = ''
+      Resolving host "${hostName}": ${
+        lib.concatMapStringsSep " " (describeSystemOnlySelection "profile" (hostOption "profiles"))
+        userSystemOnlyProfiles
+      }
+    '';
+  };
+
   # A host with a name must know its platform, and detection from the
   # evaluating package set is the only source: host records carry no
   # platform attribute. This assertion fails only when a named host is
@@ -505,12 +679,13 @@
 in {
   # Namespace-disjointness assertions run first: every other
   # kind-aware diagnosis presupposes that each name denotes one kind.
-  # Mismatch assertions run before unknown-name assertions so that a
-  # misplaced name produces the more actionable diagnosis. The
-  # definitions above appear in this same order.
+  # The mismatch assertions—one per list family, per ordered pair of
+  # roles—run before the unknown-name assertions so that a misfiled
+  # name produces the more actionable diagnosis. The definitions above
+  # appear in this same order.
   assertions =
     map namespaceAssertion namespacePairs
-    ++ map mismatchAssertion crossPairs
+    ++ lib.concatMap (family: map (mismatchAssertion family) crossPairs) listFamilies
     ++ map unknownAssertion roles
     ++ map unknownExcludeAssertion roles
     ++ map unknownForbidAssertion roles
@@ -525,6 +700,8 @@ in {
       interestCrossingAssertion
       featureImpliesProfileAssertion
       mixedBodyAssertion
+      userSystemOnlyFeatureAssertion
+      userSystemOnlyProfileAssertion
       platformDetectedAssertion
       platformSupportAssertion
     ];

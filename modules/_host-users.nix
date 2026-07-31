@@ -2,21 +2,27 @@
 #
 # The per-user registry itself—the "dotfiles.users" option—is declared
 # by the "_users.nix" module, which every class imports, so that the
-# activation substrate in "_activation.nix" can compute the per-user
-# activation union in every class. This module carries the options
-# that are meaningful only where a system configuration manages the
-# host: the primary-user designation and the host-wide Lix channel,
-# shared across all users. What nix-darwin requires of that
-# designation—a default drawn from a sole user, and an explicit
-# assignment once there are several—lives in
+# registry is visible wherever the activation substrate in
+# "_activation.nix" evaluates, the home-manager class included. This
+# module carries the options that are meaningful only where a system
+# configuration manages the host: the primary-user designation and the
+# host-wide Lix channel, shared across all users. What nix-darwin
+# requires of that designation—a default drawn from a sole user, and
+# an explicit assignment once there are several—lives in
 # "_darwin-primary-user.nix", which the nix-darwin class aggregator
 # alone imports.
 #
 # This module is imported by the nix-darwin and NixOS class
-# aggregators, not by the home-manager class aggregator. The
-# narrowed home-manager identity schema lives in
-# "_user-identity.nix".
-{lib, ...}: let
+# aggregators, not by the home-manager class aggregator, so it is also
+# where a diagnosis addressed to the machine alone belongs: the
+# backstop warning below fires for a machine that manages users while
+# selecting nothing of its own. The narrowed home-manager identity
+# schema lives in the "_user-identity.nix" file.
+{
+  lib,
+  config,
+  ...
+}: let
   inherit (lib) mkOption types;
 in {
   options.dotfiles = {
@@ -40,5 +46,26 @@ in {
         The Lix package set channel to use (e.g. "stable", "latest").
       '';
     };
+  };
+
+  config = let
+    inherit (config.dotfiles) host;
+    userNames = builtins.attrNames config.dotfiles.users;
+    # Every list through which this machine selects for its own sake.
+    # A system-class body follows these alone, so all three left empty
+    # means the machine applies no system-class feature or profile at
+    # all.
+    machineSelections = host.profiles ++ host.features ++ host.interests;
+  in {
+    # A machine that manages users while selecting nothing of its own
+    # withholds every system-class feature and profile, since a system
+    # body follows the machine's own selections alone. A consumer who
+    # writes all the selections under "dotfiles.users" arrives there
+    # without noticing, so this warning states it. Such a machine is
+    # legitimate—one that exists only to provision its users'
+    # homes—which is why this is a warning rather than an error.
+    warnings = lib.optional (userNames != [] && machineSelections == []) ''
+      Resolving host "${toString host.name}": "dotfiles.users" lists ${lib.concatMapStringsSep ", " (n: "\"${n}\"") userNames}, but this machine selects nothing of its own, so it applies no system-class profile or feature. A machine's system configuration follows only "dotfiles.host.profiles", "dotfiles.host.features", and "dotfiles.host.interests", never its users' selections. If you meant to configure the machine, add its selections to those lists. If this machine exists only to provision its users' homes, you can ignore this warning.
+    '';
   };
 }

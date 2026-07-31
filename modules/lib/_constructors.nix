@@ -37,9 +37,9 @@
 # identity fields under "dotfiles.identity", and the machine's
 # "dotfiles.host" record with its selections and exclusions layered
 # with that user's own under "dotfiles.host". The mirroring assigns
-# nothing into "dotfiles.host.{profiles,features}" at the system
-# level: those stay the machine's own selections, which alone decide
-# the machine's own configuration.
+# nothing into "dotfiles.host.{profiles,features,interests}" at the
+# system level: those stay the machine's own selections, which alone
+# decide the machine's own configuration.
 {
   lib,
   inputs,
@@ -85,8 +85,8 @@
   # account, spawns the user's nested home-manager evaluator, and
   # mirrors the user's identity and a layered host record into that
   # evaluator. It assigns nothing into
-  # "dotfiles.host.{profiles,features}" at the system level: those
-  # stay the machine's own selections, which alone decide the
+  # "dotfiles.host.{profiles,features,interests}" at the system level:
+  # those stay the machine's own selections, which alone decide the
   # machine's own configuration.
   #
   # The nested home-manager evaluator sees:
@@ -98,16 +98,18 @@
   # selections and the user's together: the machine provisions every
   # user it manages, and each user adds to that.
   #
-  # Layering lets an exclusion hold in three ways:
-  #   1. The machine's "forbidProfiles"/"forbidFeatures" pass through
-  #      untouched—the "//" below never names them—and prune every
-  #      walk, so a user naming a forbidden thing still does not
-  #      receive it.
-  #   2. The machine's "excludeProfiles"/"excludeFeatures" withhold a
-  #      name from what it provisions, yet a user who asks for that
-  #      same name—selecting it directly, or selecting a profile that
-  #      brings it along—drops it from the exclusions in force for
-  #      that user, opting back in.
+  # Layering lets an exclusion hold in three ways, applied alike to
+  # the machine's profiles, features, and interests:
+  #   1. The machine's "forbidProfiles", "forbidFeatures", and
+  #      "forbidInterests" pass through untouched—the "//" below never
+  #      names them—and prune every walk, so a user naming a forbidden
+  #      thing still does not receive it.
+  #   2. The machine's "excludeProfiles", "excludeFeatures", and
+  #      "excludeInterests" withhold a name from what it provisions,
+  #      yet a user who asks for that same name—selecting it directly,
+  #      or selecting a profile or an interest that brings it
+  #      along—drops it from the exclusions in force for that user,
+  #      opting back in.
   #   3. A user's own exclusions always hold, for that user alone.
   multiUserPropagationModule = userDir: {config, ...}: let
     inherit (config.dotfiles) host;
@@ -132,10 +134,13 @@
     # expanded along the implication graph, after that user's own
     # exclusions and everything the machine forbids prune it. The
     # machine's exclusions yield to a user who asks for a name, and
-    # selecting a profile asks for everything it brings along, so the
-    # layering below subtracts this closure rather than the bare lists
-    # the user wrote: a profile then opts back in exactly as selecting
-    # each of its members directly would. The preconditions table
+    # selecting a profile or an interest asks for everything it brings
+    # along, so the layering below subtracts this closure rather than
+    # the bare lists the user wrote: a profile or an interest then
+    # opts back in exactly as selecting each of its members directly
+    # would. The walk's "features" role spans every registered name,
+    # so the user's interests fold in there beside the user's
+    # features, exactly as in the main walk. The preconditions table
     # stays empty on purpose: a contingent feature cannot be selected,
     # so no selection asks for one, and an exclusion of one never
     # yields.
@@ -145,13 +150,23 @@
         flakeLib.resolveActivation {
           inherit implications knownByRole;
           preconditions = {};
-          selected = {inherit (userCfg) profiles features;};
+          selected = {
+            inherit (userCfg) profiles;
+            features = userCfg.features ++ userCfg.interests;
+          };
           excluded = {
             profiles = userCfg.excludeProfiles ++ host.forbidProfiles;
-            features = userCfg.excludeFeatures ++ host.forbidFeatures;
+            features =
+              userCfg.excludeFeatures
+              ++ userCfg.excludeInterests
+              ++ host.forbidFeatures
+              ++ host.forbidInterests;
           };
         }
-      else {inherit (userCfg) profiles features;};
+      else {
+        inherit (userCfg) profiles;
+        features = userCfg.features ++ userCfg.interests;
+      };
   in {
     home-manager.users =
       lib.mapAttrs (_: userCfg: let
@@ -165,12 +180,16 @@
             // {
               profiles = host.profiles ++ userCfg.profiles;
               features = host.features ++ userCfg.features;
+              interests = host.interests ++ userCfg.interests;
               excludeProfiles =
                 userCfg.excludeProfiles
                 ++ lib.subtractLists entailed.profiles host.excludeProfiles;
               excludeFeatures =
                 userCfg.excludeFeatures
                 ++ lib.subtractLists entailed.features host.excludeFeatures;
+              excludeInterests =
+                userCfg.excludeInterests
+                ++ lib.subtractLists entailed.features host.excludeInterests;
             };
         };
       })

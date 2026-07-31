@@ -41,31 +41,41 @@ in {
           };
 
           dotfiles = {
+            # This machine's own selections decide its own
+            # configuration—every "nixOS" body follows these alone—and
+            # are layered into every managed user's home, so the
+            # machine provisions each user it manages. Select here
+            # what every account on this machine should have: the
+            # "essential" profile implies the features that configure
+            # the machine itself.
             host = {
               name = hostName;
+              profiles = [
+                "essential"
+              ];
+              features = [
+                # "compat/bazel-fhs"
+              ];
             };
-            # Activate feature modules by listing profiles and
-            # features that apply to this user. The "all" profile
-            # expands to every other profile this flake advertises,
-            # computed from the "knownProfiles" registry. To opt out
-            # of specific members of the "all" profile (such as the
-            # Firefox/Safari customization in "web"), list them under
-            # "excludeProfiles". Add specific features such as
-            # "kubernetes", "cloud/aws", or "lang/rust" under
-            # "features". See:
+            # A user's own selections add to the machine's, for that
+            # user alone; no user's selection configures the machine.
+            # List here what this person works with, beyond the
+            # baseline above. See:
             # https://github.com/seh/dotfiles/tree/main/modules/home/profiles
             # https://github.com/seh/dotfiles/tree/main/modules/home/features
             users.${username} = {
               inherit identity;
               profiles = [
-                "all"
+                "development"
               ];
-              # Opt out of specific members of the "all" profile. For
-              # example, to skip Firefox/Safari customization:
+              # Withhold a member of a selection made above,
+              # for this user alone:
               # excludeProfiles = ["web"];
               features = [
                 # "kubernetes"
                 # "cloud/aws"
+              ];
+              interests = [
                 # "lang/rust"
               ];
               homeManagerConfig = {

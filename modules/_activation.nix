@@ -66,23 +66,49 @@
         impliedEdges = config.dotfiles._impliedEdges;
       }
     else null;
-  # The profiles and features this evaluator itself selects. See the
-  # "dotfiles.host" submodule description for the machine and per-user
-  # readings.
+  # The profiles, features, and interests this evaluator itself
+  # selects. See the "dotfiles.host" submodule description for the
+  # machine and per-user readings. The walk carries two roles, and its
+  # "features" role spans every registered name, so the selected
+  # interests fold in there beside the selected features: each kind
+  # has its own authoring list, and activation treats them alike.
   selected = {
-    inherit (host) profiles features;
+    inherit (host) profiles;
+    features = host.features ++ host.interests;
   };
-  # Fold what "host.forbidProfiles" and "host.forbidFeatures" forbid
-  # into this evaluator's own exclusions: both prune every walk before
-  # "resolveActivation", so a forbidden name activates nowhere—the one
-  # exclusion no user may undo. The host record conveys what they
-  # forbid and keeps it intact when the propagation module in
+  # Keep each feature and interest list to the names its own kind's
+  # registry advertises before the walk reads it. The role-mismatch
+  # assertions in "modules/_assertions.nix" refuse a name written
+  # under the other kind's list, and the walk agreeing with them keeps
+  # a refused line from withholding anything: a feature's name in
+  # "excludeInterests" or "forbidInterests" (or an interest's in the
+  # feature lists) prunes nothing, exactly as the complaint says to
+  # expect. The profile lists need no such filter, because the
+  # profiles role prunes only profile vertices already.
+  ofKind = registry: builtins.filter (name: builtins.elem name registry);
+  # The exclusions in force for this evaluator's walk, each authoring
+  # list first held to its own kind.
+  exclusionsInForce = {
+    profiles = host.excludeProfiles;
+    features =
+      ofKind config.dotfiles._knownFeatures host.excludeFeatures
+      ++ ofKind config.dotfiles._knownInterests host.excludeInterests;
+  };
+  # Fold what "host.forbidProfiles", "host.forbidFeatures", and
+  # "host.forbidInterests" forbid into this evaluator's own
+  # exclusions: all three prune every walk before "resolveActivation",
+  # so a forbidden name activates nowhere—the one exclusion no user
+  # may undo. The host record conveys what they forbid and keeps it
+  # intact when the propagation module in
   # "modules/lib/_constructors.nix" layers the machine's record with a
   # user's, so each user's own home environment respects it through
   # this same logic, with no extra wiring.
   withForbidden = excluded: {
     profiles = excluded.profiles ++ host.forbidProfiles;
-    features = excluded.features ++ host.forbidFeatures;
+    features =
+      excluded.features
+      ++ ofKind config.dotfiles._knownFeatures host.forbidFeatures
+      ++ ofKind config.dotfiles._knownInterests host.forbidInterests;
   };
   # This evaluator's own activation, resolved coherently in one walk
   # from the selections in the "dotfiles.host" record. The walk runs
@@ -97,10 +123,7 @@
     then
       flakeLib.resolveActivation {
         inherit implications knownByRole selected preconditions;
-        excluded = withForbidden {
-          profiles = host.excludeProfiles;
-          features = host.excludeFeatures;
-        };
+        excluded = withForbidden exclusionsInForce;
       }
     else selected;
 in {
@@ -131,6 +154,23 @@ in {
               (outside of any profile that would pull them in).
               Expansion starts from these selected names together with
               "profiles".
+            '';
+          };
+          interests = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = ''
+              Interest names this machine or user selects: the wants
+              that guard contingent features, such as a programming
+              language in use here. Expansion starts from these
+              selected names together with "profiles" and "features".
+              An interest carries no configuration of its own, so
+              selecting one activates only the contingent features
+              whose preconditions it completes. A feature name belongs
+              in "features" instead; the two kinds are not
+              interchangeable, and an assertion in
+              "modules/_assertions.nix" rejects a name written under
+              the wrong one.
             '';
           };
           excludeProfiles = mkOption {
@@ -167,6 +207,24 @@ in {
               "forbidFeatures".
             '';
           };
+          excludeInterests = mkOption {
+            type = types.listOf types.str;
+            default = [];
+            description = ''
+              Interest names its author deletes from its own
+              implication graph before the activation walk. An
+              interest still reachable through a non-excluded
+              path—another interest that implies it, say—remains
+              active; one reachable only through excluded vertices
+              drops out. Withholding an interest withholds every
+              contingent feature that has no other way to satisfy its
+              preconditions. The machine's own entries withhold an
+              interest from what the machine provisions its users, yet
+              yield to a user who selects that same name; a user's own
+              entries apply to that user alone. The list no user may
+              undo is "forbidInterests".
+            '';
+          };
           forbidProfiles = mkOption {
             type = setOfNames {merge = "union";};
             default = [];
@@ -195,26 +253,40 @@ in {
               explicit selection.
             '';
           };
+          forbidInterests = mkOption {
+            type = setOfNames {merge = "union";};
+            default = [];
+            description = ''
+              Machine-wide forbidding: the walk prunes each interest
+              listed here from every activation, the machine's own and
+              every user's, so it activates nowhere and no user
+              receives it—not even a user who selects that same name.
+              Forbidding is the absolute counterpart to the
+              "excludeInterests" list, which prunes only its author's
+              own walk and, at the machine level, yields to a user's
+              explicit selection.
+            '';
+          };
         };
       };
       default = {};
       description = ''
-        The host record in force in this evaluator: the "profiles" and
-        "features" it selects, the exclusions it applies to its own
-        walk, and the machine-wide "forbidProfiles"/"forbidFeatures"
-        lists. In a system evaluator these fields carry the machine's
-        own wants alone, standing alongside the users in
-        "dotfiles.users" and absorbing nothing from them, so no user's
-        selection configures the machine. In a
-        managed user's nested home-manager evaluator the propagation
-        module in "modules/lib/_constructors.nix" layers the machine's
-        record with that user's own, so the machine provisions every
-        user it manages and each user adds to that. On a standalone
-        home-manager host the sole user is the machine, so these are
-        that user's selections. Set by "lib.mkHome", "lib.mkDarwin",
-        and "lib.mkNixOS" from the "host = {...}" argument; consumer
-        modules may extend its lists via the module system's
-        append-merge.
+        The host record in force in this evaluator: the "profiles",
+        "features", and "interests" it selects, the exclusions it
+        applies to its own walk, and the machine-wide
+        "forbidProfiles"/"forbidFeatures"/"forbidInterests" lists. In
+        a system evaluator these fields carry the machine's own wants
+        alone, standing alongside the users in "dotfiles.users" and
+        absorbing nothing from them, so no user's selection configures
+        the machine. In a managed user's nested home-manager evaluator
+        the propagation module in "modules/lib/_constructors.nix"
+        layers the machine's record with that user's own, so the
+        machine provisions every user it manages and each user adds to
+        that. On a standalone home-manager host the sole user is the
+        machine, so these are that user's selections. Set by
+        "lib.mkHome", "lib.mkDarwin", and "lib.mkNixOS" from the
+        "host = {...}" argument; consumer modules may extend its lists
+        via the module system's append-merge.
       '';
     };
 
@@ -253,12 +325,12 @@ in {
               activation resolved from "dotfiles.host". The walk
               deletes this evaluator's exclusions from the implication
               graph, walks the remaining edges from the selected
-              profiles and features, and activates every
-              contingent feature whose preconditions the result meets;
-              a feature reachable only through an excluded profile is
-              automatically absent. These active features decide
-              whether each feature's configuration for this
-              evaluator's class applies, tested via "inEffect". A
+              profiles, features, and interests, and activates every
+              contingent feature whose preconditions
+              the result meets; a feature reachable only through an
+              excluded profile is automatically absent. These active
+              features decide whether each feature's configuration for
+              this evaluator's class applies, tested via "inEffect". A
               system-class body therefore follows the machine's own
               selections alone, and a user's home-class body follows
               the machine's selections layered with that user's own.
@@ -552,6 +624,21 @@ in {
       '';
     };
 
+    _profileClasses = mkOption {
+      type = types.attrsOf (types.listOf types.str);
+      default = {};
+      description = ''
+        Per-profile module classes, keyed by profile name; each value
+        names the classes ("homeManager", "nixDarwin", "nixOS") that
+        register a body for that profile. Mirrored from the
+        flake-level "dotfiles.profileClasses" registry by each class
+        aggregator. Consulted by the assertion in
+        "modules/_assertions.nix" that rejects a user selecting a
+        profile which configures the machine alone. A profile
+        registered by name alone, with no bodies, is absent.
+      '';
+    };
+
     _profileSupportedPlatforms = mkOption {
       type = types.attrsOf (types.listOf types.str);
       default = {};
@@ -583,15 +670,15 @@ in {
   # Diagnose exclusions that name a known item this evaluator's own
   # selections do not activate: the exclusion has no effect here and
   # may be removed. For each candidate name "n" in "excludeProfiles"
-  # (or "excludeFeatures"), recompute this evaluator's own activation
-  # with "n" temporarily removed from its exclusion list (but with all
-  # other exclusions still pruning the graph). If "n" is absent from
-  # the resulting activation, it would not have been active anyway, so
-  # listing it as excluded changes nothing. The judgment stays within
-  # one evaluator: the machine's own selections in a system evaluator,
-  # and the machine's layered with the user's in a managed user's
-  # evaluator, so each evaluator reports only the exclusions idle
-  # there.
+  # (or "excludeFeatures", or "excludeInterests"), recompute this
+  # evaluator's own activation with "n" temporarily removed from its
+  # exclusion list (but with all other exclusions still pruning the
+  # graph). If "n" is absent from the resulting activation, it would
+  # not have been active anyway, so listing it as excluded changes
+  # nothing. The judgment stays within one evaluator: the machine's
+  # own selections in a system evaluator, and the machine's layered
+  # with the user's in a managed user's evaluator, so each evaluator
+  # reports only the exclusions idle there.
   config = let
     hostLabel = toString host.name;
     # The unpruned walk also forces the dangling-edge check inside
@@ -615,14 +702,10 @@ in {
     # walk that never activates contingent features would misreport it
     # as removable.
     isRedundant = role: name: let
-      excluded = {
-        profiles = host.excludeProfiles;
-        features = host.excludeFeatures;
-      };
       withoutSelf =
-        excluded
+        exclusionsInForce
         // {
-          ${role} = lib.filter (m: m != name) excluded.${role};
+          ${role} = lib.filter (m: m != name) exclusionsInForce.${role};
         };
       activation = flakeLib.resolveActivation {
         inherit implications knownByRole selected preconditions;
@@ -634,15 +717,32 @@ in {
       if hasImplicationsLib
       then builtins.filter (n: builtins.elem n known && isRedundant role n) excluded
       else [];
+    # Each exclusion list is judged against its own kind's registry:
+    # "excludeFeatures" against the known features and
+    # "excludeInterests" against the known interests, matching the
+    # walk, which holds each list to its own kind. A name written
+    # under the wrong list is a kind mismatch, which the assertions in
+    # "modules/_assertions.nix" reject outright and the walk ignores.
     redundantProfiles = redundantOf "profiles" config.dotfiles._knownProfiles host.excludeProfiles;
-    redundantFeatures = redundantOf "features" config.dotfiles._knownNames host.excludeFeatures;
+    redundantFeatures = redundantOf "features" config.dotfiles._knownFeatures host.excludeFeatures;
+    redundantInterests = redundantOf "features" config.dotfiles._knownInterests host.excludeInterests;
+    # The machine-wide forbid option each kind answers to, named in
+    # the warning below as the absolute alternative to an exclusion.
+    forbidOptions = {
+      profile = "forbidProfiles";
+      feature = "forbidFeatures";
+      interest = "forbidInterests";
+    };
+    # The kind with an indefinite article that fits it, since
+    # "interest" takes "an" where "profile" and "feature" take "a".
+    describeKind = role:
+      if role == "interest"
+      then "an interest"
+      else "a ${role}";
     mkWarning = role: option: name: let
-      forbidOption =
-        if role == "feature"
-        then "forbidFeatures"
-        else "forbidProfiles";
+      forbidOption = forbidOptions.${role};
     in ''
-      Resolving host "${hostLabel}": ${option} entry "${name}" names a known ${role} that the selections in force here do not activate; the exclusion has no effect on this configuration and may be removed. A machine-wide forbid list that keeps a ${role} inactive for every walk, the machine's own and every user's, is spelled "dotfiles.host.${forbidOption}".
+      Resolving host "${hostLabel}": ${option} entry "${name}" names a known ${role} that the selections in force here do not activate; the exclusion has no effect on this configuration and may be removed. A machine-wide forbid list that keeps ${describeKind role} inactive for every walk, the machine's own and every user's, is spelled "dotfiles.host.${forbidOption}".
     '';
   in {
     dotfiles._knownNames = lib.unique (
@@ -652,6 +752,7 @@ in {
     warnings = lib.seq _unprunedSideEffect (
       map (mkWarning "profile" "excludeProfiles") redundantProfiles
       ++ map (mkWarning "feature" "excludeFeatures") redundantFeatures
+      ++ map (mkWarning "interest" "excludeInterests") redundantInterests
     );
   };
 }
