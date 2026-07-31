@@ -138,6 +138,23 @@ in {
         "dotfiles._knownProfiles" in each class aggregator.
       '';
     };
+    profileClasses = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+      readOnly = true;
+      description = ''
+        Per-profile module classes, keyed by profile name. Each value
+        names the classes ("homeManager", "nixDarwin", "nixOS") that
+        register a body for that profile, in that order. Derived from
+        the "profileModules" registry rather than recorded by the
+        "mkProfile" function, so the record stays faithful to the
+        bodies actually present; a profile registered by name alone,
+        with no bodies, is absent. A profile may span both sides of
+        the home/system divide—the "essential" profile carries a home
+        body and a nixOS body—so this record diagnoses a user
+        selecting a profile that configures the machine alone.
+        Populates "dotfiles._profileClasses" in each class aggregator.
+      '';
+    };
     profileModules = lib.mkOption {
       # See the note on "featureModules" above for the "uniq"
       # wrapper's purpose.
@@ -175,5 +192,8 @@ in {
     };
   };
 
-  config.dotfiles.featureClasses = classesOf config.dotfiles.featureModules;
+  config.dotfiles = {
+    featureClasses = classesOf config.dotfiles.featureModules;
+    profileClasses = classesOf config.dotfiles.profileModules;
+  };
 }
