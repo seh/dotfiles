@@ -12,7 +12,7 @@ flakeLib.mkProfile "web" {
   }: let
     inherit (pkgs.stdenv.hostPlatform) isDarwin;
   in {
-    dotfiles.firefox = {
+    dotfiles.web.firefox = {
       # TODO(seh): Set preferences.
 
       policies.Preferences."browser.contentblocking.category" = {
