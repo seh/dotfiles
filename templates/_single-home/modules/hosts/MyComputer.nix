@@ -45,8 +45,9 @@ in {
               # of specific members of the "all" profile (such as the
               # Firefox/Safari customization in "web"), list them
               # under "excludeProfiles". Add specific features such as
-              # "kubernetes", "cloud/aws", or "lang/rust" under
-              # "features". See:
+              # "kubernetes" or "cloud/aws" under "features", and
+              # interests such as "lang/rust"—the languages in which
+              # this user works—under "interests". See:
               # https://github.com/seh/dotfiles/tree/main/modules/home/profiles
               # https://github.com/seh/dotfiles/tree/main/modules/home/features
               host = {
@@ -60,6 +61,8 @@ in {
                 features = [
                   # "kubernetes"
                   # "cloud/aws"
+                ];
+                interests = [
                   # "lang/rust"
                 ];
               };
