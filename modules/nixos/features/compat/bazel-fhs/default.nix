@@ -8,7 +8,7 @@
 flakeLib.mkFeature "compat/bazel-fhs" {
   nixOS = {
     options = {lib, ...}: {
-      options.bazel.fhs = {
+      options.dotfiles.compat.bazel-fhs = {
         tools = lib.mkOption {
           type = lib.types.attrsOf (lib.types.nullOr lib.types.str);
           default = {};
@@ -35,7 +35,7 @@ flakeLib.mkFeature "compat/bazel-fhs" {
       pkgs,
       ...
     }: let
-      cfg = config.bazel.fhs;
+      cfg = config.dotfiles.compat.bazel-fhs;
 
       # Wrapper script for bash that sets a default "PATH" environment
       # variable when invoked with an empty or dummy environment (e.g.,
