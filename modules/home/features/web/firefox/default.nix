@@ -14,7 +14,7 @@ flakeLib.mkFeature "web/firefox" {
         then null
         else pkgs.firefox-bin;
     in {
-      options.dotfiles.firefox = {
+      options.dotfiles.web.firefox = {
         package = lib.mkOption {
           type = with lib.types; nullOr package;
           default = defaultPackage;
@@ -62,12 +62,12 @@ flakeLib.mkFeature "web/firefox" {
       ...
     }: let
       inherit (pkgs.stdenv) isDarwin;
-      cfg = config.dotfiles.firefox;
+      cfg = config.dotfiles.web.firefox;
       finalPackage = cfg.package.override {extraPolicies = cfg.policies;};
     in {
       home.packages = lib.optional (cfg.package != null) finalPackage;
 
-      dotfiles.firefox.policies.Preferences =
+      dotfiles.web.firefox.policies.Preferences =
         lib.mapAttrs (_: value: {
           Value = value;
           Status = "default";

@@ -4,7 +4,7 @@
 flakeLib.mkFeature "shell/zsh" {
   homeManager = {
     options = {lib, ...}: {
-      options.dotfiles.zsh = {
+      options.dotfiles.shell.zsh = {
         enablePowerlevel10k = lib.mkOption {
           type = lib.types.bool;
           default = true;
@@ -19,7 +19,7 @@ flakeLib.mkFeature "shell/zsh" {
       pkgs,
       ...
     }: let
-      cfg = config.dotfiles.zsh;
+      cfg = config.dotfiles.shell.zsh;
     in {
       # NB: We reference this file from the "zshrc" file.
       home.file.".p10k.zsh" = lib.mkIf cfg.enablePowerlevel10k {source = ./p10k.zsh;};
