@@ -1,23 +1,26 @@
 {flakeLib, ...}:
 flakeLib.mkProfile "essential" {
   # The essential profile brings along the minimal profile and the
-  # baseline features every managed home wants.
+  # baseline features every managed home wants, plus the machine-side
+  # integration a Mac's login shell depends on. The implication graph
+  # is class-agnostic, so a machine that selects this profile
+  # activates that integration and applies its nix-darwin body.
   implies = [
     "minimal"
-    "bash"
     "dev/difftastic"
     "editor/emacs"
     "gnupg"
     "kitty"
     "nh"
     "nix"
-    "nushell"
-    "shell"
+    "shell/bash"
+    "shell/nushell"
+    "shell/zsh"
+    "shell/zsh/integration"
     "ssh"
     "vcs/git"
     "vcs/jjui"
     "vcs/jujutsu"
-    "zsh"
   ];
 
   homeManager = {
