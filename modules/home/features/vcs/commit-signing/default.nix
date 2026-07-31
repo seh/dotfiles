@@ -28,7 +28,7 @@ flakeLib.mkFeature "vcs/commit-signing" {
       allowedSignersContent = lib.concatStringsSep "\n" (ownSignerEntries ++ additionalSignerEntries);
       allowedSignersFile = pkgs.writeText "allowed_signers" allowedSignersContent;
     in {
-      options.dotfiles.commitSigning = {
+      options.dotfiles.vcs.commit-signing = {
         # Read-only computed values for other modules to consume.
         hasGPGKey = lib.mkOption {
           type = lib.types.bool;
@@ -94,7 +94,7 @@ flakeLib.mkFeature "vcs/commit-signing" {
         key = lib.mkOption {
           type = lib.types.nullOr lib.types.str;
           default = let
-            selectedBackend = config.dotfiles.commitSigning.backend;
+            selectedBackend = config.dotfiles.vcs.commit-signing.backend;
           in
             if selectedBackend == "gpg"
             then userConfig.gpgKey
@@ -124,8 +124,8 @@ flakeLib.mkFeature "vcs/commit-signing" {
       assertions = [
         {
           assertion =
-            !(hasGPGSigningKey && hasSSHSigningKey) || config.dotfiles.commitSigning.backend != null;
-          message = "dotfiles.commitSigning.backend must be set to \"gpg\" or \"ssh\" when both gpgKey and sshSigning.key are configured";
+            !(hasGPGSigningKey && hasSSHSigningKey) || config.dotfiles.vcs.commit-signing.backend != null;
+          message = "dotfiles.vcs.commit-signing.backend must be set to \"gpg\" or \"ssh\" when both gpgKey and sshSigning.key are configured";
         }
         {
           assertion = userConfig.commitSigningBackend == "gpg" -> hasGPGSigningKey;
