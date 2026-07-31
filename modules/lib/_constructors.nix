@@ -28,19 +28,18 @@
 # passes through "modules = [...]", flowing through the target
 # evaluator's module-system merge where those fields are actually
 # read. That keeps assignments close to the evaluator that reads
-# them and avoids the flake-parts boundary crossing that the
-# previous proxy option ("_flakeOptions") used to bridge.
+# them and avoids the flake-parts boundary crossing that the retired
+# "_flakeOptions" option used to bridge.
 #
 # For the system constructors ("mkDarwin" and "mkNixOS"), each user
 # assigned under "dotfiles.users" is mirrored into
 # "home-manager.users.<name>.dotfiles" in two places: the user's
-# identity fields under "dotfiles.identity", and the system-level
-# "dotfiles.host" extended with the user's selected profiles and
-# features and their exclusions (profiles, features,
-# excludeProfiles, excludeFeatures) under "dotfiles.host". The
-# latter arrangement lets the existing "dotfiles._host" derivation in
-# "modules/_activation.nix" continue to read its inputs from one place
-# inside the nested home-manager evaluator without modification.
+# identity fields under "dotfiles.identity", and the machine's
+# "dotfiles.host" record with its selections and exclusions layered
+# with that user's own under "dotfiles.host". The mirroring assigns
+# nothing into "dotfiles.host.{profiles,features}" at the system
+# level: those stay the machine's own selections, which alone decide
+# the machine's own configuration.
 {
   lib,
   inputs,
@@ -84,39 +83,94 @@
   # System-level module that, for each user assigned under
   # "config.dotfiles.users", creates the user's operating-system
   # account, spawns the user's nested home-manager evaluator, and
-  # mirrors the user's identity and the combined host record into
-  # that evaluator. It assigns nothing into
-  # "dotfiles.host.{profiles,features}": those are the machine's own
-  # selections. The system-level active set unions the machine's own
-  # activation with each user's, computed by the "_host" record in
-  # "modules/_activation.nix".
+  # mirrors the user's identity and a layered host record into that
+  # evaluator. It assigns nothing into
+  # "dotfiles.host.{profiles,features}" at the system level: those
+  # stay the machine's own selections, which alone decide the
+  # machine's own configuration.
   #
   # The nested home-manager evaluator sees:
   #   dotfiles.identity = <user>.identity
-  #   dotfiles.host = (system-level) config.dotfiles.host
-  #                 // <user>'s selected profiles and features
-  #                    and their exclusions
-  # so the existing "dotfiles._host" derivation logic (which reads
-  # "config.dotfiles.host.{profiles,features,excludeProfiles,excludeFeatures}"
-  # from inside the home-manager evaluator) works unchanged.
+  #   dotfiles.host = the machine's record, its selections and
+  #                   exclusions layered with that user's own
+  # so the "dotfiles._host" record in "modules/_activation.nix"
+  # resolves one coherent activation for that user from the machine's
+  # selections and the user's together: the machine provisions every
+  # user it manages, and each user adds to that.
+  #
+  # Layering lets an exclusion hold in three ways:
+  #   1. The machine's "forbidProfiles"/"forbidFeatures" pass through
+  #      untouched—the "//" below never names them—and prune every
+  #      walk, so a user naming a forbidden thing still does not
+  #      receive it.
+  #   2. The machine's "excludeProfiles"/"excludeFeatures" withhold a
+  #      name from what it provisions, yet a user who asks for that
+  #      same name—selecting it directly, or selecting a profile that
+  #      brings it along—drops it from the exclusions in force for
+  #      that user, opting back in.
+  #   3. A user's own exclusions always hold, for that user alone.
   multiUserPropagationModule = userDir: {config, ...}: let
     inherit (config.dotfiles) host;
+    flakeLib = config.dotfiles._flakeLib;
+    hasImplicationsLib =
+      flakeLib != null && flakeLib ? implicationsFor && flakeLib ? resolveActivation;
+    knownByRole = {
+      profiles = config.dotfiles._knownProfiles;
+      features = config.dotfiles._knownNames;
+    };
+    implications =
+      if hasImplicationsLib
+      then
+        flakeLib.implicationsFor {
+          platform = config.dotfiles._host.platform;
+          knownProfiles = config.dotfiles._knownProfiles;
+          profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
+          impliedEdges = config.dotfiles._impliedEdges;
+        }
+      else null;
+    # Everything one user's own selections entail: those selections
+    # expanded along the implication graph, after that user's own
+    # exclusions and everything the machine forbids prune it. The
+    # machine's exclusions yield to a user who asks for a name, and
+    # selecting a profile asks for everything it brings along, so the
+    # layering below subtracts this closure rather than the bare lists
+    # the user wrote: a profile then opts back in exactly as selecting
+    # each of its members directly would. The preconditions table
+    # stays empty on purpose: a contingent feature cannot be selected,
+    # so no selection asks for one, and an exclusion of one never
+    # yields.
+    entailedBy = userCfg:
+      if hasImplicationsLib
+      then
+        flakeLib.resolveActivation {
+          inherit implications knownByRole;
+          preconditions = {};
+          selected = {inherit (userCfg) profiles features;};
+          excluded = {
+            profiles = userCfg.excludeProfiles ++ host.forbidProfiles;
+            features = userCfg.excludeFeatures ++ host.forbidFeatures;
+          };
+        }
+      else {inherit (userCfg) profiles features;};
   in {
     home-manager.users =
-      lib.mapAttrs (_: userCfg: {
+      lib.mapAttrs (_: userCfg: let
+        entailed = entailedBy userCfg;
+      in {
         imports = [userCfg.homeManagerConfig];
         dotfiles = {
           inherit (userCfg) identity;
           host =
             host
             // {
-              inherit
-                (userCfg)
-                profiles
-                excludeProfiles
-                features
-                excludeFeatures
-                ;
+              profiles = host.profiles ++ userCfg.profiles;
+              features = host.features ++ userCfg.features;
+              excludeProfiles =
+                userCfg.excludeProfiles
+                ++ lib.subtractLists entailed.profiles host.excludeProfiles;
+              excludeFeatures =
+                userCfg.excludeFeatures
+                ++ lib.subtractLists entailed.features host.excludeFeatures;
             };
         };
       })

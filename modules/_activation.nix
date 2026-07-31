@@ -2,16 +2,28 @@
 # configurations.
 #
 # This module declares the options that describe the host and the
-# currently-active host's resolved record, plus the set of "known
-# profile and feature names" that profile and feature modules
-# advertise. It is imported by each of
+# resolved activation record of the evaluator it runs in, plus the set
+# of "known profile and feature names" that profile and feature
+# modules advertise. It is imported by each of
 # "flake.modules.homeManager.default", "flake.modules.darwin.default",
-# and "flake.modules.nixos.default". It imports the "_users.nix"
-# declaration module so that the "dotfiles.users" registry is
-# visible wherever this module evaluates: on a system host the
-# active set unions the machine's own activation with each user's,
-# so the registry must be readable even in the home-manager class,
-# where it stays empty.
+# and "flake.modules.nixos.default", so it evaluates once per
+# evaluator: once for the machine in a system configuration, and once
+# more inside each managed user's nested home-manager evaluator.
+#
+# Each evaluation resolves its own activation alone, from the
+# "dotfiles.host" record that evaluator sees. In a system evaluator
+# that record carries the machine's own selections, so a system-class
+# body follows those alone and no user may configure the machine. In a
+# managed user's evaluator it carries the machine's selections layered
+# with that user's own (see the propagation module in
+# "modules/lib/_constructors.nix"), so the machine provisions every
+# user it manages and each user adds to that.
+#
+# It imports the "_users.nix" declaration module so that the
+# "dotfiles.users" registry is visible wherever this module
+# evaluates, including in the home-manager class, where the
+# aggregator in "modules/home/default.nix" demands that it stay
+# empty.
 {
   lib,
   config,
@@ -54,32 +66,33 @@
         impliedEdges = config.dotfiles._impliedEdges;
       }
     else null;
-  # The machine's own selected profiles and features. See the
-  # "dotfiles.host" submodule description for the system-host and
-  # standalone-host readings.
+  # The profiles and features this evaluator itself selects. See the
+  # "dotfiles.host" submodule description for the machine and per-user
+  # readings.
   selected = {
     inherit (host) profiles features;
   };
-  # Fold the machine-wide forbid lists into a selector's own
-  # exclusions: "host.forbidProfiles"/"host.forbidFeatures" prune
-  # every selector's walk before "resolveActivation", so a forbidden
-  # name activates nowhere. Because the host record conveys the two
-  # lists and keeps them intact when that record is mirrored into each
-  # nested home-manager evaluator (see the propagation module in
-  # "modules/lib/_constructors.nix"), each user's own home environment
-  # respects them through this same logic, with no extra wiring.
+  # Fold what "host.forbidProfiles" and "host.forbidFeatures" forbid
+  # into this evaluator's own exclusions: both prune every walk before
+  # "resolveActivation", so a forbidden name activates nowhere—the one
+  # exclusion no user may undo. The host record conveys what they
+  # forbid and keeps it intact when the propagation module in
+  # "modules/lib/_constructors.nix" layers the machine's record with a
+  # user's, so each user's own home environment respects it through
+  # this same logic, with no extra wiring.
   withForbidden = excluded: {
     profiles = excluded.profiles ++ host.forbidProfiles;
     features = excluded.features ++ host.forbidFeatures;
   };
-  # Every selector's activation, resolved coherently and
-  # independently: the machine's own walk plus one walk per user in
-  # the "dotfiles.users" registry. Each walk runs the full
-  # preconditions table on that selector's own selections, so a
-  # contingent feature activates within a selector exactly when that
-  # selector's own set satisfies its preconditions, never across
-  # selectors. The active set below is the union of these results.
-  machineActivation =
+  # This evaluator's own activation, resolved coherently in one walk
+  # from the selections in the "dotfiles.host" record. The walk runs
+  # the full preconditions table over that one set, so a contingent
+  # feature activates exactly when this evaluator's own activation
+  # satisfies its preconditions. In a system evaluator the selections
+  # are the machine's own; in a managed user's evaluator they are the
+  # machine's layered with that user's own, and the two may satisfy a
+  # contingent feature's preconditions jointly.
+  ownActivation =
     if hasImplicationsLib
     then
       flakeLib.resolveActivation {
@@ -90,36 +103,6 @@
         };
       }
     else selected;
-  perUserActivation =
-    if hasImplicationsLib
-    then
-      lib.mapAttrs (
-        _: userCfg:
-          flakeLib.resolveActivation {
-            inherit implications knownByRole preconditions;
-            selected = {
-              inherit (userCfg) profiles features;
-            };
-            excluded = withForbidden {
-              profiles = userCfg.excludeProfiles;
-              features = userCfg.excludeFeatures;
-            };
-          }
-      )
-      config.dotfiles.users
-    else {};
-  # The active set: the union of every selector's coherent
-  # activation.
-  activeSet = {
-    profiles = lib.unique (
-      machineActivation.profiles
-      ++ lib.concatMap (a: a.profiles) (lib.attrValues perUserActivation)
-    );
-    features = lib.unique (
-      machineActivation.features
-      ++ lib.concatMap (a: a.features) (lib.attrValues perUserActivation)
-    );
-  };
 in {
   imports = [./_users.nix];
 
@@ -136,7 +119,7 @@ in {
             type = types.listOf types.str;
             default = [];
             description = ''
-              Profile names the machine itself selects. Expansion
+              Profile names this machine or user selects. Expansion
               starts from these selected names.
             '';
           };
@@ -144,34 +127,44 @@ in {
             type = types.listOf types.str;
             default = [];
             description = ''
-              Feature names the machine itself selects directly
+              Feature names this machine or user selects directly
               (outside of any profile that would pull them in).
-              Expansion starts from these selected names together
-              with "profiles".
+              Expansion starts from these selected names together with
+              "profiles".
             '';
           };
           excludeProfiles = mkOption {
             type = types.listOf types.str;
             default = [];
             description = ''
-              Profile names to delete from this host's implication
-              graph before the activation walk. Both their out-edges
-              (the dependencies they would advertise) and their in-edges
-              (other profiles that target them) are removed, so
-              anything reachable only through an excluded profile is
-              automatically absent from the resolved activation.
+              Profile names its author deletes from its own
+              implication graph before the activation walk. Both their
+              out-edges (the dependencies they would advertise) and
+              their in-edges (other profiles that target them) are
+              removed, so anything reachable only through an excluded
+              profile is automatically absent from the resolved
+              activation. The machine's own entries withhold a profile
+              from what the machine provisions its users, yet yield to
+              a user who selects that same name; a user's own entries
+              apply to that user alone. The list no user may undo is
+              "forbidProfiles".
             '';
           };
           excludeFeatures = mkOption {
             type = types.listOf types.str;
             default = [];
             description = ''
-              Feature names to delete from this host's implication
-              graph before the activation walk. A feature still
-              reachable through a non-excluded path remains active; one
-              reachable only through excluded vertices drops out.
-              Excluding a contingent feature by name keeps it inactive
-              even when its preconditions are all met.
+              Feature names its author deletes from its own
+              implication graph before the activation walk. A feature
+              still reachable through a non-excluded path remains
+              active; one reachable only through excluded vertices
+              drops out. Excluding a contingent feature by name keeps
+              it inactive even when its preconditions are all met. The
+              machine's own entries withhold a feature from what the
+              machine provisions its users, yet yield to a user who
+              selects that same name; a user's own entries apply to
+              that user alone. The list no user may undo is
+              "forbidFeatures".
             '';
           };
           forbidProfiles = mkOption {
@@ -179,41 +172,49 @@ in {
             default = [];
             description = ''
               Machine-wide forbidding: each named profile is pruned
-              from every selector's activation, the machine's own and
-              every user's, so it activates nowhere and no user
-              receives it. Forbidding is the machine-wide counterpart
-              to the per-selector "excludeProfiles", which prunes only
-              its own selector's walk.
+              from every activation walk, the machine's own and every
+              user's, so it activates nowhere and no user receives
+              it—not even a user who selects that same name.
+              Forbidding is the absolute counterpart to
+              "excludeProfiles", which prunes only its author's own
+              walk and, at the machine level, yields to a user's
+              explicit selection.
             '';
           };
           forbidFeatures = mkOption {
             type = setOfNames {merge = "union";};
             default = [];
             description = ''
-              Machine-wide forbidding: each named feature is pruned
-              from every selector's activation, the machine's own and
+              Machine-wide forbidding: the walk prunes each feature
+              listed here from every activation, the machine's own and
               every user's, so it activates nowhere and no user
-              receives it. Forbidding is the machine-wide counterpart
-              to the per-selector "excludeFeatures", which prunes only
-              its own selector's walk.
+              receives it—not even a user who selects that same name.
+              Forbidding is the absolute counterpart to the
+              "excludeFeatures" list, which prunes only its author's
+              own walk and, at the machine level, yields to a user's
+              explicit selection.
             '';
           };
         };
       };
       default = {};
       description = ''
-        The machine's own host record: its selected "profiles" and
-        "features", the exclusions it applies to its own walk, and
-        the machine-wide "forbidProfiles"/"forbidFeatures" lists. The
-        machine is a first-class selector, resolved alongside the
-        users in "dotfiles.users". On a system host these fields
-        carry the machine's own wants, standing alongside its users,
-        and no longer absorb any union of its users' selections; on a
-        standalone home-manager host the machine is the sole user, so
-        they are that user's selections. Set by "lib.mkHome",
-        "lib.mkDarwin", and "lib.mkNixOS" from the "host = {...}"
-        argument; consumer modules may extend its lists via the
-        module system's append-merge.
+        The host record in force in this evaluator: the "profiles" and
+        "features" it selects, the exclusions it applies to its own
+        walk, and the machine-wide "forbidProfiles"/"forbidFeatures"
+        lists. In a system evaluator these fields carry the machine's
+        own wants alone, standing alongside the users in
+        "dotfiles.users" and absorbing nothing from them, so no user's
+        selection configures the machine. In a
+        managed user's nested home-manager evaluator the propagation
+        module in "modules/lib/_constructors.nix" layers the machine's
+        record with that user's own, so the machine provisions every
+        user it manages and each user adds to that. On a standalone
+        home-manager host the sole user is the machine, so these are
+        that user's selections. Set by "lib.mkHome", "lib.mkDarwin",
+        and "lib.mkNixOS" from the "host = {...}" argument; consumer
+        modules may extend its lists via the module system's
+        append-merge.
       '';
     };
 
@@ -235,41 +236,46 @@ in {
             type = types.listOf types.str;
             readOnly = true;
             description = ''
-              Profiles in effect on the machine: the union of every
-              selector's coherent activation. The machine's own walk
-              (from "host.profiles", with "host.excludeProfiles"
-              deleted from the implication graph) unions with one walk
-              per user in "dotfiles.users" (from that user's
-              selections and exclusions).
+              Profiles in effect for this evaluator: the coherent
+              activation resolved from "dotfiles.host", the walk from
+              "host.profiles" with "host.excludeProfiles" deleted from
+              the implication graph. In a system evaluator that is the
+              machine's own selections; in a managed user's nested
+              home-manager evaluator it is the machine's selections
+              layered with that user's own.
             '';
           };
           activeFeatures = mkOption {
             type = types.listOf types.str;
             readOnly = true;
             description = ''
-              Features active on the machine: the union of every
-              selector's coherent activation. Each selector's walk
-              deletes its own exclusions from the implication graph,
-              follows the remaining edges from its selected profiles
-              and features, and activates every contingent feature
-              whose preconditions that selector's own result meets. A
-              contingent feature therefore activates within a single
-              selector, never across selectors; a feature reachable
-              only through an excluded profile is automatically
-              absent. These active features decide whether each
-              feature's system-class configuration applies, tested via
-              "inEffect". An inactive feature contributes nothing, as
-              though it were never defined. The walk includes
-              interests as well as features, since a precondition may
-              cite either kind. This list holds the features alone;
-              see "expressedInterests" for the interests.
+              Features in effect for this evaluator: the coherent
+              activation resolved from "dotfiles.host". The walk
+              deletes this evaluator's exclusions from the implication
+              graph, walks the remaining edges from the selected
+              profiles and features, and activates every
+              contingent feature whose preconditions the result meets;
+              a feature reachable only through an excluded profile is
+              automatically absent. These active features decide
+              whether each feature's configuration for this
+              evaluator's class applies, tested via "inEffect". A
+              system-class body therefore follows the machine's own
+              selections alone, and a user's home-class body follows
+              the machine's selections layered with that user's own.
+              An inactive feature contributes nothing, as though it
+              were never defined.
+
+              The walk includes interests as well as features, since a
+              precondition may cite either kind. This list holds the
+              features alone; see "expressedInterests" for the
+              interests.
             '';
           };
           expressedInterests = mkOption {
             type = types.listOf types.str;
             readOnly = true;
             description = ''
-              Interests expressed on the machine, whether a selector
+              Interests expressed by this evaluator, whether it
               expressed one directly or another name implied it. An
               interest carries no configuration of its own; expressing
               one only completes the preconditions of the contingent
@@ -300,11 +306,11 @@ in {
             readOnly = true;
             description = ''
               Profiles advertised via "dotfiles._knownProfiles" that
-              are not active on the machine: absent from the active
-              (union) set "activeProfiles", whatever keeps them out,
-              whether no selector selected them, an exclusion pruned
-              them, or they are unsupported on the machine's platform.
-              Exposed as a diagnostic aid.
+              are not active for this evaluator: absent from
+              "activeProfiles", whatever keeps them out, whether
+              nothing here selected them, an exclusion pruned them, or
+              they are unsupported on the machine's platform. Exposed
+              as a diagnostic aid.
             '';
           };
           inactiveFeatures = mkOption {
@@ -312,8 +318,8 @@ in {
             readOnly = true;
             description = ''
               Features advertised via "dotfiles._knownFeatures" that
-              are not active on the machine, whatever keeps them out.
-              Exposed as a diagnostic aid: each entry is a name a
+              are not active for this evaluator, whatever keeps them
+              out. Exposed as a diagnostic aid: each entry is a name a
               selector could select, so contingent features, which no
               selector may select, are left out; see "latentFeatures"
               for those.
@@ -324,9 +330,9 @@ in {
             readOnly = true;
             description = ''
               Interests advertised via "dotfiles._knownInterests" that
-              no selector expresses. Exposed as a diagnostic aid: each
-              entry is an interest a selector could express, leaving
-              the contingent features citing it latent.
+              this evaluator does not express. Exposed as a diagnostic
+              aid: each entry is an interest a selector could express,
+              leaving the contingent features citing it latent.
             '';
           };
           latentFeatures = mkOption {
@@ -345,21 +351,24 @@ in {
                   missing = mkOption {
                     type = types.listOf preconditionEntry;
                     description = ''
-                      The preconditions the machine's own coherent
+                      The preconditions this evaluator's own coherent
                       activation does not satisfy: a bare name whose
                       feature or interest is inactive, or an "anyOf"
                       group none of whose members is active. A group
-                      appears as its "{ anyOf = [ ... ]; }" record so a
-                      reader sees the unsatisfied disjunction and which
-                      alternatives it wanted; a satisfied entry is
-                      absent.
+                      appears as its "{ anyOf = [ ... ]; }" record so
+                      a reader sees the unsatisfied disjunction and
+                      which alternatives it wanted; a satisfied entry
+                      is absent.
                     '';
                   };
                   excluded = mkOption {
                     type = types.bool;
                     description = ''
-                      True when the machine names this feature in its
-                      own "host.excludeFeatures" list.
+                      True when this evaluator's own
+                      "host.excludeFeatures" list names this feature:
+                      the machine's own exclusions in a system
+                      evaluator, and those in force for the user in a
+                      managed user's evaluator.
                     '';
                   };
                 };
@@ -367,42 +376,36 @@ in {
             );
             readOnly = true;
             description = ''
-              Contingent features latent for the current evaluator's
-              own selections, keyed by name. This diagnostic reflects
-              one selector: the machine's own coherent activation,
-              never the active (union) set. A contingent feature
-              already active anywhere on the machine (present in
-              "activeFeatures", whether the machine or a user
-              activated it) is left out and never also reported
-              latent; the entry for each of the rest carries the
-              per-field reasons declared below. Each nested per-user
-              evaluator computes its own "latentFeatures" from that
-              user's selections.
+              Contingent features latent for this evaluator, keyed by
+              name. A contingent feature already
+              active here (present in "activeFeatures") is left out
+              and never also reported latent; the entry for each of
+              the rest carries the per-field reasons declared below.
+              Each managed user's nested evaluator computes its own
+              "latentFeatures" from the selections in force for that
+              user.
             '';
           };
         };
 
         config = let
-          # The active set unions every selector's coherent activation
-          # (see "machineActivation" / "perUserActivation" above).
-          # Diagnostics that describe one selector read the machine's
-          # own activation directly.
-          activeProfiles = activeSet.profiles;
-          # Every name the union includes: active features and
-          # expressed interests together, since a precondition may
-          # cite either kind. The two are published apart, so the
-          # union itself stays unpublished.
-          namesInEffect = activeSet.features;
-          machineFeatures = machineActivation.features;
+          activeProfiles = ownActivation.profiles;
+          # Every name this evaluator's walk brought into effect:
+          # active features and expressed interests together, since a
+          # precondition may cite either kind. The two are published
+          # apart, so the union stays a local binding.
+          namesInEffect = ownActivation.features;
           isInterest = name: builtins.elem name config.dotfiles._knownInterests;
           contingentNames = builtins.attrNames config.dotfiles._featurePreconditions;
-          # A precondition entry the machine's own activation does not
-          # satisfy: a bare name whose feature is inactive, or a group
-          # none of whose members is active.
+          # A precondition entry this evaluator's own activation does
+          # not satisfy: a bare name neither active nor expressed, or
+          # a group no member of which is either. A precondition may
+          # cite a feature or an interest, so both tests read the
+          # "namesInEffect" binding.
           entryUnmet = entry:
             if builtins.isString entry
-            then !(builtins.elem entry machineFeatures)
-            else !(lib.any (m: builtins.elem m machineFeatures) entry.anyOf);
+            then !(builtins.elem entry namesInEffect)
+            else !(lib.any (m: builtins.elem m namesInEffect) entry.anyOf);
         in {
           inherit activeProfiles platform;
           activeFeatures = builtins.filter (name: !(isInterest name)) namesInEffect;
@@ -420,7 +423,7 @@ in {
               missing = builtins.filter entryUnmet preconditions;
               excluded = builtins.elem name host.excludeFeatures;
             })
-            (lib.filterAttrs (name: _: !(builtins.elem name machineFeatures))
+            (lib.filterAttrs (name: _: !(builtins.elem name namesInEffect))
               config.dotfiles._featurePreconditions);
         };
       };
@@ -504,6 +507,21 @@ in {
       '';
     };
 
+    _featureClasses = mkOption {
+      type = types.attrsOf (types.listOf types.str);
+      default = {};
+      description = ''
+        Per-feature module classes, keyed by feature name. Each value
+        lists the classes ("homeManager", "nixDarwin", "nixOS") that
+        register a body for that feature. Each class aggregator
+        mirrors it from the flake-level "dotfiles.featureClasses"
+        registry. The mixed-body assertion in
+        "modules/_assertions.nix" reads it to reject a feature
+        registering both a home body and a system body. A feature
+        registered by name alone, with no bodies, is absent.
+      '';
+    };
+
     _featurePreconditions = mkOption {
       type = types.attrsOf (preconditionSet {});
       default = {};
@@ -562,17 +580,18 @@ in {
     };
   };
 
-  # Diagnose exclusions that name a known item the machine's own
-  # selections do not activate: the exclusion has no effect on the
-  # machine and may be removed. For each candidate name "n" in
-  # "excludeProfiles" (or "excludeFeatures"), recompute the machine's
-  # own activation with "n" temporarily removed from its exclusion
-  # list (but with all other exclusions still pruning the graph). If
-  # "n" is absent from the resulting activation, it would not have
-  # been active anyway, so listing it as excluded changes nothing.
-  # The judgment is against the machine's own selections, not the
-  # active union: a name a user activates can still be inactive for
-  # the machine, so the machine excluding it is genuinely redundant.
+  # Diagnose exclusions that name a known item this evaluator's own
+  # selections do not activate: the exclusion has no effect here and
+  # may be removed. For each candidate name "n" in "excludeProfiles"
+  # (or "excludeFeatures"), recompute this evaluator's own activation
+  # with "n" temporarily removed from its exclusion list (but with all
+  # other exclusions still pruning the graph). If "n" is absent from
+  # the resulting activation, it would not have been active anyway, so
+  # listing it as excluded changes nothing. The judgment stays within
+  # one evaluator: the machine's own selections in a system evaluator,
+  # and the machine's layered with the user's in a managed user's
+  # evaluator, so each evaluator reports only the exclusions idle
+  # there.
   config = let
     hostLabel = toString host.name;
     # The unpruned walk also forces the dangling-edge check inside
@@ -623,7 +642,7 @@ in {
         then "forbidFeatures"
         else "forbidProfiles";
     in ''
-      Resolving host "${hostLabel}": ${option} entry "${name}" names a known ${role} that this machine's own selections do not activate; the exclusion has no effect on the machine and may be removed. A machine-wide forbid list that keeps a ${role} inactive for every selector is spelled "dotfiles.host.${forbidOption}".
+      Resolving host "${hostLabel}": ${option} entry "${name}" names a known ${role} that the selections in force here do not activate; the exclusion has no effect on this configuration and may be removed. A machine-wide forbid list that keeps a ${role} inactive for every walk, the machine's own and every user's, is spelled "dotfiles.host.${forbidOption}".
     '';
   in {
     dotfiles._knownNames = lib.unique (
