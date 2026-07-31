@@ -381,7 +381,7 @@ in {
   # applies only when some further features or interests are active,
   # beyond the file's own activation gate. Intended use:
   #
-  #   flakeLib.mkFeature "zsh" {
+  #   flakeLib.mkFeature "shell/zsh" {
   #     homeManager = {config, ...}: {
   #       programs.zsh.enable = true;
   #       programs.zsh.initContent = flakeLib.onlyWhen config ["kubernetes"] ''
