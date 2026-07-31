@@ -1,4 +1,8 @@
-{lib, ...}: let
+{
+  config,
+  lib,
+  ...
+}: let
   # The "setOfNames" constructor builds the type for a set of names
   # written as a Nix list; its "merge" parameter selects how multiple
   # definitions of one option combine. See the constructor's comment
@@ -6,8 +10,34 @@
   # the accepted policies. Both registries below demand agreement:
   # differing sets are an error rather than a union.
   inherit (import ./lib/_option-types.nix {inherit lib;}) setOfNames preconditionSet;
+
+  # The classes that register a body for each name in a per-class
+  # module registry, keyed by name. The derivation reads the
+  # registry's keys alone and leaves every body unforced.
+  classesOf = registry:
+    lib.zipAttrsWith (_name: classes: classes) (
+      lib.mapAttrsToList (
+        class: bodies: lib.mapAttrs (_name: _body: class) bodies
+      )
+      registry
+    );
 in {
   options.dotfiles = {
+    featureClasses = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+      readOnly = true;
+      description = ''
+        Per-feature module classes, keyed by feature name. Each value
+        names the classes ("homeManager", "nixDarwin", "nixOS") that
+        register a body for that feature, in that order. This module
+        computes it from the "featureModules" registry; the
+        "mkFeature" function records nothing here. The record
+        therefore stays faithful to the bodies actually present: a
+        feature registered by name alone, with no bodies, is absent.
+        Each class aggregator mirrors it into
+        "dotfiles._featureClasses".
+      '';
+    };
     featureModules = lib.mkOption {
       # The "uniq" wrapper on the per-name leaf makes a second
       # registration of one feature name within the same class a
@@ -144,4 +174,6 @@ in {
       '';
     };
   };
+
+  config.dotfiles.featureClasses = classesOf config.dotfiles.featureModules;
 }
