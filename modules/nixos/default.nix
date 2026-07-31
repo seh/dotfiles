@@ -16,6 +16,7 @@
             _knownProfiles = flake.config.dotfiles.knownProfiles;
             _knownFeatures = flake.config.dotfiles.knownFeatures;
             _knownInterests = flake.config.dotfiles.knownInterests;
+            _featureClasses = flake.config.dotfiles.featureClasses;
             _featurePreconditions = flake.config.dotfiles.featurePreconditions;
             _impliedEdges = flake.config.dotfiles.impliedEdges;
             _profileSupportedPlatforms = flake.config.dotfiles.profileSupportedPlatforms;

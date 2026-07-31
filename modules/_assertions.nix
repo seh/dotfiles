@@ -25,9 +25,9 @@
   # at the bottom applies them: namespace-disjointness first (every
   # kind-aware check presupposes that each name denotes one kind),
   # then the role-parametric name checks, then the precondition,
-  # contingent-feature, and implied-edge checks, then the platform
-  # checks. The shared helpers come first, and each assertion's own
-  # helpers sit just before it.
+  # contingent-feature, and implied-edge checks, then the per-class
+  # body checks, then the platform checks. The shared helpers come
+  # first, and each assertion's own helpers sit just before it.
   #
   # Shared inputs, used by several assertions below.
   inherit (config.dotfiles) host;
@@ -310,12 +310,13 @@
   # A contingent feature activates only through its preconditions, so
   # naming one in the selected features would activate it in an
   # inconsistent state, without the guarantee its body is written
-  # against. Every selector's "features" list is authored, so the
-  # check applies uniformly, with nothing suppressing it: the
-  # machine's own "dotfiles.host.features" here, and each user's
-  # "features" inside that user's nested evaluator. The message names
-  # both surfaces because the nested per-user evaluator sees the
-  # selection arrive from "dotfiles.users.<name>.features".
+  # against. Every selection is authored, so the check applies
+  # uniformly, with nothing suppressing it: the machine's own
+  # "dotfiles.host.features" in a system evaluator, and the machine's
+  # layered with that user's inside a managed user's evaluator. The
+  # message names both surfaces because a name arriving at a nested
+  # per-user evaluator may have been written either at
+  # "dotfiles.host.features" or at "dotfiles.users.<name>.features".
   selectedContingent = builtins.filter (n: builtins.elem n contingentNames) host.features;
   contingentSelectionAssertion = {
     assertion = selectedContingent == [];
@@ -407,6 +408,58 @@
     '';
   };
 
+  # A feature registers a body per module class, and those classes
+  # divide between the machine and a user's home: a "nixDarwin" or
+  # "nixOS" body configures the machine and follows the machine's own
+  # selections, while a "homeManager" body configures one user's home
+  # and follows that user's. One feature carrying both configures the
+  # machine and a user's home at once, so a user who selects it
+  # activates the home half alone. Registering one name across both
+  # system classes stays legal—the "nix" feature does exactly that—and
+  # this check covers features alone: the "essential" profile spans a
+  # home class and a system class deliberately.
+  #
+  # The classes come from the "dotfiles._featureClasses" record,
+  # derived from the module registry itself, so the record stays
+  # faithful to the bodies actually present rather than to what a
+  # registration claims.
+  featureClasses = config.dotfiles._featureClasses;
+  homeClass = "homeManager";
+  systemClasses = ["nixDarwin" "nixOS"];
+  systemClassesOf = classes: builtins.filter (c: builtins.elem c systemClasses) classes;
+  mixedBodyFeatures =
+    map (feature: {
+      inherit feature;
+      system = systemClassesOf featureClasses.${feature};
+    })
+    (builtins.filter (
+      feature: let
+        classes = featureClasses.${feature};
+      in
+        builtins.elem homeClass classes && systemClassesOf classes != []
+    ) (builtins.attrNames featureClasses));
+  # Name the bodies a mixed feature carries, leading with the home
+  # body: "both a home-manager body and a nixDarwin body" when one
+  # system class registers, and a serial enumeration when both do.
+  describeMixedBodies = system:
+    if lib.length system == 1
+    then ''both a home-manager body and a ${lib.head system} body''
+    else ''a home-manager body, ${lib.concatMapStringsSep ", " (c: "a ${c} body") (lib.init system)}, and a ${lib.last system} body'';
+  describeMixedFeature = {
+    feature,
+    system,
+  }: ''The feature "${feature}" carries ${describeMixedBodies system}'';
+  mixedBodyAssertion = {
+    assertion = mixedBodyFeatures == [];
+    message = ''
+      Resolving host "${hostName}": ${lib.concatMapStringsSep " " (
+          entry: "${describeMixedFeature entry}, but a feature configures the machine or a user's home, never both. A system body follows the machine's own selections while a home body follows each user's, so a mixed feature activates only partially."
+        )
+        mixedBodyFeatures} Split each one into a machine-only feature
+      and a home feature.
+    '';
+  };
+
   # A host with a name must know its platform, and detection from the
   # evaluating package set is the only source: host records carry no
   # platform attribute. This assertion fails only when a named host is
@@ -446,7 +499,7 @@
   platformSupportAssertion = {
     assertion = unsupportedActiveProfiles == [];
     message = ''
-      Resolving host "${hostName}": the profile(s) ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveProfiles} may not activate on this host's platform, "${toString platform}". Remove the name(s) from "dotfiles.host.profiles".
+      Resolving host "${hostName}": the profile(s) ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveProfiles} may not activate on this host's platform, "${toString platform}". Remove the name(s) from "dotfiles.host.profiles" or, on a multi-user host, from "dotfiles.users.<name>.profiles".
     '';
   };
 in {
@@ -471,6 +524,7 @@ in {
       fabricatedInterestTargetAssertion
       interestCrossingAssertion
       featureImpliesProfileAssertion
+      mixedBodyAssertion
       platformDetectedAssertion
       platformSupportAssertion
     ];
