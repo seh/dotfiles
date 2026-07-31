@@ -8,7 +8,7 @@ flakeLib.mkFeature "vcs/jujutsu" {
     }: let
       tomlFormat = pkgs.formats.toml {};
     in {
-      options.dotfiles.jujutsu = {
+      options.dotfiles.vcs.jujutsu = {
         extraSettings = lib.mkOption {
           inherit (tomlFormat) type;
           default = {};
@@ -23,9 +23,9 @@ flakeLib.mkFeature "vcs/jujutsu" {
       pkgs,
       ...
     }: let
-      inherit (config.dotfiles) commitSigning;
+      commitSigning = config.dotfiles.vcs.commit-signing;
       userConfig = config.dotfiles.identity;
-      cfg = config.dotfiles.jujutsu;
+      cfg = config.dotfiles.vcs.jujutsu;
       difftasticMergeToolName = "difftastic-split-view";
     in {
       programs = {

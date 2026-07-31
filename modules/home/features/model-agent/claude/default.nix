@@ -147,7 +147,7 @@ flakeLib.mkFeature "model-agent/claude" {
                 ++ lib.optional (config.dotfiles._host.inEffect "lang/lua") {
                   # Lua files
                   patterns = ["*.lua"];
-                  command = ''${lib.getExe pkgs.stylua} --config-path ${config.dotfiles.lua.styluaConfigFile} -- ${receiveInputFilePath}'';
+                  command = ''${lib.getExe pkgs.stylua} --config-path ${config.dotfiles.lang.lua.tools.styluaConfigFile} -- ${receiveInputFilePath}'';
                 }
                 ++ lib.optional (config.dotfiles._host.inEffect "lang/markdown") {
                   # Markdown files
@@ -157,7 +157,7 @@ flakeLib.mkFeature "model-agent/claude" {
                   # walking up through parent directories, and a
                   # hook's working directory need not sit beneath the
                   # home directory.
-                  command = ''${lib.getExe pkgs.rumdl} fmt --config ${config.dotfiles.markdown.rumdlConfigFile} -- ${receiveInputFilePath}'';
+                  command = ''${lib.getExe pkgs.rumdl} fmt --config ${config.dotfiles.lang.markdown.tools.rumdlConfigFile} -- ${receiveInputFilePath}'';
                 }
                 ++ [
                   {

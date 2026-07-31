@@ -6,7 +6,7 @@ flakeLib.mkFeature "vcs/git" {
     pkgs,
     ...
   }: let
-    inherit (config.dotfiles) commitSigning;
+    commitSigning = config.dotfiles.vcs.commit-signing;
     userConfig = config.dotfiles.identity;
   in {
     programs.git = {
@@ -27,10 +27,10 @@ flakeLib.mkFeature "vcs/git" {
         format = let
           # NB: Home Manager's "programs.git.signing.format" option also
           # accepts "x509" (S/MIME via "gpgsm"), but our
-          # "commitSigning.backend" enumeration does not yet offer a
-          # backend that maps to it. Add an "x509" entry here in
-          # tandem with extending the enumeration if and when X.509
-          # signing becomes desirable.
+          # "dotfiles.vcs.commit-signing.backend" enumeration does not
+          # yet offer a backend that maps to it. Add an "x509" entry
+          # here in tandem with extending the enumeration if and when
+          # X.509 signing becomes desirable.
           signingFormatsByBackend = {
             gpg = "openpgp";
             ssh = "ssh";
