@@ -1,5 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "bash" {
+flakeLib.mkFeature "shell/bash" {
   homeManager = _: {
     # TODO(seh): Elaborate this configuration.
     programs.bash = {
