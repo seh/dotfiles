@@ -1,7 +1,7 @@
 # Basis of inspiration:
 #   https://github.com/sebastiant/dotfiles/blob/fd3f32073bce885027f7069d870ba4ea254fc348/programs/zsh/zsh.nix
 {flakeLib, ...}:
-flakeLib.mkFeature "zsh" {
+flakeLib.mkFeature "shell/zsh" {
   homeManager = {
     options = {lib, ...}: {
       options.dotfiles.zsh = {
@@ -60,7 +60,8 @@ flakeLib.mkFeature "zsh" {
             zstyle ':completion:*' cache-path ~/.zsh/cache
             zstyle ':completion:*' completer _expand _complete _ignored _correct _approximate
             # As suggested by the carpace project: https://carapace-sh.github.io/carapace-bin/setup.html#zsh
-            # See also: https://zsh.sourceforge.io/Guide/zshguide06.html#l158
+            # See also:
+            # https://zsh.sourceforge.io/Guide/zshguide06.html#l158
             zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
             zstyle ':completion:*' group-name '''
             zstyle ':completion:*:-command-' group-order builtins functions commands

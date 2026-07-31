@@ -1,5 +1,5 @@
 {flakeLib, ...}:
-flakeLib.mkFeature "nushell" {
+flakeLib.mkFeature "shell/nushell" {
   homeManager = {
     lib,
     pkgs,
