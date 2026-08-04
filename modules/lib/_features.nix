@@ -277,12 +277,12 @@ in {
   #   to omitting the key.
   #
   #   supportedPlatforms: a list of Nixpkgs system identifiers (e.g.
-  #   ["aarch64-darwin" "x86_64-darwin"]) on which this feature may
+  #   ["aarch64-darwin" "aarch64-linux"]) on which this feature may
   #   activate. A host qualifies when its platform is one of them.
   #   Omit the key for a feature that may activate on every platform.
   #   The implication graph drops an unsupported name from every
-  #   target list it assembles, and an assertion in
-  #   "modules/_assertions.nix" rejects a host whose activation
+  #   target list it assembles, and an assertion in the
+  #   "modules/_assertions.nix" file rejects a host whose activation
   #   includes one anyway. Every entry must be a platform that nixpkgs
   #   recognizes—a member of the "lib.systems.doubles.all" list—so a
   #   misspelled identifier fails here at registration instead of
@@ -455,7 +455,7 @@ in {
   # reserved keys:
   #
   #   supportedPlatforms: a list of Nixpkgs system identifiers (e.g.
-  #   ["aarch64-darwin" "x86_64-darwin"]) on which this profile may
+  #   ["aarch64-darwin" "aarch64-linux"]) on which this profile may
   #   activate. A host qualifies when its platform is one of them.
   #   Omit the key for a profile that may activate on every platform.
   #   The key carries the same meaning for a feature, and the
