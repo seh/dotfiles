@@ -166,16 +166,25 @@
     );
   isImpliesList = value: builtins.isList value && lib.all isImpliesEntry value;
 
+  # The platform identifiers in a list that nixpkgs does not
+  # recognize: those absent from the "lib.systems.doubles.all" list.
+  # Callers apply this only once the value is known to be a list of
+  # strings. Shared by every platform-bearing key so that one
+  # membership test judges them all: the "supportedPlatforms" key that
+  # constrains a name, and the "supportedPlatforms" field of a
+  # record-form "implies" entry that conditions an edge.
+  unknownPlatforms = platforms:
+    builtins.filter (p: !(builtins.elem p lib.systems.doubles.all)) platforms;
+
   # Collect, deduplicated, the platform identifiers named across a
   # valid "implies" list's record-form entries that nixpkgs does not
-  # recognize (that are absent from the "lib.systems.doubles.all"
-  # list). Callers apply this only after "isImpliesList" accepts the
-  # value, so every record entry carries a string list under
+  # recognize. Callers apply this only after "isImpliesList" accepts
+  # the value, so every record entry carries a string list under
   # "supportedPlatforms"; a bare-name entry names no platform and
   # contributes nothing.
   impliesUnknownPlatforms = value:
     lib.unique (
-      builtins.filter (p: !(builtins.elem p lib.systems.doubles.all)) (
+      unknownPlatforms (
         lib.concatMap (
           entry:
             if builtins.isAttrs entry
@@ -225,7 +234,7 @@
       }.'';
 in {
   # In addition to the per-class bodies described in this file's
-  # header, the "mkFeature" function recognizes two reserved keys:
+  # header, the "mkFeature" function recognizes three reserved keys:
   #
   #   preconditions: a conjunction of entries whose joint satisfaction
   #   this feature's activation is conditioned on; listing a name here
@@ -267,11 +276,23 @@ in {
   #   features, never profiles or interests. A null value is identical
   #   to omitting the key.
   #
-  # The "supportedPlatforms" key belongs to the "mkProfile" function
-  # alone; passing it here is an error rather than a silently
-  # discarded class body.
+  #   supportedPlatforms: a list of Nixpkgs system identifiers (e.g.
+  #   ["aarch64-darwin" "x86_64-darwin"]) on which this feature may
+  #   activate. A host qualifies when its platform is one of them.
+  #   Omit the key for a feature that may activate on every platform.
+  #   The implication graph drops an unsupported name from every
+  #   target list it assembles, and an assertion in
+  #   "modules/_assertions.nix" rejects a host whose activation
+  #   includes one anyway. Every entry must be a platform that nixpkgs
+  #   recognizes—a member of the "lib.systems.doubles.all" list—so a
+  #   misspelled identifier fails here at registration instead of
+  #   silently constraining the feature away on every host.
   mkFeature = name: args: let
-    bodies = builtins.removeAttrs args ["preconditions" "implies"];
+    bodies = builtins.removeAttrs args ["preconditions" "implies" "supportedPlatforms"];
+    declaredBadPlatforms =
+      if args ? supportedPlatforms && isListOfStrings args.supportedPlatforms
+      then unknownPlatforms args.supportedPlatforms
+      else [];
     impliesBadPlatforms =
       if args ? implies && args.implies != null && isImpliesList args.implies
       then impliesUnknownPlatforms args.implies
@@ -286,8 +307,14 @@ in {
       else [];
     emptyGroup = lib.findFirst (g: g.anyOf == []) null preconditionGroups;
     checks = lib.seq (checkName "mkFeature" name) (
-      if args ? supportedPlatforms
-      then throw ''mkFeature: the feature "${name}" passes a "supportedPlatforms" key, but the "mkProfile" function reserves that key; features carry no platform constraint.''
+      if args ? supportedPlatforms && !(isListOfStrings args.supportedPlatforms)
+      then throw ''mkFeature: the feature "${name}" passes a "supportedPlatforms" value that is not a list of strings. Pass the Nixpkgs system identifiers on which the feature may activate.''
+      else if declaredBadPlatforms != []
+      then throw ''mkFeature: the feature "${name}" declares support for ${enumerateNames declaredBadPlatforms}, which ${
+          if lib.length declaredBadPlatforms == 1
+          then "names no platform"
+          else "name no platforms"
+        } that nixpkgs recognizes (the "lib.systems.doubles.all" list).''
       else if args ? preconditions && args.preconditions != null && !(isPreconditionList args.preconditions)
       then throw ''mkFeature: the feature "${name}" passes a "preconditions" value that is not a list of preconditions. Each entry is either a bare feature or interest name, or a group "{ anyOf = [ "<name>" ... ]; }" satisfied when any one member is active.''
       else if emptyGroup != null
@@ -300,11 +327,14 @@ in {
           then "names no platform"
           else "name no platforms"
         } that nixpkgs recognizes (the "lib.systems.doubles.all" list).''
-      else checkBodyKeys "mkFeature" "feature" ["implies" "preconditions"] name bodies
+      else checkBodyKeys "mkFeature" "feature" ["implies" "preconditions" "supportedPlatforms"] name bodies
     );
     registration = mkFeatureRegistration name bodies;
     extraDotfiles =
-      lib.optionalAttrs (args ? preconditions && args.preconditions != null) {
+      lib.optionalAttrs (args ? supportedPlatforms) {
+        supportedPlatforms.${name} = args.supportedPlatforms;
+      }
+      // lib.optionalAttrs (args ? preconditions && args.preconditions != null) {
         featurePreconditions.${name} =
           if args.preconditions == []
           then throw ''mkFeature: the feature "${name}" passes an empty "preconditions" list, but a contingent feature with no preconditions would be unconditionally active. Omit the "preconditions" key (or set it to null) to define an ordinary feature.''
@@ -424,17 +454,19 @@ in {
   # function accepts, the "mkProfile" function recognizes two
   # reserved keys:
   #
-  #   supportedPlatforms: a list of Nixpkgs system identifiers
-  #   (e.g. ["aarch64-darwin" "x86_64-darwin"]) on which this
-  #   profile may activate. A host qualifies when its platform is
-  #   one of them. Omit the key for a profile that may activate on
-  #   every platform. The implication graph filters every profile list
-  #   by this support, and an assertion rejects a host that would
-  #   activate an unsupported profile anyway. Every entry must be a
-  #   platform that nixpkgs recognizes — a member of the
-  #   "lib.systems.doubles.all" list — so a misspelled identifier
-  #   fails here at registration instead of silently constraining
-  #   the profile away on every host.
+  #   supportedPlatforms: a list of Nixpkgs system identifiers (e.g.
+  #   ["aarch64-darwin" "x86_64-darwin"]) on which this profile may
+  #   activate. A host qualifies when its platform is one of them.
+  #   Omit the key for a profile that may activate on every platform.
+  #   The key carries the same meaning for a feature, and the
+  #   "mkFeature" function above accepts it as well. The implication
+  #   graph drops an unsupported name from every target list it
+  #   assembles, and an assertion in "modules/_assertions.nix" rejects
+  #   a host whose activation includes one anyway. Every entry must be
+  #   a platform that nixpkgs recognizes—a member of the
+  #   "lib.systems.doubles.all" list—so a misspelled identifier fails
+  #   here at registration instead of silently constraining the
+  #   profile away on every host.
   #
   #   implies: a list naming the profiles or features this profile
   #   brings along—the implied edges whose source is this profile.
@@ -455,9 +487,9 @@ in {
   # body.
   mkProfile = name: args: let
     bodies = builtins.removeAttrs args ["supportedPlatforms" "implies"];
-    unknownPlatforms =
+    declaredBadPlatforms =
       if args ? supportedPlatforms && isListOfStrings args.supportedPlatforms
-      then builtins.filter (p: !(builtins.elem p lib.systems.doubles.all)) args.supportedPlatforms
+      then unknownPlatforms args.supportedPlatforms
       else [];
     impliesBadPlatforms =
       if args ? implies && args.implies != null && isImpliesList args.implies
@@ -468,9 +500,9 @@ in {
       then throw ''mkProfile: the profile "${name}" passes a "preconditions" key, but the "mkFeature" function reserves that key; only features may be contingent.''
       else if args ? supportedPlatforms && !(isListOfStrings args.supportedPlatforms)
       then throw ''mkProfile: the profile "${name}" passes a "supportedPlatforms" value that is not a list of strings. Pass the Nixpkgs system identifiers on which the profile may activate.''
-      else if unknownPlatforms != []
-      then throw ''mkProfile: the profile "${name}" declares support for ${enumerateNames unknownPlatforms}, which ${
-          if lib.length unknownPlatforms == 1
+      else if declaredBadPlatforms != []
+      then throw ''mkProfile: the profile "${name}" declares support for ${enumerateNames declaredBadPlatforms}, which ${
+          if lib.length declaredBadPlatforms == 1
           then "names no platform"
           else "name no platforms"
         } that nixpkgs recognizes (the "lib.systems.doubles.all" list).''
@@ -487,7 +519,7 @@ in {
     registration = mkProfileRegistration name bodies;
     extraDotfiles =
       lib.optionalAttrs (args ? supportedPlatforms) {
-        profileSupportedPlatforms.${name} = args.supportedPlatforms;
+        supportedPlatforms.${name} = args.supportedPlatforms;
       }
       // lib.optionalAttrs (args ? implies && args.implies != null && args.implies != []) {
         impliedEdges.${name} = args.implies;

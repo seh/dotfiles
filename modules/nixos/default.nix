@@ -20,7 +20,7 @@
             _featurePreconditions = flake.config.dotfiles.featurePreconditions;
             _impliedEdges = flake.config.dotfiles.impliedEdges;
             _profileClasses = flake.config.dotfiles.profileClasses;
-            _profileSupportedPlatforms = flake.config.dotfiles.profileSupportedPlatforms;
+            _supportedPlatforms = flake.config.dotfiles.supportedPlatforms;
             _flakeLib = flake.config.flake.lib;
           };
         }

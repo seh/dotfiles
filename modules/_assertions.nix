@@ -647,33 +647,43 @@
     '';
   };
 
-  # A profile may declare (via the "mkProfile" function's
-  # "supportedPlatforms" argument) the platforms on which it may
-  # activate; a host qualifies when its platform is one of them. The
-  # "all" entry already omits unsupported profiles (see the
+  # A profile or a feature may declare (via the "supportedPlatforms"
+  # argument of the "mkProfile" or "mkFeature" function) the platforms
+  # on which it may activate; a host qualifies when its platform is
+  # one of them. The implication graph already drops an unsupported
+  # name from every target list it assembles (see the
   # "implicationsFor" function in "modules/lib/_implications.nix");
   # this assertion rejects a host whose resolved activation includes
-  # one anyway, such as by selecting it directly in
-  # "dotfiles.host.profiles". A host whose platform could not be
-  # detected (no package set) is not checked, since its operating
-  # system is unknown.
-  profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
-  unsupportedActiveProfiles =
+  # one anyway, such as by selecting it directly. Every active name is
+  # judged, in either role, since the constraint belongs to a name
+  # rather than to a kind. A host whose platform could not be detected
+  # (no package set) is not checked, since its operating system is
+  # unknown.
+  supportedPlatforms = config.dotfiles._supportedPlatforms;
+  activeNames =
+    config.dotfiles._host.activeProfiles ++ config.dotfiles._host.activeFeatures;
+  unsupportedActiveNames =
     if platform == null
     then []
     else
       builtins.filter (
         name: let
-          supported = profileSupportedPlatforms.${name} or null;
+          supported = supportedPlatforms.${name} or null;
         in
           supported != null && !(builtins.elem platform supported)
       )
-      config.dotfiles._host.activeProfiles;
-  describeUnsupported = name: ''"${name}" (supports only ${lib.concatStringsSep ", " profileSupportedPlatforms.${name}})'';
+      activeNames;
+  kindOf = name:
+    if isProfile name
+    then "profile"
+    else if isInterest name
+    then "interest"
+    else "feature";
+  describeUnsupported = name: ''the ${kindOf name} "${name}" (supports only ${lib.concatStringsSep ", " supportedPlatforms.${name}})'';
   platformSupportAssertion = {
-    assertion = unsupportedActiveProfiles == [];
+    assertion = unsupportedActiveNames == [];
     message = ''
-      Resolving host "${hostName}": the profile(s) ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveProfiles} may not activate on this host's platform, "${toString platform}". Remove the name(s) from "dotfiles.host.profiles" or, on a multi-user host, from "dotfiles.users.<name>.profiles".
+      Resolving host "${hostName}": ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveNames} may not activate on this host's platform, "${toString platform}". Remove the name(s) from "${hostOption "profiles"}" or "${hostOption "features"}" or, on a multi-user host, from the matching "dotfiles.users.<name>" list.
     '';
   };
 in {
