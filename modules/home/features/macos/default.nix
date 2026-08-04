@@ -3,8 +3,8 @@
   lib,
   ...
 }:
-flakeLib.mkProfile "macos" {
-  # This profile configures macOS itself, so a host qualifies for
+flakeLib.mkFeature "macos" {
+  # This feature configures macOS itself, so a host qualifies for
   # it only when its platform is one of the Darwin systems.
   supportedPlatforms = lib.platforms.darwin;
 
