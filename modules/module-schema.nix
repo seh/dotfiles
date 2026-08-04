@@ -170,24 +170,23 @@ in {
         An assertion in "modules/_assertions.nix" rejects collisions.
       '';
     };
-    profileSupportedPlatforms = lib.mkOption {
+    supportedPlatforms = lib.mkOption {
       type = lib.types.attrsOf (setOfNames {
         merge = "agreement";
         allowEmpty = false;
       });
       default = {};
       description = ''
-        Per-profile platform support, keyed by profile name. Each value
-        lists the Nixpkgs system identifiers on which that profile may
-        activate; a host qualifies when its platform is one of them.
-        Profiles absent from this registry may activate on every
-        platform. Populated by the "mkProfile" function from its
-        "supportedPlatforms" argument. The value is a set of names:
-        the type's merge normalizes each definition, so declarations
-        denoting the same set merge and ones denoting different sets
-        are rejected. Populates
-        "dotfiles._profileSupportedPlatforms" in each class
-        aggregator.
+        Per-name platform support, keyed by profile or feature name.
+        Each value lists the Nixpkgs system identifiers on which that
+        name may activate; a host qualifies when its platform is one
+        of them. Names absent from this registry may activate on every
+        platform. Populated by the "mkFeature" and "mkProfile"
+        functions from their "supportedPlatforms" argument. The value
+        is a set of names: the type's merge normalizes each
+        definition, so declarations denoting the same set merge and
+        ones denoting different sets are rejected. Populates
+        "dotfiles._supportedPlatforms" in each class aggregator.
       '';
     };
   };

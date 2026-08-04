@@ -62,7 +62,7 @@
       flakeLib.implicationsFor {
         inherit platform;
         knownProfiles = config.dotfiles._knownProfiles;
-        profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
+        supportedPlatforms = config.dotfiles._supportedPlatforms;
         impliedEdges = config.dotfiles._impliedEdges;
       }
     else null;
@@ -122,7 +122,8 @@
     if hasImplicationsLib
     then
       flakeLib.resolveActivation {
-        inherit implications knownByRole selected preconditions;
+        inherit implications knownByRole platform selected preconditions;
+        supportedPlatforms = config.dotfiles._supportedPlatforms;
         excluded = withForbidden exclusionsInForce;
       }
     else selected;
@@ -391,10 +392,12 @@ in {
             description = ''
               Features advertised via "dotfiles._knownFeatures" that
               are not active for this evaluator, whatever keeps them
-              out. Exposed as a diagnostic aid: each entry is a name a
-              selector could select, so contingent features, which no
-              selector may select, are left out; see "latentFeatures"
-              for those.
+              out: nothing here selected them, an exclusion pruned
+              them, or the machine's platform does not support them.
+              Exposed as a diagnostic aid: each entry is a name a
+              selector could select, so the list leaves out the
+              contingent features, which no selector may select; see
+              "latentFeatures" for those.
             '';
           };
           unexpressedInterests = mkOption {
@@ -402,9 +405,12 @@ in {
             readOnly = true;
             description = ''
               Interests advertised via "dotfiles._knownInterests" that
-              this evaluator does not express. Exposed as a diagnostic
-              aid: each entry is an interest a selector could express,
-              leaving the contingent features citing it latent.
+              this evaluator does not express, whether nothing
+              expressed them, an exclusion pruned them, or the
+              machine's platform does not support them. Exposed as a
+              diagnostic aid: each entry is an interest a selector
+              could express, leaving the contingent features citing it
+              latent.
             '';
           };
           latentFeatures = mkOption {
@@ -639,17 +645,17 @@ in {
       '';
     };
 
-    _profileSupportedPlatforms = mkOption {
+    _supportedPlatforms = mkOption {
       type = types.attrsOf (types.listOf types.str);
       default = {};
       description = ''
-        Per-profile platform support, keyed by profile name; each
-        value lists the platforms on which that profile may
-        activate. Mirrored from the flake-level
-        "dotfiles.profileSupportedPlatforms" registry by each class
-        aggregator. Consulted by the implication-graph computation
-        (the "all" entry skips unsupported profiles) and by the
-        platform-support assertion in "modules/_assertions.nix".
+        Per-name platform support, keyed by profile or feature name.
+        Each value lists the platforms on which that name may
+        activate. Each class aggregator mirrors it from the
+        flake-level "dotfiles.supportedPlatforms" registry. The
+        implication-graph computation reads it to drop an unsupported
+        name from every target list. The platform-support assertion in
+        "modules/_assertions.nix" reads it as well.
       '';
     };
 
@@ -690,7 +696,8 @@ in {
       if hasImplicationsLib
       then
         flakeLib.resolveActivation {
-          inherit implications knownByRole selected preconditions;
+          inherit implications knownByRole platform selected preconditions;
+          supportedPlatforms = config.dotfiles._supportedPlatforms;
         }
       else null;
     # Redundancy test: a name "n" excluded under "role" is
@@ -708,7 +715,8 @@ in {
           ${role} = lib.filter (m: m != name) exclusionsInForce.${role};
         };
       activation = flakeLib.resolveActivation {
-        inherit implications knownByRole selected preconditions;
+        inherit implications knownByRole platform selected preconditions;
+        supportedPlatforms = config.dotfiles._supportedPlatforms;
         excluded = withoutSelf;
       };
     in
