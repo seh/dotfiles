@@ -33,9 +33,11 @@ in {
         computes it from the "featureModules" registry; the
         "mkFeature" function records nothing here. The record
         therefore stays faithful to the bodies actually present: a
-        feature registered by name alone, with no bodies, is absent.
-        Each class aggregator mirrors it into
-        "dotfiles._featureClasses".
+        feature registered by name alone, with no bodies, is absent. A
+        feature may configure the machine alone—the "apps" feature
+        carries a nix-darwin body and nothing else—so this record also
+        diagnoses a user selecting such a feature. Each class
+        aggregator mirrors it into "dotfiles._featureClasses".
       '';
     };
     featureModules = lib.mkOption {
@@ -47,9 +49,14 @@ in {
       type = lib.types.lazyAttrsOf (lib.types.lazyAttrsOf (lib.types.uniq lib.types.deferredModule));
       default = {};
       description = ''
-        Per-class feature modules, keyed by module class ("homeManager",
-        "nixDarwin", "nixOS") and then by feature name. Each leaf value is a
-        deferred module to be imported into that class's aggregate.
+        Per-class feature modules, keyed by module class
+        ("homeManager", "nixDarwin", "nixOS") and then by feature
+        name. Each leaf value is a deferred module to be imported into
+        that class's aggregate.
+
+        Features and interests share one namespace: a feature may not
+        share its name with an interest. An assertion in the
+        "modules/_assertions.nix" file rejects collisions.
       '';
     };
     featurePreconditions = lib.mkOption {
@@ -78,18 +85,18 @@ in {
       default = {};
       description = ''
         Per-source implied edges, keyed by the name of the source
-        profile, feature, or interest that brings the targets along.
-        Each value is that source's "implies" list: an entry is
-        either a bare target name or a record "{ name = "<target>";
+        feature or interest that brings the targets along. Each value
+        is that source's "implies" list: an entry is either a bare
+        target name or a record "{ name = "<target>";
         supportedPlatforms = [<systems>]; }" naming an edge present
-        only when the host's platform is one of the listed systems.
-        An interest source lists only bare interest names. Populated
-        by the "mkFeature", "mkProfile", and "mkInterest" functions
-        from their "implies" argument. Definitions accumulate, so
-        several modules may extend one source's edges. The
-        "implicationsFor" function in "modules/lib/_implications.nix"
-        assembles these into the role-keyed implication graph.
-        Populates "dotfiles._impliedEdges" in each class aggregator.
+        only when the host's platform is one of the listed systems. An
+        interest source lists only bare interest names. Populated by
+        the "mkFeature" and "mkInterest" functions from their
+        "implies" argument. Definitions accumulate, so several modules
+        may extend one source's edges. The "implicationsFor" function
+        in "modules/lib/_implications.nix" assembles these into the
+        implication graph. Populates "dotfiles._impliedEdges" in each
+        class aggregator.
       '';
     };
     interestDescriptions = lib.mkOption {
@@ -109,9 +116,9 @@ in {
       default = [];
       apply = lib.unique;
       description = ''
-        Feature names advertised by feature or profile modules in this
-        flake or downstream consumers. Accumulated and de-duplicated.
-        Populates "dotfiles._knownFeatures" in each class aggregator.
+        Feature names advertised by feature modules in this flake or
+        downstream consumers. Accumulated and de-duplicated. Populates
+        "dotfiles._knownFeatures" in each class aggregator.
       '';
     };
     knownInterests = lib.mkOption {
@@ -128,47 +135,6 @@ in {
         "dotfiles._knownInterests" in each class aggregator.
       '';
     };
-    knownProfiles = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [];
-      apply = lib.unique;
-      description = ''
-        Profile names advertised by profile modules in this flake or
-        downstream consumers. Accumulated and de-duplicated. Populates
-        "dotfiles._knownProfiles" in each class aggregator.
-      '';
-    };
-    profileClasses = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.listOf lib.types.str);
-      readOnly = true;
-      description = ''
-        Per-profile module classes, keyed by profile name. Each value
-        names the classes ("homeManager", "nixDarwin", "nixOS") that
-        register a body for that profile, in that order. Derived from
-        the "profileModules" registry rather than recorded by the
-        "mkProfile" function, so the record stays faithful to the
-        bodies actually present; a profile registered by name alone,
-        with no bodies, is absent. A profile may configure the machine
-        alone—the "apps" profile carries a nix-darwin body and nothing
-        else—so this record diagnoses a user selecting such a profile.
-        Populates "dotfiles._profileClasses" in each class aggregator.
-      '';
-    };
-    profileModules = lib.mkOption {
-      # See the note on "featureModules" above for the "uniq"
-      # wrapper's purpose.
-      type = lib.types.lazyAttrsOf (lib.types.lazyAttrsOf (lib.types.uniq lib.types.deferredModule));
-      default = {};
-      description = ''
-        Per-class profile modules, keyed by module class ("homeManager",
-        "nixDarwin", "nixOS") and then by profile name. Each leaf value is a
-        deferred module to be imported into that class's aggregate.
-
-        Profiles, features, and interests share one namespace: a
-        profile may not share its name with a feature or an interest.
-        An assertion in "modules/_assertions.nix" rejects collisions.
-      '';
-    };
     supportedPlatforms = lib.mkOption {
       type = lib.types.attrsOf (setOfNames {
         merge = "agreement";
@@ -176,22 +142,19 @@ in {
       });
       default = {};
       description = ''
-        Per-name platform support, keyed by profile or feature name.
-        Each value lists the Nixpkgs system identifiers on which that
-        name may activate; a host qualifies when its platform is one
-        of them. Names absent from this registry may activate on every
-        platform. Populated by the "mkFeature" and "mkProfile"
-        functions from their "supportedPlatforms" argument. The value
-        is a set of names: the type's merge normalizes each
-        definition, so declarations denoting the same set merge and
-        ones denoting different sets are rejected. Populates
-        "dotfiles._supportedPlatforms" in each class aggregator.
+        Per-name platform support, keyed by feature name. Each value
+        lists the Nixpkgs system identifiers on which that name may
+        activate; a host qualifies when its platform is one of them.
+        Names absent from this registry may activate on every
+        platform. Populated by the "mkFeature" function from its
+        "supportedPlatforms" argument. The value is a set of names:
+        the type's merge normalizes each definition, so definitions
+        that spell the same set merge, and the merge rejects ones
+        that differ. Populates "dotfiles._supportedPlatforms" in each
+        class aggregator.
       '';
     };
   };
 
-  config.dotfiles = {
-    featureClasses = classesOf config.dotfiles.featureModules;
-    profileClasses = classesOf config.dotfiles.profileModules;
-  };
+  config.dotfiles.featureClasses = classesOf config.dotfiles.featureModules;
 }

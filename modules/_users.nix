@@ -3,11 +3,11 @@
 # This module declares the "dotfiles.users" option and its per-user
 # submodule schema, and assigns nothing. Every module class imports
 # it, so the registry exists in each one, defaulting to the empty
-# attrset. Each entry is a complete, self-contained per-user
-# record: identity fields plus the user's selected profiles,
-# features, and interests and their exclusions. There is no
-# inheritance between users; sharing is the caller's business,
-# expressed with ordinary Nix "let" bindings or shared modules.
+# attrset. Each entry is a complete, self-contained per-user record:
+# identity fields plus the user's selected features and interests and
+# their exclusions. There is no inheritance between users; sharing is
+# the caller's business, expressed with ordinary Nix "let" bindings or
+# shared modules.
 #
 # Only a system configuration acts on the entries. A standalone
 # home-manager configuration must leave the registry empty.
@@ -131,31 +131,14 @@
           '';
         };
 
-        profiles = mkOption {
-          type = types.listOf types.str;
-          default = [];
-          description = ''
-            Profile names this user opts into. Expansion inside
-            the nested home-manager evaluator for this user starts
-            from these selected names.
-          '';
-        };
-
-        excludeProfiles = mkOption {
-          type = types.listOf types.str;
-          default = [];
-          description = ''
-            Profile names to subtract from this user's resolved
-            activation.
-          '';
-        };
-
         features = mkOption {
           type = types.listOf types.str;
           default = [];
           description = ''
-            Feature names this user opts into directly (outside of
-            any profile that would pull them in).
+            The features this user selects, from the finest single
+            concern to a bundle that only brings others along.
+            Expansion starts from these selected names together with
+            the "interests" list.
           '';
         };
 
@@ -214,7 +197,7 @@
             module function, or a list of modules.
 
             Use this to keep a user's complete configuration
-            (identity, selected profiles and features, and
+            (identity, selected features and interests, and
             home-manager customization) at one option path.
           '';
         };
@@ -228,10 +211,10 @@ in {
     description = ''
       Per-user records for this host. Each entry's key is the
       username; each value is a complete, self-contained record of
-      identity fields plus the user's selected profiles, features,
-      and interests and their exclusions. Meaningful only on hosts
-      that a system configuration manages (nix-darwin or NixOS); in
-      the home-manager class the registry must stay empty.
+      identity fields plus the user's selected features and interests
+      and their exclusions. Meaningful only on hosts that a system
+      configuration manages (nix-darwin or NixOS); in the home-manager
+      class the registry must stay empty.
     '';
   };
 }

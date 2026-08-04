@@ -5,9 +5,9 @@
   lib,
   ...
 }:
-flakeLib.mkProfile "apps" {
+flakeLib.mkFeature "apps" {
   # Homebrew exists only on macOS, so a host qualifies for this
-  # profile only when its platform is one of the Darwin systems.
+  # feature only when its platform is one of the Darwin systems.
   supportedPlatforms = lib.platforms.darwin;
 
   nixDarwin = {lib, ...}: {

@@ -1,7 +1,7 @@
 # Basis of inspiration:
 #   https://github.com/midchildan/dotfiles/blob/8105b21f1a743960a8bbbf5bdcd752a7d9b60d10/nix/home/profiles/fonts.nix
 {flakeLib, ...}:
-flakeLib.mkProfile "fonts" {
+flakeLib.mkFeature "fonts" {
   homeManager = {
     lib,
     pkgs,
