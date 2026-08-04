@@ -520,9 +520,10 @@
   # and follows that user's. One feature carrying both configures the
   # machine and a user's home at once, so a user who selects it
   # activates the home half alone. Registering one name across both
-  # system classes stays legal—the "nix" feature does exactly that—and
-  # this check covers features alone: the "essential" profile spans a
-  # home class and a system class deliberately.
+  # system classes stays legal—the "nix" feature and the
+  # "shell/zsh/integration" feature each do exactly that—and this
+  # check reads the feature class record alone, so a profile's bodies
+  # fall outside its scope.
   #
   # The classes come from the "dotfiles._featureClasses" record,
   # derived from the module registry itself, so the record stays
