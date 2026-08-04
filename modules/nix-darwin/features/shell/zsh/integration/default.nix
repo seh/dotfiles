@@ -3,7 +3,7 @@
 # "/etc/zshrc" file and a login shell loads the nix-darwin
 # environment.
 #
-# The machine alone nominates this feature. The "essential" profile
+# The machine alone nominates this feature. The "essential" feature
 # implies it, and only the machine's own selections decide a
 # nix-darwin body, so a user who selects "essential" does not bring it
 # along. The "shell/zsh" feature configures a user's own zsh and stays
