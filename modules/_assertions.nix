@@ -1,27 +1,28 @@
 # Assertions catching mis-selected host entries.
 #
 # Role-aware assertions are surfaced against the typed authoring
-# surface: each role ("profiles", "features", "interests") gets an
-# unknown-name assertion for each of the three lists a machine or user
-# writes under it—its selections, its exclusions, and the machine-wide
-# forbid list—plus a cross-role mismatch assertion that catches a name
-# written into one role's list while another role advertises it.
+# surface: each role ("features", "interests") gets an unknown-name
+# assertion for each of three things a machine or user writes under
+# it—its selections, its exclusions, and what it forbids
+# machine-wide—plus a cross-role mismatch assertion that catches a
+# name written into one role's list while the other role advertises
+# it.
 #
 # Role-mismatch assertions run before the plain "unknown name"
 # assertions so that the more specific diagnosis wins when a name was
 # simply written under the wrong role.
 #
-# The "knownProfiles", "knownFeatures", and "knownInterests"
-# registries consulted here are flake-wide by design; see the comment
-# block in "modules/_activation.nix" near the declaration of
-# "dotfiles._knownProfiles" for the rationale. The preconditions table
-# ("dotfiles._featurePreconditions") is consulted as well, to check
-# contingent features' precondition edges and their possible misuse in
-# a host's selections and in the implication graph. The per-class
-# module records ("dotfiles._featureClasses" and
-# "dotfiles._profileClasses") are consulted too, to hold each feature
-# to one side of the home/system divide and to catch a user selecting
-# a name that configures the machine alone.
+# The "knownFeatures" and "knownInterests" registries consulted here
+# are flake-wide by design; see the comment block in the
+# "modules/_activation.nix" file near the declaration of the
+# "dotfiles._knownFeatures" option for the rationale. The
+# preconditions table ("dotfiles._featurePreconditions") is consulted
+# as well, to check contingent features' precondition edges and their
+# possible misuse in a host's selections and in the implication graph.
+# The per-class module record ("dotfiles._featureClasses") is
+# consulted too, to hold each feature to one side of the home/system
+# divide and to catch a user selecting a name that configures the
+# machine alone.
 {
   lib,
   config,
@@ -43,7 +44,6 @@
   # records carry no platform attribute.
   platform = config.dotfiles._host.platform;
 
-  knownProfiles = config.dotfiles._knownProfiles;
   knownFeatures = config.dotfiles._knownFeatures;
   knownInterests = config.dotfiles._knownInterests;
   knownNames = config.dotfiles._knownNames;
@@ -54,33 +54,13 @@
   # Quote and join names for the messages below.
   quoteNames = names: lib.concatMapStringsSep ", " (n: "\"${n}\"") names;
 
-  # Profiles, features, and interests share one namespace: a name may
-  # denote only one kind. The pairwise checks below name the offender
-  # and both kinds. An interest-versus-feature collision is the case
-  # the "uniq" guard on the module registries cannot catch (an
-  # interest contributes no module body, so a body under its name
-  # would count as a first definition, not a duplicate).
+  # Features and interests share one namespace: a name may denote only
+  # one kind. The check below names the offender and both kinds. This
+  # collision is the case the "uniq" guard on the module registries
+  # cannot catch (an interest contributes no module body, so a body
+  # under its name would count as a first definition, not a
+  # duplicate).
   namespacePairs = [
-    {
-      here = {
-        kind = "profile";
-        names = knownProfiles;
-      };
-      there = {
-        kind = "feature";
-        names = knownFeatures;
-      };
-    }
-    {
-      here = {
-        kind = "profile";
-        names = knownProfiles;
-      };
-      there = {
-        kind = "interest";
-        names = knownInterests;
-      };
-    }
     {
       here = {
         kind = "feature";
@@ -104,40 +84,29 @@
   in {
     assertion = shared == [];
     message = ''
-      Resolving host "${hostName}": the name(s) ${quoteNames shared} are registered as both ${describeKind here.kind} and ${describeKind there.kind}, but profiles, features, and interests share one namespace, so a name may denote only one kind. Rename one of the registrations.
+      Resolving host "${hostName}": the name(s) ${quoteNames shared} are registered as both ${describeKind here.kind} and ${describeKind there.kind}, but features and interests share one namespace, so a name may denote only one kind. Rename one of the registrations.
     '';
   };
 
   # Every authoring list named below sits directly under
-  # "dotfiles.host" at the machine level; each one but the
-  # machine-wide forbid list also has a per-user counterpart under
-  # "dotfiles.users.<name>". The messages below build both paths from
-  # a list's bare name, since a name arriving at a managed user's
-  # nested evaluator may have been written at either surface.
+  # "dotfiles.host" at the machine level; each one but
+  # "forbidFeatures" and "forbidInterests" also has a per-user
+  # counterpart under "dotfiles.users.<name>". The messages below
+  # build both paths from a list's bare name, since a name arriving at
+  # a managed user's nested evaluator may have been written at either
+  # surface.
   hostOption = attr: "dotfiles.host.${attr}";
   userOption = attr: "dotfiles.users.<name>.${attr}";
 
   # Role-parametric driver. Iterating over this list (rather than
-  # hard-coding "profiles", "features", and "interests") means that
-  # adding a fourth role later—say, "bundles"—reduces to a single new
-  # entry. Each role names the three lists a machine or user authors
-  # under it and the registry of names it advertises, so that each
-  # kind's own registry judges its own lists. These are the authoring
-  # roles, one per kind; the activation walk carries two roles and
-  # folds the interests into its "features" role (see
-  # "modules/_activation.nix").
+  # hard-coding "features" and "interests") means that adding a third
+  # role later—say, "bundles"—reduces to a single new entry. Each role
+  # names the three lists a machine or user authors under it and the
+  # registry of names it advertises, so that each kind's own registry
+  # judges its own lists. These are the authoring roles, one per kind;
+  # the activation walk carries one list and folds both kinds into it
+  # (see "modules/_activation.nix").
   roles = [
-    {
-      name = "profiles";
-      excludeName = "excludeProfiles";
-      forbidName = "forbidProfiles";
-      selected = host.profiles;
-      excluded = host.excludeProfiles;
-      forbidden = host.forbidProfiles;
-      known = knownProfiles;
-      humanSingular = "profile";
-      humanPlural = "profile(s)";
-    }
     {
       name = "features";
       excludeName = "excludeFeatures";
@@ -162,8 +131,8 @@
     }
   ];
 
-  # Pair each role with "the other roles", so that each role's lists
-  # can be checked against every other role's known set.
+  # Pair each role with the other role, so that each role's lists can
+  # be checked against the other's known set.
   crossPairs =
     lib.concatMap (
       here: map (there: {inherit here there;}) (builtins.filter (r: r.name != here.name) roles)
@@ -243,9 +212,10 @@
   };
 
   # The names every role other than the given one advertises. A name
-  # in one of a role's lists that another role knows is misfiled, not
-  # unknown, so the three checks below leave it to the role-mismatch
-  # assertions above and report only names nothing advertises.
+  # in one of a role's lists that the other role knows is misfiled,
+  # not unknown, so the three checks below leave it to the
+  # role-mismatch assertions above and report only names nothing
+  # advertises.
   otherKnown = role:
     lib.concatLists (map (r: r.known) (builtins.filter (r: r.name != role.name) roles));
 
@@ -304,10 +274,10 @@
   };
 
   # Every precondition must name a known feature or interest—never a
-  # profile, and never a name nothing advertises. A group's members
-  # are subject to the same hygiene, so flatten each feature's
-  # preconditions to every referenced name: each bare entry, plus
-  # every member of each "anyOf" group.
+  # name nothing advertises. A group's members are subject to the same
+  # hygiene, so flatten each feature's preconditions to every
+  # referenced name: each bare entry, plus every member of each
+  # "anyOf" group.
   referencedNames = entries:
     lib.concatMap (
       entry:
@@ -330,24 +300,8 @@
     feature,
     precondition,
   }: ''The feature "${feature}" names "${precondition}" as a precondition'';
-  preconditionsNamingProfiles =
-    builtins.filter ({precondition, ...}: builtins.elem precondition knownProfiles)
-    preconditionEdges;
-  preconditionProfileAssertion = {
-    assertion = preconditionsNamingProfiles == [];
-    message = ''
-      Resolving host "${hostName}": ${lib.concatMapStringsSep " " (
-          edge: "${describePreconditionEdge edge}, which names a known profile, but preconditions may name only features or interests."
-        )
-        preconditionsNamingProfiles} Remove each profile name from its "preconditions" list.
-    '';
-  };
   unknownPreconditions =
-    builtins.filter (
-      {precondition, ...}:
-        !(builtins.elem precondition knownNames)
-        && !(builtins.elem precondition knownProfiles)
-    )
+    builtins.filter ({precondition, ...}: !(builtins.elem precondition knownNames))
     preconditionEdges;
   preconditionUnknownAssertion = {
     assertion = unknownPreconditions == [];
@@ -396,25 +350,25 @@
   # The preconditions table's keys must themselves be registered
   # features: the "mkFeature" function registers each contingent
   # feature's name alongside its "preconditions" list, so a key that
-  # no imported module advertises as a feature was written into
-  # "dotfiles.featurePreconditions" directly—whether a name nothing
-  # registers or a name registered as a profile or an interest.
+  # no imported module advertises as a feature was written into the
+  # "dotfiles.featurePreconditions" registry directly—whether a name
+  # nothing registers or a name registered as an interest.
   unregisteredContingent =
     builtins.filter (n: !(builtins.elem n knownFeatures)) contingentNames;
   contingentRegistrationAssertion = {
     assertion = unregisteredContingent == [];
     message = ''
-      Resolving host "${hostName}": the preconditions table keys the contingent feature(s) ${quoteNames unregisteredContingent}, but no imported module registers these names as features. A contingent feature must be registered via the "mkFeature" function; a name known only as a profile or an interest may not carry preconditions. Register each name with the "mkFeature" function (passing its "preconditions" list there) or remove its entry from "dotfiles.featurePreconditions".
+      Resolving host "${hostName}": the preconditions table keys the contingent feature(s) ${quoteNames unregisteredContingent}, but no imported module registers these names as features. A contingent feature must be registered via the "mkFeature" function; a name known only as an interest may not carry preconditions. Register each name with the "mkFeature" function (passing its "preconditions" list there) or remove its entry from "dotfiles.featurePreconditions".
     '';
   };
 
   # A contingent feature activates only through its preconditions, so
   # naming one among the selections would activate it in an
   # inconsistent state, without the guarantee its body is written
-  # against. Both selection lists that feed the walk's "features" role
-  # are checked, since a contingent name written under "interests"
-  # would enter the walk just the same; the role-mismatch assertion
-  # above objects to the misfiling, and this one to the selection.
+  # against. Both selection lists that feed the walk are checked,
+  # since a contingent name written under "interests" would enter the
+  # walk just the same; the role-mismatch assertion above objects to
+  # the misfiling, and this one to the selection.
   # Every selection is authored, so the check applies uniformly, with
   # nothing suppressing it: the machine's own lists in a system
   # evaluator, and the machine's layered with that user's inside a
@@ -427,6 +381,26 @@
     assertion = selectedContingent == [];
     message = ''
       Resolving host "${hostName}": the selections name the contingent feature(s) ${quoteNames selectedContingent} (written in "dotfiles.host.features" or "dotfiles.host.interests" or, on a multi-user host, in the matching "dotfiles.users.<name>" list), but a contingent feature activates automatically exactly when all of its preconditions are met and may not be selected directly. Select its preconditions instead.
+    '';
+  };
+
+  # A name the machine forbids that this evaluator's own copy of what
+  # it forbids no longer contains. Only a module inside a managed
+  # user's home configuration can produce this, by defining
+  # "dotfiles.host" again at a priority that displaces what the
+  # propagation module in the "modules/lib/_constructors.nix" file
+  # wrote. The name stays inactive either way, since the walk prunes
+  # the "dotfiles._machineForbidFeatures" and
+  # "dotfiles._machineForbidInterests" lists beside the "host" ones,
+  # so this assertion tells its author that the line accomplished
+  # nothing rather than leaving them to wonder.
+  forbidOverridden =
+    lib.subtractLists host.forbidFeatures config.dotfiles._machineForbidFeatures
+    ++ lib.subtractLists host.forbidInterests config.dotfiles._machineForbidInterests;
+  forbidOverriddenAssertion = {
+    assertion = forbidOverridden == [];
+    message = ''
+      Resolving host "${hostName}": something in this user's own configuration removed ${quoteNames forbidOverridden} from the "${hostOption "forbidFeatures"}" or "${hostOption "forbidInterests"}" list. Those lists are the machine's, and the walk prunes what the machine forbids whatever this configuration says, so the name stays inactive and the line accomplishes nothing. Remove the line. To decline a name the machine merely excludes, select it instead.
     '';
   };
 
@@ -455,17 +429,14 @@
       })
       rawImpliedEdges.${source}
   ) (builtins.attrNames rawImpliedEdges);
-  # Classify a name by kind. A name among the known profiles is a
-  # profile; among the known interests, an interest; otherwise it is a
-  # feature. A contingent feature is one the preconditions registry
-  # keys.
-  isProfile = n: builtins.elem n knownProfiles;
+  # Classify a name by kind. A name among the known interests is an
+  # interest; every other name is a feature. A contingent feature is
+  # one the preconditions registry keys.
   isInterest = n: builtins.elem n knownInterests;
   isContingent = n: builtins.elem n contingentNames;
 
-  # No implied edge—a profile's "implies" list included—may target a
-  # contingent feature, which activates automatically exactly when all
-  # of its preconditions are met.
+  # No implied edge may target a contingent feature, which activates
+  # automatically exactly when all of its preconditions are met.
   contingentImplicationTargets =
     lib.unique (map (e: e.target) (builtins.filter (e: isContingent e.target) rawEdgePairs));
   contingentImplicationTargetAssertion = {
@@ -475,41 +446,27 @@
     '';
   };
 
-  # A feature or a profile may not imply an interest: a want is
-  # expressed by a selector, not manufactured by a configuration unit.
-  # Another interest may, so the source is exempted here.
+  # A feature may not imply an interest: a want is expressed by a
+  # selector, not manufactured by a configuration unit. Another
+  # interest may, so the source is exempted here.
   fabricatedInterestEdges =
     builtins.filter (e: isInterest e.target && !(isInterest e.source)) rawEdgePairs;
   fabricatedInterestTargetAssertion = {
     assertion = fabricatedInterestEdges == [];
     message = ''
-      Resolving host "${hostName}": the implication graph has a feature or profile imply the interest(s) ${quoteNames (lib.unique (map (e: e.target) fabricatedInterestEdges))}, but only another interest may imply an interest — a want is expressed by selection, not manufactured by a configuration unit. Remove the edge(s) from the source's "implies" list.
+      Resolving host "${hostName}": the implication graph has a feature imply the interest(s) ${quoteNames (lib.unique (map (e: e.target) fabricatedInterestEdges))}, but only another interest may imply an interest — a want is expressed by selection, not manufactured by a configuration unit. Remove the edge(s) from the source's "implies" list.
     '';
   };
 
-  # An interest may imply only interests, never a feature or a profile,
-  # so the want-world and the configuration-world do not cross through
+  # An interest may imply only interests, never a feature, so the
+  # want-world and the configuration-world do not cross through
   # implication.
   interestCrossingEdges =
     builtins.filter (e: isInterest e.source && !(isInterest e.target)) rawEdgePairs;
   interestCrossingAssertion = {
     assertion = interestCrossingEdges == [];
     message = ''
-      Resolving host "${hostName}": the interest(s) ${quoteNames (lib.unique (map (e: e.source) interestCrossingEdges))} imply non-interest names ${quoteNames (lib.unique (map (e: e.target) interestCrossingEdges))}, but an interest may imply only other interests, never a feature or a profile. Remove the crossing edge(s).
-    '';
-  };
-
-  # A feature may not imply a profile: profiles are coarser than
-  # features, and reversing that would make host records misleading. A
-  # profile source may imply a profile, and an interest source is
-  # judged by the interest-crossing rule above, so only a feature-kind
-  # source (neither profile nor interest) is caught here.
-  featureImpliesProfileEdges =
-    builtins.filter (e: !(isProfile e.source) && !(isInterest e.source) && isProfile e.target) rawEdgePairs;
-  featureImpliesProfileAssertion = {
-    assertion = featureImpliesProfileEdges == [];
-    message = ''
-      Resolving host "${hostName}": the feature(s) ${quoteNames (lib.unique (map (e: e.source) featureImpliesProfileEdges))} imply the profile(s) ${quoteNames (lib.unique (map (e: e.target) featureImpliesProfileEdges))}, but a feature may not imply a profile — profiles are coarser than features, and reversing that would make host records misleading. Remove the edge(s) or make ${quoteNames (lib.unique (map (e: e.source) featureImpliesProfileEdges))} a profile.
+      Resolving host "${hostName}": the interest(s) ${quoteNames (lib.unique (map (e: e.source) interestCrossingEdges))} imply non-interest names ${quoteNames (lib.unique (map (e: e.target) interestCrossingEdges))}, but an interest may imply only other interests, never a feature. Remove the crossing edge(s).
     '';
   };
 
@@ -521,9 +478,7 @@
   # machine and a user's home at once, so a user who selects it
   # activates the home half alone. Registering one name across both
   # system classes stays legal—the "nix" feature and the
-  # "shell/zsh/integration" feature each do exactly that—and this
-  # check reads the feature class record alone, so a profile's bodies
-  # fall outside its scope.
+  # "shell/zsh/integration" feature each do exactly that.
   #
   # The classes come from the "dotfiles._featureClasses" record,
   # derived from the module registry itself, so the record stays
@@ -566,10 +521,10 @@
     '';
   };
 
-  # A feature or profile whose every registered body is system-class
-  # configures the machine and nothing else, so a user selecting it
-  # receives nothing at all. Each user's own lists are judged, never
-  # the resolved activation in force for that user: the machine's
+  # A feature whose every registered body is system-class configures
+  # the machine and nothing else, so a user selecting it receives
+  # nothing at all. Each user's own lists are judged, never the
+  # resolved activation in force for that user: the machine's
   # selections layer into every user's walk, so a machine-nominated
   # system-only name legitimately appears there. That distinction
   # matters because the layering is an intended pattern—an
@@ -580,57 +535,43 @@
   # A name absent from the class record carries no bodies at all: a
   # name-only registration, an interest, or a misspelling that the
   # unknown-name checks above already diagnose. None is flagged here.
-  profileClasses = config.dotfiles._profileClasses;
   userRecords = config.dotfiles.users;
-  systemOnlyClassesOf = registry: name: let
-    classes = registry.${name} or [];
+  systemOnlyClassesOf = name: let
+    classes = featureClasses.${name} or [];
   in
     if classes != [] && !(builtins.elem homeClass classes)
     then classes
     else [];
-  systemOnlySelections = registry: entriesOf:
+  # Both lists that a user writes into the walk are judged, since a
+  # system-only feature name written under the "interests" list enters
+  # the walk just the same; the role-mismatch assertion above objects
+  # to the misfiling, and this one to the selection.
+  userSystemOnlyFeatures =
     lib.concatMap (
       user:
         lib.concatMap (
           name: let
-            classes = systemOnlyClassesOf registry name;
+            classes = systemOnlyClassesOf name;
           in
             lib.optional (classes != []) {inherit user name classes;}
         )
-        (entriesOf userRecords.${user})
+        (userRecords.${user}.features ++ userRecords.${user}.interests)
     )
     (builtins.attrNames userRecords);
-  # Both lists that a user writes into the walk's "features" role are
-  # judged, since a system-only feature name written under "interests"
-  # enters that role just the same; the role-mismatch assertion above
-  # objects to the misfiling, and this one to the selection.
-  userSystemOnlyFeatures =
-    systemOnlySelections featureClasses (record: record.features ++ record.interests);
-  userSystemOnlyProfiles = systemOnlySelections profileClasses (record: record.profiles);
   describeSystemOnlyClasses = classes:
     if lib.length classes == 1
     then ''only for the ${lib.head classes} class''
     else ''only for the ${lib.concatStringsSep " and " classes} classes'';
-  describeSystemOnlySelection = kind: destination: {
+  describeSystemOnlySelection = {
     user,
     name,
     classes,
-  }: ''the user "${user}" selects the ${kind} "${name}", which carries configuration ${describeSystemOnlyClasses classes} and so does nothing for a user; select it in "${destination}" so the machine applies it.'';
+  }: ''the user "${user}" selects the feature "${name}", which carries configuration ${describeSystemOnlyClasses classes} and so does nothing for a user; select it in "${hostOption "features"}" so the machine applies it.'';
   userSystemOnlyFeatureAssertion = {
     assertion = userSystemOnlyFeatures == [];
     message = ''
       Resolving host "${hostName}": ${
-        lib.concatMapStringsSep " " (describeSystemOnlySelection "feature" (hostOption "features"))
-        userSystemOnlyFeatures
-      }
-    '';
-  };
-  userSystemOnlyProfileAssertion = {
-    assertion = userSystemOnlyProfiles == [];
-    message = ''
-      Resolving host "${hostName}": ${
-        lib.concatMapStringsSep " " (describeSystemOnlySelection "profile" (hostOption "profiles"))
-        userSystemOnlyProfiles
+        lib.concatMapStringsSep " " describeSystemOnlySelection userSystemOnlyFeatures
       }
     '';
   };
@@ -648,21 +589,17 @@
     '';
   };
 
-  # A profile or a feature may declare (via the "supportedPlatforms"
-  # argument of the "mkProfile" or "mkFeature" function) the platforms
-  # on which it may activate; a host qualifies when its platform is
-  # one of them. The implication graph already drops an unsupported
-  # name from every target list it assembles (see the
-  # "implicationsFor" function in "modules/lib/_implications.nix");
-  # this assertion rejects a host whose resolved activation includes
-  # one anyway, such as by selecting it directly. Every active name is
-  # judged, in either role, since the constraint belongs to a name
-  # rather than to a kind. A host whose platform could not be detected
+  # A feature may declare (via the "supportedPlatforms" argument of
+  # the "mkFeature" function) the platforms on which it may activate;
+  # a host qualifies when its platform is one of them. The implication
+  # graph already drops an unsupported name from every target list it
+  # assembles (see the "implicationsFor" function in the
+  # "modules/lib/_implications.nix" file); this assertion rejects a
+  # host whose resolved activation includes one anyway, such as by
+  # selecting it directly. A host whose platform could not be detected
   # (no package set) is not checked, since its operating system is
   # unknown.
   supportedPlatforms = config.dotfiles._supportedPlatforms;
-  activeNames =
-    config.dotfiles._host.activeProfiles ++ config.dotfiles._host.activeFeatures;
   unsupportedActiveNames =
     if platform == null
     then []
@@ -673,18 +610,12 @@
         in
           supported != null && !(builtins.elem platform supported)
       )
-      activeNames;
-  kindOf = name:
-    if isProfile name
-    then "profile"
-    else if isInterest name
-    then "interest"
-    else "feature";
-  describeUnsupported = name: ''the ${kindOf name} "${name}" (supports only ${lib.concatStringsSep ", " supportedPlatforms.${name}})'';
+      config.dotfiles._host.activeFeatures;
+  describeUnsupported = name: ''the feature "${name}" (supports only ${lib.concatStringsSep ", " supportedPlatforms.${name}})'';
   platformSupportAssertion = {
     assertion = unsupportedActiveNames == [];
     message = ''
-      Resolving host "${hostName}": ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveNames} may not activate on this host's platform, "${toString platform}". Remove the name(s) from "${hostOption "profiles"}" or "${hostOption "features"}" or, on a multi-user host, from the matching "dotfiles.users.<name>" list.
+      Resolving host "${hostName}": ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveNames} may not activate on this host's platform, "${toString platform}". Remove the name(s) from "${hostOption "features"}" or, on a multi-user host, from the matching "dotfiles.users.<name>" list.
     '';
   };
 in {
@@ -701,7 +632,6 @@ in {
     ++ map unknownExcludeAssertion roles
     ++ map unknownForbidAssertion roles
     ++ [
-      preconditionProfileAssertion
       preconditionUnknownAssertion
       anyOfMemberContingentAssertion
       contingentRegistrationAssertion
@@ -709,11 +639,10 @@ in {
       contingentImplicationTargetAssertion
       fabricatedInterestTargetAssertion
       interestCrossingAssertion
-      featureImpliesProfileAssertion
       mixedBodyAssertion
       userSystemOnlyFeatureAssertion
-      userSystemOnlyProfileAssertion
       platformDetectedAssertion
       platformSupportAssertion
+      forbidOverriddenAssertion
     ];
 }

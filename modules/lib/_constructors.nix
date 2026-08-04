@@ -14,7 +14,7 @@
 #             email = "seh@panix.com";
 #             fullName = "Steven E. Harris";
 #           };
-#           profiles = ["essential"];
+#           features = ["essential"];
 #         };
 #       }
 #       ./machine.nix
@@ -23,13 +23,13 @@
 #
 # without having to install any flake-parts module into the consumer
 # evaluator. All identity and behavior assignments (e.g.
-# "dotfiles.users.<name>.identity.email", "dotfiles.users.<name>.profiles",
-# "dotfiles.knownProfiles") happen inside the modules the consumer
-# passes through "modules = [...]", flowing through the target
-# evaluator's module-system merge where those fields are actually
-# read. That keeps assignments close to the evaluator that reads
-# them and avoids the flake-parts boundary crossing that the retired
-# "_flakeOptions" option used to bridge.
+# "dotfiles.users.<name>.identity.email",
+# "dotfiles.users.<name>.features", "dotfiles.knownFeatures") happen
+# inside the modules the consumer passes through "modules = [...]",
+# flowing through the target evaluator's module-system merge where
+# those fields are actually read. That keeps assignments close to the
+# evaluator that reads them and avoids the flake-parts boundary
+# crossing that the retired "_flakeOptions" option used to bridge.
 #
 # For the system constructors ("mkDarwin" and "mkNixOS"), each user
 # assigned under "dotfiles.users" is mirrored into
@@ -37,9 +37,9 @@
 # identity fields under "dotfiles.identity", and the machine's
 # "dotfiles.host" record with its selections and exclusions layered
 # with that user's own under "dotfiles.host". The mirroring assigns
-# nothing into "dotfiles.host.{profiles,features,interests}" at the
-# system level: those stay the machine's own selections, which alone
-# decide the machine's own configuration.
+# nothing into "dotfiles.host.{features,interests}" at the system
+# level: those stay the machine's own selections, which alone decide
+# the machine's own configuration.
 {
   lib,
   inputs,
@@ -85,8 +85,8 @@
   # account, spawns the user's nested home-manager evaluator, and
   # mirrors the user's identity and a layered host record into that
   # evaluator. It assigns nothing into
-  # "dotfiles.host.{profiles,features,interests}" at the system level:
-  # those stay the machine's own selections, which alone decide the
+  # "dotfiles.host.{features,interests}" at the system level: those
+  # stay the machine's own selections, which alone decide the
   # machine's own configuration.
   #
   # The nested home-manager evaluator sees:
@@ -99,48 +99,41 @@
   # user it manages, and each user adds to that.
   #
   # Layering lets an exclusion hold in three ways, applied alike to
-  # the machine's profiles, features, and interests:
-  #   1. The machine's "forbidProfiles", "forbidFeatures", and
-  #      "forbidInterests" pass through untouched—the "//" below never
-  #      names them—and prune every walk, so a user naming a forbidden
-  #      thing still does not receive it.
-  #   2. The machine's "excludeProfiles", "excludeFeatures", and
-  #      "excludeInterests" withhold a name from what it provisions,
-  #      yet a user who asks for that same name—selecting it directly,
-  #      or selecting a profile or an interest that brings it
-  #      along—drops it from the exclusions in force for that user,
-  #      opting back in.
+  # the machine's features and interests:
+  #   1. The machine's "forbidFeatures" and "forbidInterests" pass
+  #      through untouched—the "//" below never names them—and prune
+  #      every walk, so a user naming a forbidden thing still does not
+  #      receive it.
+  #   2. The machine's "excludeFeatures" and "excludeInterests"
+  #      withhold a name from what it provisions, yet a user who asks
+  #      for that same name—selecting it directly, or selecting a
+  #      bundle that brings it along—drops it from the exclusions in
+  #      force for that user, opting back in.
   #   3. A user's own exclusions always hold, for that user alone.
   multiUserPropagationModule = userDir: {config, ...}: let
     inherit (config.dotfiles) host;
     flakeLib = config.dotfiles._flakeLib;
     hasImplicationsLib =
       flakeLib != null && flakeLib ? implicationsFor && flakeLib ? resolveActivation;
-    knownByRole = {
-      profiles = config.dotfiles._knownProfiles;
-      features = config.dotfiles._knownNames;
-    };
     implications =
       if hasImplicationsLib
       then
         flakeLib.implicationsFor {
           platform = config.dotfiles._host.platform;
-          knownProfiles = config.dotfiles._knownProfiles;
+          preconditions = config.dotfiles._featurePreconditions;
           supportedPlatforms = config.dotfiles._supportedPlatforms;
           impliedEdges = config.dotfiles._impliedEdges;
+          knownFeatures = config.dotfiles._knownFeatures;
         }
       else null;
     # Everything one user's own selections entail: those selections
     # expanded along the implication graph, after that user's own
     # exclusions and everything the machine forbids prune it. The
     # machine's exclusions yield to a user who asks for a name, and
-    # selecting a profile or an interest asks for everything it brings
-    # along, so the layering below subtracts this closure rather than
-    # the bare lists the user wrote: a profile or an interest then
-    # opts back in exactly as selecting each of its members directly
-    # would. The walk's "features" role spans every registered name,
-    # so the user's interests fold in there beside the user's
-    # features, exactly as in the main walk. The preconditions table
+    # selecting a bundle asks for everything it brings along, so the
+    # layering below subtracts this closure rather than the bare lists
+    # the user wrote: a bundle then opts back in exactly as selecting
+    # each of its members directly would. The preconditions table
     # stays empty on purpose: a contingent feature cannot be selected,
     # so no selection asks for one, and an exclusion of one never
     # yields.
@@ -148,25 +141,19 @@
       if hasImplicationsLib
       then
         flakeLib.resolveActivation {
-          inherit implications knownByRole;
+          inherit implications;
+          known = config.dotfiles._knownNames;
+          platform = config.dotfiles._host.platform;
           preconditions = {};
-          selected = {
-            inherit (userCfg) profiles;
-            features = userCfg.features ++ userCfg.interests;
-          };
-          excluded = {
-            profiles = userCfg.excludeProfiles ++ host.forbidProfiles;
-            features =
-              userCfg.excludeFeatures
-              ++ userCfg.excludeInterests
-              ++ host.forbidFeatures
-              ++ host.forbidInterests;
-          };
+          supportedPlatforms = config.dotfiles._supportedPlatforms;
+          selected = userCfg.features ++ userCfg.interests;
+          excluded =
+            userCfg.excludeFeatures
+            ++ userCfg.excludeInterests
+            ++ host.forbidFeatures
+            ++ host.forbidInterests;
         }
-      else {
-        inherit (userCfg) profiles;
-        features = userCfg.features ++ userCfg.interests;
-      };
+      else userCfg.features ++ userCfg.interests;
   in {
     home-manager.users =
       lib.mapAttrs (_: userCfg: let
@@ -175,24 +162,65 @@
         imports = [userCfg.homeManagerConfig];
         dotfiles = {
           inherit (userCfg) identity;
+          # What the machine forbids, written where no module of this
+          # user's can displace it. The "host" record below carries the
+          # same two lists, but a user's own module may rewrite that
+          # record, so the walk reads both and these two hold.
+          _machineForbidFeatures = host.forbidFeatures;
+          _machineForbidInterests = host.forbidInterests;
           host =
             host
             // {
-              profiles = host.profiles ++ userCfg.profiles;
               features = host.features ++ userCfg.features;
               interests = host.interests ++ userCfg.interests;
-              excludeProfiles =
-                userCfg.excludeProfiles
-                ++ lib.subtractLists entailed.profiles host.excludeProfiles;
               excludeFeatures =
                 userCfg.excludeFeatures
-                ++ lib.subtractLists entailed.features host.excludeFeatures;
+                ++ lib.subtractLists entailed host.excludeFeatures;
               excludeInterests =
                 userCfg.excludeInterests
-                ++ lib.subtractLists entailed.features host.excludeInterests;
+                ++ lib.subtractLists entailed host.excludeInterests;
             };
         };
       })
+      config.dotfiles.users;
+
+    # What the machine forbids that a user's own evaluator no longer
+    # prunes. Only a module inside that user's home configuration can
+    # produce this, by defining "dotfiles.host" or the propagated
+    # lists again at a priority displacing what this module wrote.
+    # The test sits here, in the machine's own evaluator, because
+    # nothing a user writes reaches this far: a check inside the
+    # user's evaluator would compare two values that same user can
+    # rewrite together.
+    # Only the users this flake provisions are tested. A home-manager
+    # user some other module declares receives none of the propagated
+    # lists, so its empty copies would read as every forbidden name
+    # gone missing, and the complaint would accuse a person whose
+    # configuration this flake never wrote.
+    assertions =
+      lib.mapAttrsToList (
+        userName: _: let
+          evaluated = config.home-manager.users.${userName}.dotfiles;
+          lost =
+            lib.subtractLists
+            (evaluated.host.forbidFeatures ++ evaluated._machineForbidFeatures)
+            host.forbidFeatures
+            ++ lib.subtractLists
+            (evaluated.host.forbidInterests ++ evaluated._machineForbidInterests)
+            host.forbidInterests;
+        in {
+          assertion = lost == [];
+          message = let
+            label =
+              if host.name == null
+              then "an unnamed host"
+              else ''host "${host.name}"'';
+            names = lib.concatMapStringsSep ", " (n: ''"${n}"'') lost;
+          in ''
+            Resolving ${label}: the configuration of the user "${userName}" removed ${names} from what this machine forbids. The "dotfiles.host.forbidFeatures" and "dotfiles.host.forbidInterests" lists are the machine's, and no user may set them aside. Remove whatever line in that user's own configuration writes them. To decline a name the machine merely excludes, select it instead.
+          '';
+        }
+      )
       config.dotfiles.users;
 
     users.users =

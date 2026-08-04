@@ -52,20 +52,20 @@ in {
     inherit (config.dotfiles) host;
     userNames = builtins.attrNames config.dotfiles.users;
     # Every list through which this machine selects for its own sake.
-    # A system-class body follows these alone, so all three left empty
-    # means the machine applies no system-class feature or profile at
-    # all.
-    machineSelections = host.profiles ++ host.features ++ host.interests;
+    # A system-class body follows these alone, so both left empty
+    # means the machine applies no system-class feature at all.
+    machineSelections = host.features ++ host.interests;
   in {
     # A machine that manages users while selecting nothing of its own
-    # withholds every system-class feature and profile, since a system
-    # body follows the machine's own selections alone. A consumer who
-    # writes all the selections under "dotfiles.users" arrives there
-    # without noticing, so this warning states it. Such a machine is
-    # legitimate—one that exists only to provision its users'
-    # homes—which is why this is a warning rather than an error.
+    # withholds every system-class feature, since a system body
+    # follows the machine's own selections alone. A consumer who
+    # writes all the selections under the "dotfiles.users" registry
+    # arrives there without noticing, so this warning states it. Such
+    # a machine is legitimate—one that exists only to provision its
+    # users' homes—which is why this is a warning rather than an
+    # error.
     warnings = lib.optional (userNames != [] && machineSelections == []) ''
-      Resolving host "${toString host.name}": "dotfiles.users" lists ${lib.concatMapStringsSep ", " (n: "\"${n}\"") userNames}, but this machine selects nothing of its own, so it applies no system-class profile or feature. A machine's system configuration follows only "dotfiles.host.profiles", "dotfiles.host.features", and "dotfiles.host.interests", never its users' selections. If you meant to configure the machine, add its selections to those lists. If this machine exists only to provision its users' homes, you can ignore this warning.
+      Resolving host "${toString host.name}": "dotfiles.users" lists ${lib.concatMapStringsSep ", " (n: "\"${n}\"") userNames}, but this machine selects nothing of its own, so it applies no system-class feature. A machine's system configuration follows only "dotfiles.host.features" and "dotfiles.host.interests", never its users' selections. If you meant to configure the machine, add its selections to those lists. If this machine exists only to provision its users' homes, you can ignore this warning.
     '';
   };
 }

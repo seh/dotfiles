@@ -46,14 +46,12 @@ in {
             # are layered into every managed user's home, so the
             # machine provisions each user it manages. Select here
             # what every account on this machine should have: the
-            # "essential" profile implies the features that configure
+            # "essential" bundle implies the features that configure
             # the machine itself.
             host = {
               name = hostName;
-              profiles = [
-                "essential"
-              ];
               features = [
+                "essential"
                 # "compat/bazel-fhs"
               ];
             };
@@ -61,20 +59,17 @@ in {
             # user alone; no user's selection configures the machine.
             # List here what this person works with, beyond the
             # baseline above. See:
-            # https://github.com/seh/dotfiles/tree/main/modules/home/profiles
             # https://github.com/seh/dotfiles/tree/main/modules/home/features
             users.${username} = {
               inherit identity;
-              profiles = [
-                "development"
-              ];
-              # Withhold a member of a selection made above,
-              # for this user alone:
-              # excludeProfiles = ["web"];
               features = [
+                "development"
                 # "kubernetes"
                 # "cloud/aws"
               ];
+              # Withhold a member of a selection made above,
+              # for this user alone:
+              # excludeFeatures = ["web"];
               interests = [
                 # "lang/rust"
               ];

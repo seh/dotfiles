@@ -38,30 +38,27 @@ in {
             home.stateVersion = "26.11";
 
             dotfiles = {
-              # Activate feature modules by listing profiles and
-              # features that apply to this user. The "all" profile
-              # expands to every other profile this flake advertises,
-              # computed from the "knownProfiles" registry. To opt out
-              # of specific members of the "all" profile (such as the
-              # Firefox/Safari customization in "web"), list them
-              # under "excludeProfiles". Add specific features such as
-              # "kubernetes" or "cloud/aws" under "features", and
+              # Activate feature modules by listing the features that
+              # apply to this user, from the coarsest bundle to the
+              # finest single concern. The "all" feature brings along
+              # every bundle this flake advertises. To opt out of
+              # specific members of "all" (such as the Firefox/Safari
+              # customization in "web"), list them under
+              # "excludeFeatures". Add narrower features such as
+              # "kubernetes" or "cloud/aws" to the same list, and
               # interests such as "lang/rust"—the languages in which
               # this user works—under "interests". See:
-              # https://github.com/seh/dotfiles/tree/main/modules/home/profiles
               # https://github.com/seh/dotfiles/tree/main/modules/home/features
               host = {
                 name = hostName;
-                profiles = [
-                  "all"
-                ];
-                # Opt out of specific members of the "all" profile.
-                # For example, to skip Firefox/Safari customization:
-                # excludeProfiles = ["web"];
                 features = [
+                  "all"
                   # "kubernetes"
                   # "cloud/aws"
                 ];
+                # Opt out of specific members of the "all" feature.
+                # For example, to skip Firefox/Safari customization:
+                # excludeFeatures = ["web"];
                 interests = [
                   # "lang/rust"
                 ];

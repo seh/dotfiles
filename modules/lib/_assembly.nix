@@ -6,8 +6,8 @@
 #
 #   - "../../flake.nix", which threads the result through
 #     "mkFlake"'s "specialArgs" as the "flakeLib" module argument
-#     so that feature and profile files in this flake's tree can
-#     take "{flakeLib, ...}" without triggering the "_module.args"
+#     so that the feature files in this flake's tree can take
+#     "{flakeLib, ...}" without triggering the "_module.args"
 #     recursion that occurs when such arguments are computed
 #     inside a "config" block.
 #

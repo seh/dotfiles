@@ -3,7 +3,7 @@
 # "/etc/zshrc", lists zsh among "/etc/shells", and a login shell
 # loads the system environment.
 #
-# The machine alone nominates this feature. The "essential" profile
+# The machine alone nominates this feature. The "essential" feature
 # implies it, and only the machine's own selections decide a nixOS
 # body, so a user who selects "essential" does not bring it along.
 # The "shell/zsh" feature configures a user's own zsh and stays

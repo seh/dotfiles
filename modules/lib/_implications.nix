@@ -1,77 +1,84 @@
 {lib}: let
   # Assemble the per-host implication graph from the co-located
-  # "implies" declarations that each profile, feature, and interest
-  # carries. An implied edge is a property of its source, so it
-  # lives in the source's own file; the "impliedEdges" argument
-  # carries those declarations, keyed by source name, and this
-  # function classifies every target by role to produce the
-  # role-keyed graph that the "expandClosure" function consumes.
+  # "implies" declarations that each feature and interest carries. An
+  # implied edge is a property of its source, so it lives in the
+  # source's own file; the "impliedEdges" argument carries those
+  # declarations, keyed by source name, and this function turns them
+  # into the graph that the "expandClosure" function consumes: a map
+  # from each source name to the names it brings along.
   #
-  # The graph is role-keyed ("profiles" / "features") so that a
-  # future role (e.g. "bundles") becomes a purely additive change:
-  # add a new top-level key and the "expandClosure" function walks it
-  # unchanged, since its walk iterates over whatever roles the graph
-  # advertises.
+  # Features and interests share this one graph. A feature carries
+  # configuration and an interest is a payload-free want, yet both
+  # enter one activation walk, so an edge here targets a name without
+  # regard to which kind it denotes. The rules that do turn on
+  # kind—that a feature may not imply an interest, nor an interest a
+  # feature—are the business of the assertions in the
+  # "modules/_assertions.nix" file, which judge the raw edge registry.
   #
   # This function runs per-host so that the per-name platform
   # filtering described below can vary with the host's platform.
   #
-  # This function filters every target list, in every role, against
-  # the target's declared "supportedPlatforms" (see the "mkFeature"
-  # and "mkProfile" functions): a name the host's platform does not
-  # support never arrives through the graph, whether via the "all"
-  # entry or via a narrower source such as "desktop". A name with no
-  # declaration is available everywhere. The assertion in
-  # "modules/_assertions.nix" rejects a host whose activation includes
-  # an unsupported name anyway (e.g. by selecting it directly).
+  # This function filters every target list against the target's
+  # declared "supportedPlatforms" list (see the "mkFeature" function):
+  # a name the host's platform does not support never arrives through
+  # the graph, whether via the "all" feature or via a narrower source
+  # such as "desktop". A name with no declaration is available
+  # everywhere. The assertion in the "modules/_assertions.nix" file
+  # rejects a host whose activation includes an unsupported name
+  # anyway (e.g. by selecting it directly).
   #
   # This function includes a record-form edge ("{ name = "<target>";
   # supportedPlatforms = [<systems>]; }") only when the host's
   # platform is one of the listed systems; this is how a source brings
   # along a target on some platforms and not others.
   #
-  # This function computes the "all" entry's targets from
-  # "knownProfiles" rather than reading a declared edge, since "all"
-  # is not a co-located edge: introducing a new profile folds it into
-  # "all" automatically, and hosts that want to skip one of the
-  # profiles it brings along list that profile under
-  # "excludeProfiles".
+  # This function computes the "all" feature's targets rather than
+  # reading a declared edge: "all" targets every non-contingent
+  # feature that no other feature implies. Such a feature therefore
+  # folds into "all" the moment it is registered, while a feature some
+  # bundle already implies stays out, arriving through that bundle
+  # instead. A contingent feature stays out because its preconditions
+  # are its only way in, and an interest stays out because a feature's
+  # edges may target only features—so the computation upholds on its
+  # own the two rules that the assertions in "modules/_assertions.nix"
+  # police for declared edges, which never see these. Hosts decline
+  # what "all" brings along by naming it under "excludeFeatures":
+  # declining is an exclusion, not an absence.
   #
-  # The graph across all roles MUST form a DAG; the "expandClosure"
-  # function rejects cycles at runtime.
+  # The graph MUST form a DAG. This function rejects a name that
+  # implies itself, and the "expandClosure" function rejects every
+  # longer cycle at runtime.
   implicationsFor = {
-    knownProfiles,
     # Nixpkgs system string (e.g. "aarch64-darwin"), or null when
     # the host record does not carry one.
     platform ? null,
-    # Per-name platform support, keyed by profile or feature name;
-    # each value lists the platforms on which that name may activate.
-    # A name absent from this record may activate anywhere; a name
-    # present in it activates only where the host's platform is one of
-    # the listed values, so a null platform errs toward omitting every
+    # Per-name platform support, keyed by feature name; each value
+    # lists the platforms on which that name may activate. A name
+    # absent from this record may activate anywhere; a name present in
+    # it activates only where the host's platform is one of the listed
+    # values, so a null platform errs toward omitting every
     # platform-constrained name.
     supportedPlatforms ? {},
     # Co-located implied edges, keyed by source name; each value is
     # the source's "implies" list, whose entries are bare target
     # names or record-form platform-conditional edges. This function
-    # assembles them into the role-keyed graph below.
+    # assembles them into the graph below.
     impliedEdges ? {},
+    # Every registered feature name, interests excluded. The full set
+    # the "all" feature draws its computed targets from, so a name
+    # missing here never arrives at a host through "all".
+    knownFeatures ? [],
+    # Per-feature preconditions, keyed by contingent feature name.
+    # Read here only to recognize which names are contingent, since
+    # the "all" feature may not target one; the activation fixpoint in
+    # the "expandActivation" function reads the entries themselves.
+    preconditions ? {},
     ...
   }: let
     availableOnHost = name: let
       supported = supportedPlatforms.${name} or null;
     in
       supported == null || (platform != null && builtins.elem platform supported);
-    # Filter every target list an entry carries, whatever role holds
-    # it, by each target's own platform support. The entry's keys are
-    # role names and its values are name lists, so the same walk
-    # covers a role added later.
-    filterEntryTargets = entry:
-      lib.mapAttrs (_targetRole: names: builtins.filter availableOnHost names) entry;
-    # A name among the known profiles denotes a profile; every other
-    # name denotes a feature. The same test classifies both a source
-    # (which role-bucket it declares under) and each of its targets.
-    isProfile = name: builtins.elem name knownProfiles;
     # An entry applies when it is a bare name (an unconditional edge)
     # or a record whose "supportedPlatforms" list contains the host's
     # platform.
@@ -82,231 +89,128 @@
       if builtins.isString entry
       then entry
       else entry.name;
-    # Partition one source's applicable targets by role. A target
-    # among the known profiles is a profile edge; every other target
-    # is a feature edge—an unknown target falls here so that
-    # "expandClosure" reports it as a dangling feature edge. A feature
-    # naming a profile also falls under "profiles"; the feature-to-
-    # profile rule is judged not here but by an assertion in
-    # "modules/_assertions.nix" against the raw edge registry, so such
-    # an edge is inert in this graph. The "profiles" key appears only
-    # when the source names a profile target, so a feature source that
-    # names none carries no "profiles" field.
-    targetsFor = entries: let
-      names = map edgeName (builtins.filter edgeApplies entries);
-      profileTargets = lib.unique (builtins.filter isProfile names);
-      featureTargets = lib.unique (builtins.filter (n: !(isProfile n)) names);
-    in
-      {features = featureTargets;}
-      // lib.optionalAttrs (profileTargets != []) {profiles = profileTargets;};
-    # Group the sources under the role of the source itself, so that
-    # a profile's edges sit under "profiles" and a feature's under
-    # "features".
-    edgesForRole = wantProfiles:
-      lib.listToAttrs (
-        map (source: {
-          name = source;
-          value = targetsFor impliedEdges.${source};
-        })
-        (builtins.filter (source: isProfile source == wantProfiles) (builtins.attrNames impliedEdges))
+    # One source's applicable targets, each of them supported on this
+    # host. An unknown target falls here too, so that the
+    # "expandClosure" function reports it as a dangling edge.
+    targetsFor = entries:
+      builtins.filter availableOnHost (
+        lib.unique (map edgeName (builtins.filter edgeApplies entries))
       );
-    # The "all" profile brings along every other profile; this
-    # function computes its targets rather than reading a declared
-    # edge (see this function's header).
-    allEntry = {
-      profiles = lib.subtractLists ["all"] knownProfiles;
-      features = [];
-    };
-    profileEntries = edgesForRole true // {all = allEntry;};
-  in {
-    profiles = lib.mapAttrs (_name: filterEntryTargets) profileEntries;
-    features = lib.mapAttrs (_name: filterEntryTargets) (edgesForRole false);
-  };
+    # The name of the aggregate whose targets this function computes.
+    # Bound once so that the two tests below—excluding it from its own
+    # targets, and excluding its own declarations from the "implied
+    # elsewhere" reading—name the same feature.
+    aggregateName = "all";
+    # Every name some source other than the aggregate brings along,
+    # read from the raw declarations before platform filtering.
+    # Interest sources join the reading: an interest may legally imply
+    # only other interests, so counting them changes nothing for a
+    # legal graph while keeping a name that some illegal edge targets
+    # out of the aggregate. Membership is thus the same on every
+    # platform: a target arriving only through a record-form edge for
+    # another platform still counts as brought along, so a host's
+    # platform decides which of the aggregate's targets survive, never
+    # which names it holds.
+    impliedElsewhere = lib.unique (
+      lib.concatMap (source: map edgeName impliedEdges.${source}) (
+        builtins.filter (source: source != aggregateName) (builtins.attrNames impliedEdges)
+      )
+    );
+    # The aggregate's computed targets, in the registration order of
+    # the "knownFeatures" list. Any "implies" list the aggregate
+    # itself declares is discarded by the override below, since this
+    # computation is the sole authority on what the "all" feature
+    # brings along.
+    aggregateTargets = let
+      eligible = name:
+        (name != aggregateName)
+        && !(preconditions ? ${name})
+        && !(builtins.elem name impliedElsewhere);
+    in
+      builtins.filter eligible knownFeatures;
+    # A name that implies itself. The "lib.lists.toposort" call in the
+    # "expandClosure" function cannot see this one: it asks whether one
+    # name precedes another, and never asks that of a name against
+    # itself. This test reads the raw declarations rather than the
+    # graph below for the reason the dangling-edge comment gives—a
+    # name implying itself is illegal on every platform, so an edge
+    # hidden behind a "supportedPlatforms" record for a platform this
+    # host does not run must not escape it. The kind stays out of the
+    # sentence because this function holds no interest registry, and
+    # an interest may imply itself just as a feature may.
+    selfImplying =
+      builtins.filter (
+        source: builtins.elem source (map edgeName impliedEdges.${source})
+      )
+      (builtins.attrNames impliedEdges);
+    _selfEdgeCheck =
+      if selfImplying != []
+      then
+        throw (
+          lib.concatMapStringsSep "\n" (
+            name: "The name \"${name}\" implies itself, so the implication graph is not a DAG."
+          )
+          selfImplying
+        )
+      else null;
+  in
+    lib.seq _selfEdgeCheck (
+      lib.mapAttrs (_source: targetsFor) (impliedEdges // {${aggregateName} = aggregateTargets;})
+    );
 
-  # Role-parametric transitive closure over the typed implication
-  # graph. Takes the record produced by the "implicationsFor"
-  # function, a "knownByRole" attrset naming the identifiers each
-  # role advertises (keyed by role name, value is a list of known
-  # names), and the selected names "{ profiles = [...]; features =
-  # [...]; }" (or any other roles the graph advertises). Returns a
-  # record of the same form with each list fully expanded along
-  # the implied edges.
-  #
-  # The implementation iterates over "builtins.attrNames
-  # implications" rather than hard-coding role names, so adding a
-  # new role is a pure data-level change.
+  # Transitive closure over the implication graph. Takes the graph the
+  # "implicationsFor" function produces, the list of every name the
+  # flake advertises, and the list of selected names. Returns those
+  # selected names expanded along the implied edges, in the order the
+  # walk visits them.
   #
   # One static check runs before the transitive-closure walk: every
-  # edge target named in "implications.<role>.<source>" under a
-  # "<targetRole>" key must appear in "knownByRole.<targetRole>".
-  # Dangling edges (typically typos) are rejected with a message that
-  # names the edge.
+  # edge target listed under the "implications.<source>" entry must
+  # appear among the known names. Dangling edges (typically typos) are
+  # rejected with a message that specifies the edge.
   #
   # This function does not judge kind legality — that a feature may
-  # not imply a profile, most relevantly. Kind-crossing is
-  # platform-independent, so the assertions in
-  # "modules/_assertions.nix" judge it against the unfiltered raw edge
-  # registry; judging it against this per-host, platform-filtered
+  # not imply an interest, most relevantly. Kind-crossing is
+  # platform-independent, so the assertions in the
+  # "modules/_assertions.nix" file judge it against the unfiltered raw
+  # edge registry; judging it against this per-host, platform-filtered
   # graph would let an edge hidden behind a "supportedPlatforms"
-  # record for another platform escape. A feature-source "profiles"
-  # edge is therefore inert here rather than an error.
-  expandClosure = implications: knownByRole: selected: let
-    roles = builtins.attrNames implications;
-    # "Profiles" from "profiles", "Features" from "features", etc.
-    # Used only in dangling-edge error messages so that the option
-    # name "flake.known<TargetRole>" reads naturally.
-    capitalize = s: let
-      head = builtins.substring 0 1 s;
-      tail = builtins.substring 1 (builtins.stringLength s) s;
-    in
-      lib.toUpper head + tail;
+  # record for another platform escape. A kind-crossing edge is
+  # therefore inert here rather than an error.
+  expandClosure = implications: known: selected: let
     # Walk every declared edge and collect errors. Each error is a
     # pre-formatted string; the first, if any, is thrown below.
-    edgeErrors =
-      lib.concatMap (
-        role: let
-          edgeRecord = implications.${role};
-          sources = builtins.attrNames edgeRecord;
-        in
-          lib.concatMap (
-            source: let
-              targetsByRole = edgeRecord.${source};
-              targetRoles = builtins.attrNames targetsByRole;
-              danglingErrors =
-                lib.concatMap (
-                  targetRole: let
-                    known = knownByRole.${targetRole} or [];
-                    targets = targetsByRole.${targetRole};
-                    missing = lib.filter (t: !(builtins.elem t known)) targets;
-                  in
-                    map (t: ''
-                      implicationsFor: dangling edge ${role}.${source} -> ${targetRole}.${t} (no such ${targetRole} is known via "flake.known${capitalize targetRole}")
-                    '')
-                    missing
-                )
-                targetRoles;
-            in
-              danglingErrors
-          )
-          sources
-      )
-      roles;
+    edgeErrors = lib.concatMap (
+      source:
+        map (
+          target: ''
+            implicationsFor: dangling edge ${source} -> ${target} (no such feature or interest is known via the "flake.knownFeatures" and "flake.knownInterests" options)
+          ''
+        ) (lib.filter (target: !(builtins.elem target known)) implications.${source})
+    ) (builtins.attrNames implications);
     _edgeCheck =
       if edgeErrors != []
       then throw (lib.head edgeErrors)
       else null;
-    # Map each role to a single-character key prefix used inside
-    # "builtins.genericClosure". Two roles must not share a prefix.
-    rolePrefix = role: builtins.substring 0 1 role;
-    prefixes = map rolePrefix roles;
-    _prefixCollision =
-      if lib.length (lib.unique prefixes) != lib.length prefixes
-      then
-        throw ''
-          Implication role names must have distinct first characters;
-          got: ${lib.concatStringsSep ", " roles}.
-        ''
-      else null;
-    mkKey = role: name: "${rolePrefix role}:${name}";
-    # Parse a "<prefix>:<name>" key back into {role, name} by
-    # matching the prefix to one of the known roles.
-    roleByPrefix = lib.listToAttrs (
-      map (r: {
-        name = rolePrefix r;
-        value = r;
-      })
-      roles
+    edgesFrom = name: implications.${name} or [];
+    # Toposort over every name the graph mentions, as a source or as a
+    # target, so that a cycle anywhere in it is rejected.
+    mentionedNames = lib.unique (
+      builtins.attrNames implications ++ lib.concatLists (builtins.attrValues implications)
     );
-    parseKey = key: let
-      prefix = builtins.substring 0 1 key;
-      rest = builtins.substring 2 (builtins.stringLength key) key;
-    in {
-      role = roleByPrefix.${prefix};
-      name = rest;
-    };
-    # Toposort over every (role, name) pair the table mentions, so
-    # that cycles anywhere in the graph are rejected.
-    mentionedPairs =
-      lib.concatMap (
-        role: let
-          edges = implications.${role};
-          declaredHere = lib.attrNames edges;
-          reachedHere = lib.concatMap (
-            targets:
-              lib.concatMap (
-                targetRole: let
-                  names = targets.${targetRole} or [];
-                in
-                  map (n: {
-                    role = targetRole;
-                    name = n;
-                  })
-                  names
-              )
-              roles
-          ) (lib.attrValues edges);
-        in
-          map (n: {
-            inherit role;
-            name = n;
-          })
-          declaredHere
-          ++ reachedHere
-      )
-      roles;
-    mentionedKeys = lib.unique (
-      map (
-        {
-          role,
-          name,
-        }:
-          mkKey role name
-      )
-      mentionedPairs
-    );
-    edgesFrom = key: let
-      p = parseKey key;
-      targets = implications.${p.role}.${p.name} or {};
-    in
-      lib.concatMap (targetRole: map (n: mkKey targetRole n) (targets.${targetRole} or [])) roles;
-    sorted = lib.lists.toposort (a: b: builtins.elem b (edgesFrom a)) mentionedKeys;
-    # Build the start set by mapping each role's selected names
-    # through "mkKey". Roles missing from "selected" default to [].
-    startSet = lib.concatMap (role: map (n: {key = mkKey role n;}) (selected.${role} or [])) roles;
+    sorted = lib.lists.toposort (a: b: builtins.elem b (edgesFrom a)) mentionedNames;
     closure = builtins.genericClosure {
-      inherit startSet;
-      operator = {key, ...}: map (k: {key = k;}) (edgesFrom key);
+      startSet = map (name: {key = name;}) selected;
+      operator = {key, ...}: map (name: {key = name;}) (edgesFrom key);
     };
-    # Project the closure back into a per-role record of name lists.
-    emptyByRole = lib.listToAttrs (
-      map (r: {
-        name = r;
-        value = [];
-      })
-      roles
-    );
-    grouped =
-      lib.foldl' (
-        acc: entry: let
-          p = parseKey entry.key;
-        in
-          acc
-          // {
-            ${p.role} = (acc.${p.role} or []) ++ [p.name];
-          }
-      )
-      emptyByRole
-      closure;
   in
     if sorted ? cycle
     then
-      lib.seq _prefixCollision (
-        lib.seq _edgeCheck (throw ''
-          The implication graph contains a cycle involving: ${lib.concatStringsSep ", " sorted.loops}.
-          The implication graph must form a DAG across all roles.
-        '')
-      )
-    else lib.seq _prefixCollision (lib.seq _edgeCheck grouped);
+      lib.seq _edgeCheck (throw ''
+        The implication graph contains a cycle involving: ${lib.concatStringsSep ", " sorted.loops}.
+        The implication graph must form a DAG.
+      '')
+    else lib.seq _edgeCheck (map (entry: entry.key) closure);
 
   # Format a list of names as a quoted, comma-separated English
   # enumeration with a serial comma: one name renders as "a", two as
@@ -369,7 +273,7 @@
   # a precondition alone.
   expandActivation = {
     implications,
-    knownByRole,
+    known,
     preconditions,
     excludeFeatures ? [],
     platform ? null,
@@ -434,11 +338,8 @@
     # Contingent features that appear as sources of implied edges;
     # see the mirror-rule paragraph in this function's header
     # comment.
-    contingentSources = builtins.filter (name: preconditions ? ${name}) (
-      lib.unique (
-        lib.concatMap (role: builtins.attrNames implications.${role}) (builtins.attrNames implications)
-      )
-    );
+    contingentSources =
+      builtins.filter (name: preconditions ? ${name}) (builtins.attrNames implications);
     _contingentSourceCheck =
       if contingentSources != []
       then throw ''expandActivation: the implication graph gives the contingent feature(s) ${enumerateNames contingentSources} outgoing edges, but a contingent feature activates automatically exactly when all of its preconditions are met and may not activate other features. Express each relationship as a precondition instead.''
@@ -472,23 +373,19 @@
       then builtins.elem entry active
       else lib.any (m: builtins.elem m active) entry.anyOf;
     step = current: let
-      expanded = expandClosure implications knownByRole current;
+      expanded = expandClosure implications known current;
       newlyActive = builtins.attrNames (
         lib.filterAttrs (
           name: needed:
-            !(builtins.elem name expanded.features)
-            && lib.all (entrySatisfied expanded.features) needed
+            !(builtins.elem name expanded)
+            && lib.all (entrySatisfied expanded) needed
         )
         activatable
       );
     in
       if newlyActive == []
       then expanded
-      else
-        step (expanded
-          // {
-            features = expanded.features ++ newlyActive;
-          });
+      else step (expanded ++ newlyActive);
   in
     lib.seq _cycleCheck (lib.seq _contingentSourceCheck (step selected));
 
@@ -499,50 +396,36 @@
   # the same form, suitable for passing to the "expandClosure"
   # function.
   #
-  # Excluding a profile (or feature) is therefore equivalent to
-  # deleting that vertex from the DAG: anything reachable only
-  # through the excluded vertex falls out of the transitive closure
-  # automatically, without the consumer having to enumerate the
-  # downstream vertices in "excludeFeatures".
+  # Excluding a feature is therefore equivalent to deleting that
+  # vertex from the DAG: anything reachable only through the excluded
+  # vertex falls out of the transitive closure automatically, without
+  # the consumer having to enumerate the downstream vertices in the
+  # "excludeFeatures" list.
   pruneImplications = implications: excluded: let
-    isExcluded = role: name: builtins.elem name (excluded.${role} or []);
-    withoutExcludedSources =
-      lib.mapAttrs (
-        role: edges: lib.filterAttrs (name: _: !(isExcluded role name)) edges
-      )
-      implications;
-    pruneTargets = targetsByRole:
-      lib.mapAttrs (
-        targetRole: targetNames: lib.filter (n: !(isExcluded targetRole n)) targetNames
-      )
-      targetsByRole;
+    isExcluded = name: builtins.elem name excluded;
   in
-    lib.mapAttrs (_role: edges: lib.mapAttrs (_source: pruneTargets) edges) withoutExcludedSources;
+    lib.mapAttrs (_source: targets: lib.filter (target: !(isExcluded target)) targets) (
+      lib.filterAttrs (source: _: !(isExcluded source)) implications
+    );
 
   # Resolve a host's activation in one step: delete the excluded
   # names from the implication graph (see the "pruneImplications"
   # function above), drop them from the selected names, and run the
-  # activation fixpoint on what remains. "excluded" follows the
-  # exclusion-record form "{ profiles = [...]; features = [...];
-  # }"; a role it omits keeps all of its names.
+  # activation fixpoint on what remains.
   resolveActivation = {
     implications,
-    knownByRole,
+    known,
     preconditions,
     selected,
-    excluded ? {},
+    excluded ? [],
     platform ? null,
     supportedPlatforms ? {},
-  }: let
-    remainingSelected =
-      lib.mapAttrs (role: names: lib.subtractLists (excluded.${role} or []) names)
-      selected;
-  in
+  }:
     expandActivation {
       implications = pruneImplications implications excluded;
-      inherit knownByRole platform preconditions supportedPlatforms;
-      excludeFeatures = excluded.features or [];
-      selected = remainingSelected;
+      inherit known platform preconditions supportedPlatforms;
+      excludeFeatures = excluded;
+      selected = lib.subtractLists excluded selected;
     };
 in {
   inherit
