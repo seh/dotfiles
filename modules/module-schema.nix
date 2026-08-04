@@ -148,10 +148,9 @@ in {
         the "profileModules" registry rather than recorded by the
         "mkProfile" function, so the record stays faithful to the
         bodies actually present; a profile registered by name alone,
-        with no bodies, is absent. A profile may span both sides of
-        the home/system divide—the "essential" profile carries a home
-        body and a nixOS body—so this record diagnoses a user
-        selecting a profile that configures the machine alone.
+        with no bodies, is absent. A profile may configure the machine
+        alone—the "apps" profile carries a nix-darwin body and nothing
+        else—so this record diagnoses a user selecting such a profile.
         Populates "dotfiles._profileClasses" in each class aggregator.
       '';
     };
