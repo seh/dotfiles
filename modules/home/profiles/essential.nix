@@ -2,15 +2,18 @@
 flakeLib.mkProfile "essential" {
   # The essential profile brings along the minimal profile and the
   # baseline features every managed home wants, plus the machine-side
-  # integration a Mac's login shell depends on. The implication graph
-  # is class-agnostic, so a machine that selects this profile
-  # activates that integration and applies its nix-darwin body.
+  # features a managed machine wants: its login shell's integration
+  # and its SSH daemon. The implication graph is class-agnostic, so a
+  # machine that selects this profile activates those machine-side
+  # features and applies their system bodies, while a user who selects
+  # it receives the home bodies alone.
   implies = [
     "minimal"
     "dev/difftastic"
     "editor/emacs"
     "gnupg"
     "kitty"
+    "net/ssh-daemon"
     "nh"
     "nix"
     "shell/bash"
