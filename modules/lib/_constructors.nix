@@ -126,7 +126,7 @@
         flakeLib.implicationsFor {
           platform = config.dotfiles._host.platform;
           knownProfiles = config.dotfiles._knownProfiles;
-          profileSupportedPlatforms = config.dotfiles._profileSupportedPlatforms;
+          supportedPlatforms = config.dotfiles._supportedPlatforms;
           impliedEdges = config.dotfiles._impliedEdges;
         }
       else null;

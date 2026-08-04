@@ -13,16 +13,17 @@
   # unchanged, since its walk iterates over whatever roles the graph
   # advertises.
   #
-  # This function runs per-host so that the per-profile platform
+  # This function runs per-host so that the per-name platform
   # filtering described below can vary with the host's platform.
   #
-  # This function filters every profile entry's "profiles" list
-  # against the profiles' declared "supportedPlatforms" (see the
-  # "mkProfile" function): a profile the host's platform does not
+  # This function filters every target list, in every role, against
+  # the target's declared "supportedPlatforms" (see the "mkFeature"
+  # and "mkProfile" functions): a name the host's platform does not
   # support never arrives through the graph, whether via the "all"
-  # entry or via a narrower one such as "desktop". The assertion in
-  # "modules/_assertions.nix" rejects a host that would activate
-  # such a profile anyway (e.g. by selecting it directly).
+  # entry or via a narrower source such as "desktop". A name with no
+  # declaration is available everywhere. The assertion in
+  # "modules/_assertions.nix" rejects a host whose activation includes
+  # an unsupported name anyway (e.g. by selecting it directly).
   #
   # This function includes a record-form edge ("{ name = "<target>";
   # supportedPlatforms = [<systems>]; }") only when the host's
@@ -43,13 +44,13 @@
     # Nixpkgs system string (e.g. "aarch64-darwin"), or null when
     # the host record does not carry one.
     platform ? null,
-    # Per-profile platform support, keyed by profile name; each
-    # value lists the platforms on which that profile may activate.
-    # A profile absent from this record may activate anywhere; a
-    # profile present in it requires the host's platform to be one
-    # of the listed values, so a null platform errs toward omitting
-    # every platform-constrained profile.
-    profileSupportedPlatforms ? {},
+    # Per-name platform support, keyed by profile or feature name;
+    # each value lists the platforms on which that name may activate.
+    # A name absent from this record may activate anywhere; a name
+    # present in it activates only where the host's platform is one of
+    # the listed values, so a null platform errs toward omitting every
+    # platform-constrained name.
+    supportedPlatforms ? {},
     # Co-located implied edges, keyed by source name; each value is
     # the source's "implies" list, whose entries are bare target
     # names or record-form platform-conditional edges. This function
@@ -58,14 +59,15 @@
     ...
   }: let
     availableOnHost = name: let
-      supported = profileSupportedPlatforms.${name} or null;
+      supported = supportedPlatforms.${name} or null;
     in
       supported == null || (platform != null && builtins.elem platform supported);
-    filterEntryProfiles = entry:
-      entry
-      // lib.optionalAttrs (entry ? profiles) {
-        profiles = builtins.filter availableOnHost entry.profiles;
-      };
+    # Filter every target list an entry carries, whatever role holds
+    # it, by each target's own platform support. The entry's keys are
+    # role names and its values are name lists, so the same walk
+    # covers a role added later.
+    filterEntryTargets = entry:
+      lib.mapAttrs (_targetRole: names: builtins.filter availableOnHost names) entry;
     # A name among the known profiles denotes a profile; every other
     # name denotes a feature. The same test classifies both a source
     # (which role-bucket it declares under) and each of its targets.
@@ -117,8 +119,8 @@
     };
     profileEntries = edgesForRole true // {all = allEntry;};
   in {
-    profiles = lib.mapAttrs (_name: filterEntryProfiles) profileEntries;
-    features = edgesForRole false;
+    profiles = lib.mapAttrs (_name: filterEntryTargets) profileEntries;
+    features = lib.mapAttrs (_name: filterEntryTargets) (edgesForRole false);
   };
 
   # Role-parametric transitive closure over the typed implication
@@ -370,6 +372,8 @@
     knownByRole,
     preconditions,
     excludeFeatures ? [],
+    platform ? null,
+    supportedPlatforms ? {},
     selected,
   }: let
     contingentNames = builtins.attrNames preconditions;
@@ -439,8 +443,25 @@
       if contingentSources != []
       then throw ''expandActivation: the implication graph gives the contingent feature(s) ${enumerateNames contingentSources} outgoing edges, but a contingent feature activates automatically exactly when all of its preconditions are met and may not activate other features. Express each relationship as a precondition instead.''
       else null;
+    # A contingent feature activates only where the host's platform
+    # supports it. Support is tested here as well as on implied edges,
+    # because a contingent feature is never the target of one: its
+    # preconditions are its whole way into effect, so a platform
+    # declaration it makes would otherwise go unread and the feature
+    # would activate where it cannot work. A name declaring no
+    # platforms activates anywhere. A name that declares them needs
+    # the host's platform among them, so an undetected platform
+    # withholds every such name, matching how the "implicationsFor"
+    # function treats an edge target.
+    supportedHere = name: let
+      supported = supportedPlatforms.${name} or null;
+    in
+      supported == null || (platform != null && builtins.elem platform supported);
     activatable =
-      lib.filterAttrs (name: _: !(builtins.elem name excludeFeatures)) preconditions;
+      lib.filterAttrs (
+        name: _: !(builtins.elem name excludeFeatures) && supportedHere name
+      )
+      preconditions;
     # One precondition entry against the currently-active names: a
     # bare name is satisfied when it is active; a group is satisfied
     # when at least one member is active. A feature activates when
@@ -510,6 +531,8 @@
     preconditions,
     selected,
     excluded ? {},
+    platform ? null,
+    supportedPlatforms ? {},
   }: let
     remainingSelected =
       lib.mapAttrs (role: names: lib.subtractLists (excluded.${role} or []) names)
@@ -517,7 +540,7 @@
   in
     expandActivation {
       implications = pruneImplications implications excluded;
-      inherit knownByRole preconditions;
+      inherit knownByRole platform preconditions supportedPlatforms;
       excludeFeatures = excluded.features or [];
       selected = remainingSelected;
     };
