@@ -4,32 +4,4 @@
 flakeLib.mkFeature "web" {
   # The web bundle brings along the Firefox customization feature.
   implies = ["web/firefox"];
-
-  homeManager = {
-    lib,
-    pkgs,
-    ...
-  }: let
-    inherit (pkgs.stdenv.hostPlatform) isDarwin;
-  in {
-    dotfiles.web.firefox = {
-      # TODO(seh): Set preferences.
-
-      policies.Preferences."browser.contentblocking.category" = {
-        Value = lib.mkDefault "strict";
-
-        # Firefox forcibly sets this option to "custom" if:
-        #   1. The setting doesn't appear to be set by the user
-        #   2. Related settings deviate from the expected values
-        # https://searchfox.org/mozilla-central/rev/201b2c1/browser/components/BrowserGlue.jsm#5059
-        Status = lib.mkDefault "user";
-      };
-    };
-
-    targets.darwin = lib.mkIf isDarwin {
-      defaults."com.apple.Safari" = {
-        # TODO(seh): Include Safari customizations.
-      };
-    };
-  };
 }
