@@ -124,6 +124,7 @@
           supportedPlatforms = config.dotfiles._supportedPlatforms;
           impliedEdges = config.dotfiles._impliedEdges;
           knownFeatures = config.dotfiles._knownFeatures;
+          featureClasses = config.dotfiles._featureClasses;
         }
       else null;
     # Everything one user's own selections entail: those selections
