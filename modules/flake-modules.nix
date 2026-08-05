@@ -1,6 +1,6 @@
 # Reify a handful of this flake's flake-parts modules under
-# "flake.modules.flake" so consumers can opt into them from their
-# own evaluators.
+# "flake.modules.flake" so consumers can opt into them from their own
+# evaluators.
 #
 # The "flake.modules.flake.style" module is a consumer-facing
 # extension: a consumer importing it installs the corresponding
@@ -9,11 +9,11 @@
 # There is deliberately no "flake.modules.flake.default": the
 # constructors ("lib.mkHome", "lib.mkDarwin", "lib.mkNixOS") are
 # called as plain library functions through "inputs.dotfiles.lib.*",
-# closing over this flake's own "self"
-# without installing anything into the consumer evaluator. All
-# option schemas and overlays relevant to a consumer flow in
-# through the modules passed to those constructors, inside the
-# target class evaluator where they are actually read.
+# closing over this flake's own "self" without installing anything
+# into the consumer evaluator. All option schemas and overlays
+# relevant to a consumer flow in through the modules passed to those
+# constructors, inside the target class evaluator where they are
+# actually read.
 #
 # Importing "inputs.flake-parts.flakeModules.modules" pulls in the
 # class-aware "flake.modules.<class>.<name>" option schema, which
