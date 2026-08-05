@@ -11,9 +11,9 @@ final: prev: {
   # "prev.lixPackageSets.stable.nix-direnv" directly here, as both
   # cause infinite recursion: the "nix-direnv" entry within
   # "lixPackageSets" is defined as "nix-direnv.override { ... }",
-  # where the bare "nix-direnv" reference resolves back into the
-  # fixed point of the package set being extended. Instead we
-  # override "prev.nix-direnv" directly, supplying Lix ourselves.
+  # where the bare "nix-direnv" reference resolves back into the fixed
+  # point of the package set being extended. Instead we override
+  # "prev.nix-direnv" directly, supplying Lix ourselves.
   nix-direnv = prev.nix-direnv.override {
     nix = final.lixPackageSets.stable.lix;
   };

@@ -1,12 +1,12 @@
 # The machine's zsh integration: a machine-only feature that asserts
 # "programs.zsh.enable" so that NixOS installs zsh, writes
-# "/etc/zshrc", lists zsh among "/etc/shells", and a login shell
-# loads the system environment.
+# "/etc/zshrc", lists zsh among "/etc/shells", and a login shell loads
+# the system environment.
 #
 # The machine alone nominates this feature. The "essential" feature
 # implies it, and only the machine's own selections decide a nixOS
-# body, so a user who selects "essential" does not bring it along.
-# The "shell/zsh" feature configures a user's own zsh and stays
+# body, so a user who selects "essential" does not bring it along. The
+# "shell/zsh" feature configures a user's own zsh and stays
 # independent of this one—a user's zsh still loads and reads that
 # configuration wherever this feature is absent.
 #
