@@ -22,6 +22,8 @@ flakeLib.mkFeature "ssh" {
       };
       sshControlDir = "~/.ssh/sockets";
     in {
+      dotfiles.ssh.enableMultiplexing = lib.mkDefault true;
+
       programs.ssh = {
         enable = true;
         enableDefaultConfig = false;
