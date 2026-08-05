@@ -4,8 +4,8 @@
   ...
 }:
 flakeLib.mkFeature "macos" {
-  # This feature configures macOS itself, so a host qualifies for
-  # it only when its platform is one of the Darwin systems.
+  # This feature configures macOS itself, so a host qualifies for it
+  # only when its platform is one of the Darwin systems.
   supportedPlatforms = lib.platforms.darwin;
 
   homeManager = {lib, ...}: let
@@ -24,14 +24,23 @@ flakeLib.mkFeature "macos" {
 
       defaults = {
         "com.apple.dock" = {
-          # System Preferences > Mission Control > Group windows by application
+          # "System Settings"
+          #   > Desktop & Dock
+          #     > Mission Control
+          #       > Group windows by application
           expose-group-apps = mkDefault true;
-          # System Preferences > Dock > Position on screen
+          # "System Settings"
+          #   > Desktop & Dock
+          #     > Dock position on screen
           orientation = mkDefault "right";
-          # System Preferences > Dock > Show recent applications in Dock
+          # "System Settings"
+          #   > Desktop & Dock
+          #     > Show suggested and recent apps in Dock
           show-recents = mkDefault false;
           #size-immutable
-          # System Preferences > Dock > Size
+          # "System Settings"
+          #   > Desktop & Dock
+          #     > Size
           tilesize = mkDefault 39;
         };
       };

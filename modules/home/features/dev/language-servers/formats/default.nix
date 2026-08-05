@@ -1,7 +1,7 @@
 {flakeLib, ...}:
 # The language servers with no subject feature of their own; wanted
-# whenever the "dev/language-servers" interest is active. Each moves to
-# a subject of its own if one ever exists.
+# whenever the "dev/language-servers" interest is active. Each moves
+# to a subject of its own if one ever exists.
 flakeLib.mkFeature "dev/language-servers/formats" {
   preconditions = ["dev/language-servers"];
   homeManager = {pkgs, ...}: {
