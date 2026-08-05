@@ -26,12 +26,4 @@ flakeLib.mkFeature "development" {
     "vcs/git-town"
     "vcs/github"
   ];
-
-  homeManager = {lib, ...}: {
-    dotfiles = {
-      coder = {
-        enableSSHIntegration = lib.mkDefault true;
-      };
-    };
-  };
 }

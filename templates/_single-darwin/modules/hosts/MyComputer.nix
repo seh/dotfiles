@@ -32,10 +32,11 @@ in {
                 "essential"
               ];
             };
-            # When more than one user is defined under "users" below,
-            # "primaryUser" must be set explicitly to one of those
-            # usernames. With a single user (the common case), this
-            # assignment can stay commented out; the dotfiles flake's
+            # When more than one user is defined under the "users"
+            # registry below, the "primaryUser" option must be set
+            # explicitly to one of those usernames. With a single user
+            # (the common case), this assignment can stay commented
+            # out; the dotfiles flake's
             # "modules/_darwin-primary-user.nix" file defaults the
             # "primaryUser" option to that sole user's name.
             # primaryUser = username;

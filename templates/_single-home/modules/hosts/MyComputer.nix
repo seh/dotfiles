@@ -39,15 +39,16 @@ in {
 
             dotfiles = {
               # Activate feature modules by listing the features that
-              # apply to this user, from the coarsest bundle to the
-              # finest single concern. The "all" feature brings along
-              # every bundle this flake advertises. To opt out of
-              # specific members of "all" (such as the Firefox/Safari
-              # customization in "web"), list them under
-              # "excludeFeatures". Add narrower features such as
+              # apply to this user, from a bundle that only brings
+              # others along to the finest single concern. The "all"
+              # feature brings along every body-less bundle this flake
+              # advertises. To opt out of specific members of the
+              # "all" feature (such as the Firefox customization in
+              # the "web" feature), list them under the
+              # "excludeFeatures" list. Add narrower features such as
               # "kubernetes" or "cloud/aws" to the same list, and
               # interests such as "lang/rust"—the languages in which
-              # this user works—under "interests". See:
+              # this user works—under the "interests" list. See:
               # https://github.com/seh/dotfiles/tree/main/modules/home/features
               host = {
                 name = hostName;
@@ -57,7 +58,7 @@ in {
                   # "cloud/aws"
                 ];
                 # Opt out of specific members of the "all" feature.
-                # For example, to skip Firefox/Safari customization:
+                # For example, to skip Firefox customization:
                 # excludeFeatures = ["web"];
                 interests = [
                   # "lang/rust"

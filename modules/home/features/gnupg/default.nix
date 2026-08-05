@@ -18,6 +18,8 @@ flakeLib.mkFeature "gnupg" {
       hasGPGSigningKey = userConfig.gpgKey != null;
       inherit (pkgs.stdenv.hostPlatform) isDarwin;
     in {
+      dotfiles.gnupg.enableSSHSupport = lib.mkDefault true;
+
       programs.gpg = {
         enable = true;
         settings = lib.mkIf hasGPGSigningKey {
