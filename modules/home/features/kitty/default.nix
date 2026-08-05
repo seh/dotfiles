@@ -48,8 +48,8 @@ flakeLib.mkFeature "kitty" {
         cursor_beam_thickness = "2.5";
         cursor_stop_blinking_after = "1.5";
         # Minimum number of milliseconds for which the cursor must
-        # have sat in its current position before showing a trail
-        # when it moves far enough away.
+        # have sat in its current position before showing a trail when
+        # it moves far enough away.
         cursor_trail = 1250;
         #dynamic_background_opacity = true;
         editor = "emacsclient";
@@ -72,6 +72,7 @@ flakeLib.mkFeature "kitty" {
         active_tab_title_template = "{fmt.fg._e5c07b}{fmt.bg.default}{fmt.fg._282c34}{fmt.bg._e5c07b} {fmt.fg.red}{bell_symbol}{activity_symbol}{fmt.fg._282c34}{title} {fmt.fg._e5c07b}{fmt.bg.default} ";
         # NB: The cursor color is usually set by themes, so set it
         # here after loading a theme.
+        #
         # Emulate "tomato" which is 255 R, 99 G, and 71 B.
         cursor = "#ff6347";
       };
