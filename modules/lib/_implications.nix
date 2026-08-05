@@ -33,17 +33,22 @@
   # along a target on some platforms and not others.
   #
   # This function computes the "all" feature's targets rather than
-  # reading a declared edge: "all" targets every non-contingent
-  # feature that no other feature implies. Such a feature therefore
-  # folds into "all" the moment it is registered, while a feature some
-  # bundle already implies stays out, arriving through that bundle
-  # instead. A contingent feature stays out because its preconditions
-  # are its only way in, and an interest stays out because a feature's
-  # edges may target only features—so the computation upholds on its
-  # own the two rules that the assertions in "modules/_assertions.nix"
-  # police for declared edges, which never see these. Hosts decline
-  # what "all" brings along by naming it under "excludeFeatures":
-  # declining is an exclusion, not an absence.
+  # reading a declared edge: "all" targets every feature that carries
+  # no class body, is not contingent, and no other feature implies. A
+  # body-less bundle therefore folds into "all" the moment it is
+  # registered, while a feature some bundle already implies stays out,
+  # arriving through that bundle instead. A feature that configures
+  # something of its own stays out as well, so that "all" names the
+  # body-less bundles alone and a feature with a body is one a host
+  # asks for deliberately; the "featureClasses" argument reports which
+  # names carry a body. A contingent feature stays out because its
+  # preconditions are its only way in, and an interest stays out
+  # because a feature's edges may target only features—so the
+  # computation upholds on its own the two rules that the assertions
+  # in "modules/_assertions.nix" police for declared edges, which
+  # never see these. Hosts decline what "all" brings along by naming
+  # it under "excludeFeatures": declining is an exclusion, not an
+  # absence.
   #
   # The graph MUST form a DAG. This function rejects a name that
   # implies itself, and the "expandClosure" function rejects every
@@ -68,6 +73,12 @@
     # the "all" feature draws its computed targets from, so a name
     # missing here never arrives at a host through "all".
     knownFeatures ? [],
+    # The module classes that register a body for each feature, keyed
+    # by feature name and holding only the names that carry one. Read
+    # here only to recognize which features configure something, since
+    # the "all" feature targets the body-less bundles alone; a name
+    # absent from this record carries no body and so qualifies.
+    featureClasses ? {},
     # Per-feature preconditions, keyed by contingent feature name.
     # Read here only to recognize which names are contingent, since
     # the "all" feature may not target one; the activation fixpoint in
@@ -101,33 +112,48 @@
     # targets, and excluding its own declarations from the "implied
     # elsewhere" reading—name the same feature.
     aggregateName = "all";
-    # Every name some source other than the aggregate brings along,
-    # read from the raw declarations before platform filtering.
-    # Interest sources join the reading: an interest may legally imply
-    # only other interests, so counting them changes nothing for a
-    # legal graph while keeping a name that some illegal edge targets
-    # out of the aggregate. Membership is thus the same on every
-    # platform: a target arriving only through a record-form edge for
-    # another platform still counts as brought along, so a host's
-    # platform decides which of the aggregate's targets survive, never
-    # which names it holds.
-    impliedElsewhere = lib.unique (
+    # A bundle: a registered feature that declares no body of its own
+    # and is not contingent. This one predicate decides both which
+    # names the aggregate can cover and which sources count against
+    # them, so the two readings cannot drift apart. Membership in the
+    # "knownFeatures" list is part of it because an interest may be a
+    # source too, and an interest is not a bundle.
+    isBundle = name:
+      (name != aggregateName)
+      && builtins.elem name knownFeatures
+      && !(featureClasses ? ${name})
+      && !(preconditions ? ${name});
+    # Every name another bundle brings along, read from the raw
+    # declarations before platform filtering. Only bundle sources
+    # count. A feature with a body of its own never arrives through
+    # the aggregate, so counting it as a source would leave its target
+    # with no way to arrive at all: the aggregate would drop the
+    # target, and nothing would stand in its place. Reading the raw
+    # declarations keeps membership the same on every platform, since
+    # a target that only a record-form edge for another platform names
+    # still counts, so a host's platform decides which of the
+    # aggregate's targets survive, never which names it holds.
+    impliedByBundle = lib.unique (
       lib.concatMap (source: map edgeName impliedEdges.${source}) (
-        builtins.filter (source: source != aggregateName) (builtins.attrNames impliedEdges)
+        builtins.filter isBundle (builtins.attrNames impliedEdges)
       )
     );
     # The aggregate's computed targets, in the registration order of
-    # the "knownFeatures" list. Any "implies" list the aggregate
-    # itself declares is discarded by the override below, since this
+    # the "knownFeatures" list: the bundles no other bundle brings
+    # along, which are the roots of the graph induced on the bundles.
+    # Every other bundle arrives through one of those roots, since
+    # following the chain of sources upward ends at one in an acyclic
+    # graph, so every bundle can arrive. A contingent feature stays
+    # out because nobody may select one; it activates from its
+    # preconditions instead. Any "implies" list the aggregate itself
+    # declares is discarded by the override below, since this
     # computation is the sole authority on what the "all" feature
     # brings along.
-    aggregateTargets = let
-      eligible = name:
-        (name != aggregateName)
-        && !(preconditions ? ${name})
-        && !(builtins.elem name impliedElsewhere);
-    in
-      builtins.filter eligible knownFeatures;
+    aggregateTargets =
+      builtins.filter (
+        name: isBundle name && !(builtins.elem name impliedByBundle)
+      )
+      knownFeatures;
     # A name that implies itself. The "lib.lists.toposort" call in the
     # "expandClosure" function cannot see this one: it asks whether one
     # name precedes another, and never asks that of a name against
