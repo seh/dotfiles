@@ -61,6 +61,7 @@
         supportedPlatforms = config.dotfiles._supportedPlatforms;
         impliedEdges = config.dotfiles._impliedEdges;
         knownFeatures = config.dotfiles._knownFeatures;
+        featureClasses = config.dotfiles._featureClasses;
       }
     else null;
   # The features and interests this evaluator itself selects. See the
@@ -540,10 +541,12 @@ in {
         lists the classes ("homeManager", "nixDarwin", "nixOS") that
         register a body for that feature. Each class aggregator
         mirrors it from the flake-level "dotfiles.featureClasses"
-        registry. The mixed-body assertion in
-        "modules/_assertions.nix" reads it to reject a feature
-        registering both a home body and a system body. A feature
-        registered by name alone, with no bodies, is absent.
+        registry. The mixed-body assertion in the
+        "modules/_assertions.nix" file reads it to reject a feature
+        registering both a home body and a system body, and the
+        "flake.lib.implicationsFor" function reads the keys alone to
+        keep the computed "all" feature on the body-less bundles. A
+        feature registered by name alone, with no bodies, is absent.
       '';
     };
 

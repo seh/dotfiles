@@ -36,8 +36,11 @@ in {
         feature registered by name alone, with no bodies, is absent. A
         feature may configure the machine alone—the "apps" feature
         carries a nix-darwin body and nothing else—so this record also
-        diagnoses a user selecting such a feature. Each class
-        aggregator mirrors it into "dotfiles._featureClasses".
+        diagnoses a user selecting such a feature. The keys alone tell
+        which features configure something, which is how the
+        "implicationsFor" function keeps the computed "all" feature on
+        the body-less bundles. Each class aggregator mirrors it into
+        "dotfiles._featureClasses".
       '';
     };
     featureModules = lib.mkOption {
