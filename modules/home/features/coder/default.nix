@@ -20,6 +20,8 @@ flakeLib.mkFeature "coder" {
     }: let
       cfg = config.dotfiles.coder;
     in {
+      dotfiles.coder.enableSSHIntegration = lib.mkDefault true;
+
       home.packages = [
         cfg.package
       ];

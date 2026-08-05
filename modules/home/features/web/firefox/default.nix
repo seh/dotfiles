@@ -67,12 +67,26 @@ flakeLib.mkFeature "web/firefox" {
     in {
       home.packages = lib.optional (cfg.package != null) finalPackage;
 
-      dotfiles.web.firefox.policies.Preferences =
-        lib.mapAttrs (_: value: {
-          Value = value;
-          Status = "default";
-        })
-        cfg.preferences;
+      # TODO(seh): Set preferences.
+
+      dotfiles.web.firefox.policies.Preferences = lib.mkMerge [
+        (lib.mapAttrs (_: value: {
+            Value = value;
+            Status = "default";
+          })
+          cfg.preferences)
+        {
+          "browser.contentblocking.category" = {
+            Value = lib.mkDefault "strict";
+
+            # Firefox forcibly sets this option to "custom" if:
+            #   1. The setting doesn't appear to be set by the user
+            #   2. Related settings deviate from the expected values
+            # https://searchfox.org/mozilla-central/rev/201b2c1/browser/components/BrowserGlue.jsm#5059
+            Status = lib.mkDefault "user";
+          };
+        }
+      ];
 
       targets.darwin.defaults = lib.mkIf (isDarwin && cfg.package == null) {
         "org.mozilla.firefox" =
