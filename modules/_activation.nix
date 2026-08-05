@@ -20,10 +20,9 @@
 # user it manages and each user adds to that.
 #
 # It imports the "_users.nix" declaration module so that the
-# "dotfiles.users" registry is visible wherever this module
-# evaluates, including in the home-manager class, where the
-# aggregator in "modules/home/default.nix" demands that it stay
-# empty.
+# "dotfiles.users" registry is visible wherever this module evaluates,
+# including in the home-manager class, where the aggregator in
+# "modules/home/default.nix" demands that it stay empty.
 {
   lib,
   config,
@@ -626,9 +625,9 @@ in {
     hostLabel = toString host.name;
     # The unpruned walk also forces the dangling-edge check inside
     # "expandClosure" and the precondition-cycle check inside
-    # "expandActivation" to run against the full tables. Pruning
-    # could otherwise hide a typo in an excluded feature's
-    # adjacency list, or a cycle behind an excluded member.
+    # "expandActivation" to run against the full tables. Pruning could
+    # otherwise hide a typo in an excluded feature's adjacency list,
+    # or a cycle behind an excluded member.
     _unprunedSideEffect =
       if hasImplicationsLib
       then

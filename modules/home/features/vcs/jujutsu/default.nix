@@ -126,7 +126,8 @@ flakeLib.mkFeature "vcs/jujutsu" {
             }
             (lib.optionalAttrs commitSigning.hasKey {
               git = {
-                # NB: Opt for this instead of enabling "signing.sign-all".
+                # NB: Opt for this instead of enabling
+                # "signing.sign-all".
                 sign-on-push = true;
               };
               signing = {
@@ -175,9 +176,9 @@ flakeLib.mkFeature "vcs/jujutsu" {
                       "$base"
                       "$output"
                     ];
-                    # Attempt to detect when we exit ediff-merge without
-                    # resolving all the conflicts, leaving some still
-                    # present in the output file.
+                    # Attempt to detect when we exit ediff-merge
+                    # without resolving all the conflicts, leaving
+                    # some still present in the output file.
                     merge-tool-edits-conflict-markers = true;
                   };
                 };

@@ -19,16 +19,16 @@
 # storing a body that nothing ever reads. Each value is one of two
 # forms:
 #
-#   1. A deferred module returning the *contents* of a "config"
-#      block — not a full module with its own "config = {...}" key.
-#      The helper inserts the
-#      "config = lib.mkIf (inEffect name) (...)" wrapper, so
-#      a body that itself wraps in "config = {...}" would produce
-#      "config.config = {...}" and silently drop its contributions.
+#   1. A deferred module returning the *contents* of a "config" block
+#      — not a full module with its own "config = {...}" key. The
+#      "mkFeature" function inserts the "config = lib.mkIf (inEffect
+#      name) (...)" wrapper, so a body that itself wraps in "config =
+#      {...}" would produce "config.config = {...}" and silently drop
+#      its contributions.
 #
 #   2. A structured attrset "{options? = ...; config? = ...;}" for
-#      features that declare their own options. The "options" half
-#      is a normal module function (e.g. "{lib, ...}: {options = ...;}")
+#      features that declare their own options. The "options" half is
+#      a normal module function (e.g. "{lib, ...}: {options = ...;}")
 #      passed through verbatim — option declarations cannot be
 #      conditional. The "config" half follows the same contract as
 #      form 1 and gets the same activation gate. Either key may be
@@ -51,14 +51,14 @@
   # The wrapper's outer function destructures every module argument
   # that bodies might rely on, so the module system's argument
   # injection mechanism (driven by "builtins.functionArgs") can fill
-  # them in from "_module.args". A body that destructures an
-  # argument missing from this list will fail with "called without
-  # required argument".
+  # them in from "_module.args". A body that destructures an argument
+  # missing from this list will fail with "called without required
+  # argument".
   #
   # Currently covers what the home-manager, nix-darwin, and NixOS
-  # class evaluators provide for the features in this repository.
-  # If a future feature body needs "inputs", "specialArgs", or any
-  # other module argument, add it here as "name ? null".
+  # class evaluators provide for the features in this repository. If a
+  # future feature body needs "inputs", "specialArgs", or any other
+  # module argument, add it here as "name ? null".
   wrap = name: body: {
     config,
     lib,
@@ -71,15 +71,15 @@
     config = lib.mkIf (config.dotfiles._host.inEffect name) (body args);
   };
 
-  # Build the per-class deferred module for one body, dispatching
-  # on its form. A function body is the plain form (config-only,
-  # gated). An attrset with at least one of "options"/"config" is
-  # the structured form (options pass through, config gated); its
-  # parts combine through a single "imports"-bearing module. The
-  # module system expands a merge-valued definition into multiple
-  # definition values before the option type's merge runs, so the
-  # single-imports-module form keeps one registration counting as
-  # one definition under the "uniq"-wrapped registry options in
+  # Build the per-class deferred module for one body, dispatching on
+  # its form. A function body is the plain form (config-only, gated).
+  # An attrset with at least one of "options"/"config" is the
+  # structured form (options pass through, config gated); its parts
+  # combine through a single "imports"-bearing module. The module
+  # system expands a merge-valued definition into multiple definition
+  # values before the option type's merge runs, so the
+  # single-imports-module form keeps one registration counting as one
+  # definition under the "uniq"-wrapped registry options in
   # "modules/module-schema.nix".
   buildClassModule = name: body:
     if lib.isFunction body
@@ -110,8 +110,8 @@
 
   # Argument validation shared by the constructors below. Each
   # rejected argument throws in the author's vocabulary, naming the
-  # offending registration, so that no bare Nix coercion error
-  # escapes without naming the culprit.
+  # offending registration, so that no bare Nix coercion error escapes
+  # without naming the culprit.
   checkName = constructor: name:
     if !(builtins.isString name)
     then throw ''${constructor}: a registration's name must be a string, but a value of type "${builtins.typeOf name}" was passed.''
@@ -121,10 +121,10 @@
   isListOfStrings = value: builtins.isList value && lib.all builtins.isString value;
 
   # A "preconditions" list is a conjunction whose entries are each
-  # either a bare feature or interest name, or a group
-  # "{ anyOf = [ "<name>" ... ]; }" satisfied when any one member is
-  # active. A group entry is a closed attrset: "anyOf" is its only
-  # key, holding a list of names.
+  # either a bare feature or interest name, or a group "{ anyOf = [
+  # "<name>" ... ]; }" satisfied when any one member is active. A
+  # group entry is a closed attrset: "anyOf" is its only key, holding
+  # a list of names.
   isPreconditionEntry = entry:
     builtins.isString entry
     || (
@@ -182,8 +182,8 @@
   # Format a list of names as a quoted, comma-separated English
   # enumeration with a serial comma, matching the "enumerateNames"
   # helper in the "modules/lib/_implications.nix" file: one name
-  # renders as "a", two as "a" and "b", and three or more as "a",
-  # "b", and "c".
+  # renders as "a", two as "a" and "b", and three or more as "a", "b",
+  # and "c".
   enumerateNames = names: let
     quoted = map (n: "\"${n}\"") names;
     count = lib.length quoted;
@@ -195,12 +195,12 @@
     else "${lib.concatStringsSep ", " (lib.init quoted)}, and ${lib.last quoted}";
 
   # The module-class names that this flake's class aggregators
-  # recognize. The set of keys a registration accepts is closed:
-  # once a constructor splits its reserved key off, every remaining
-  # key of the argument attrset must be one of these names. A key
-  # outside the set — a misspelled class name, most likely — would
-  # otherwise register a body under a name that nothing ever reads,
-  # silently discarding the whole body.
+  # recognize. The set of keys a registration accepts is closed: once
+  # a constructor splits its reserved key off, every remaining key of
+  # the argument attrset must be one of these names. A key outside the
+  # set — a misspelled class name, most likely — would otherwise
+  # register a body under a name that nothing ever reads, silently
+  # discarding the whole body.
   classNames = ["homeManager" "nixDarwin" "nixOS"];
 
   # The keys the "mkFeature" function claims for itself, split off the
@@ -223,11 +223,11 @@ in {
   #   preconditions: a conjunction of entries whose joint satisfaction
   #   this feature's activation is conditioned on; listing a name here
   #   never activates it. Each entry is either a bare feature or
-  #   interest name (satisfied when that name is active) or a group
-  #   "{ anyOf = [ "<name>" ... ]; }" (satisfied when at least one
-  #   member is active); the feature activates when every entry is
-  #   satisfied, so the list reads as a conjunction of disjunctions.
-  #   Every "anyOf" member must be a non-contingent name — an ordinary
+  #   interest name (satisfied when that name is active) or a group "{
+  #   anyOf = [ "<name>" ... ]; }" (satisfied when at least one member
+  #   is active); the feature activates when every entry is satisfied,
+  #   so the list reads as a conjunction of disjunctions. Every
+  #   "anyOf" member must be a non-contingent name — an ordinary
   #   feature or an interest, never a contingent feature — which keeps
   #   groups out of every precondition cycle; an assertion in
   #   "modules/_assertions.nix" enforces this. A bare entry may still
@@ -236,8 +236,8 @@ in {
   #   all of its preconditions are met, and that is its only
   #   activation path—no host and no implied edge may name it directly
   #   (an assertion in "modules/_assertions.nix" enforces this). The
-  #   registry option's type treats the list as a set — its
-  #   merge normalizes each definition — so order and duplication are
+  #   registry option's type treats the list as a set — its merge
+  #   normalizes each definition — so order and duplication are
   #   immaterial, equal declarations merge, and unequal ones are
   #   rejected. A null value is identical to omitting the key — an
   #   explicit "no preconditions" — so callers building the value
@@ -348,13 +348,12 @@ in {
   #     description = "Editor-facing language servers.";
   #   }
   #
-  # The closed pattern lets Nix itself reject any unexpected
-  # attribute — a "homeManager" body, say — with its precise
-  # unexpected-argument error, keeping configuration out of
-  # interests by construction. The name enters the "knownInterests"
-  # registry, which the activation machinery folds in beside the
-  # feature names; a non-null description enters the
-  # "interestDescriptions" registry.
+  # The closed pattern lets Nix itself reject any unexpected attribute
+  # — a "homeManager" body, say — with its precise unexpected-argument
+  # error, keeping configuration out of interests by construction. The
+  # name enters the "knownInterests" registry, which the activation
+  # machinery folds in beside the feature names; a non-null
+  # description enters the "interestDescriptions" registry.
   #
   # The optional "implies" key names other interests this interest
   # brings along — a bundle. Selecting the bundle activates its

@@ -54,8 +54,8 @@
   # implies itself, and the "expandClosure" function rejects every
   # longer cycle at runtime.
   implicationsFor = {
-    # Nixpkgs system string (e.g. "aarch64-darwin"), or null when
-    # the host record does not carry one.
+    # Nixpkgs system string (e.g. "aarch64-darwin"), or null when the
+    # host record does not carry one.
     platform ? null,
     # Per-name platform support, keyed by feature name; each value
     # lists the platforms on which that name may activate. A name
@@ -65,8 +65,8 @@
     # platform-constrained name.
     supportedPlatforms ? {},
     # Co-located implied edges, keyed by source name; each value is
-    # the source's "implies" list, whose entries are bare target
-    # names or record-form platform-conditional edges. This function
+    # the source's "implies" list, whose entries are bare target names
+    # or record-form platform-conditional edges. This function
     # assembles them into the graph below.
     impliedEdges ? {},
     # Every registered feature name, interests excluded. The full set
@@ -261,10 +261,9 @@
   # a group entry "{ anyOf = [...]; }" is satisfied when at least one
   # member is active. Preconditions have no pulling power: a listed
   # name never becomes active by being named as a precondition.
-  # Exclusion trumps
-  # activation twice over: a contingent feature named in
-  # "excludeFeatures" never activates even when its preconditions hold
-  # (its entry is dropped from the table here), and one whose
+  # Exclusion trumps activation twice over: a contingent feature named
+  # in "excludeFeatures" never activates even when its preconditions
+  # hold (its entry is dropped from the table here), and one whose
   # precondition is excluded never activates because the pruned walk
   # can never bring that precondition into effect (the caller prunes
   # the implication graph and filters "selected" as usual).
@@ -326,9 +325,9 @@
     cyclicNames =
       builtins.filter (name: builtins.elem name (reachableFrom name))
       (lib.sort lib.lessThan contingentNames);
-    # Group the members by cycle: two members belong to the same
-    # cycle exactly when each can reach the other. Each group
-    # keeps the sorted order of "cyclicNames".
+    # Group the members by cycle: two members belong to the same cycle
+    # exactly when each can reach the other. Each group keeps the
+    # sorted order of "cyclicNames".
     cycleGroups =
       lib.foldl' (
         groups: name:
@@ -361,9 +360,8 @@
           + lib.concatMapStringsSep "\n" describeCycle cycleGroups
         )
       else null;
-    # Contingent features that appear as sources of implied edges;
-    # see the mirror-rule paragraph in this function's header
-    # comment.
+    # Contingent features that appear as sources of implied edges; see
+    # the mirror-rule paragraph in this function's header comment.
     contingentSources =
       builtins.filter (name: preconditions ? ${name}) (builtins.attrNames implications);
     _contingentSourceCheck =
@@ -418,9 +416,8 @@
   # Delete a set of vertices from the implication graph. Excluded
   # vertices lose their out-edges (their adjacency entries are
   # removed) and their in-edges (every surviving adjacency list is
-  # filtered to drop them as targets). The result is a record of
-  # the same form, suitable for passing to the "expandClosure"
-  # function.
+  # filtered to drop them as targets). The result is a record of the
+  # same form, suitable for passing to the "expandClosure" function.
   #
   # Excluding a feature is therefore equivalent to deleting that
   # vertex from the DAG: anything reachable only through the excluded
@@ -434,10 +431,10 @@
       lib.filterAttrs (source: _: !(isExcluded source)) implications
     );
 
-  # Resolve a host's activation in one step: delete the excluded
-  # names from the implication graph (see the "pruneImplications"
-  # function above), drop them from the selected names, and run the
-  # activation fixpoint on what remains.
+  # Resolve a host's activation in one step: delete the excluded names
+  # from the implication graph (see the "pruneImplications" function
+  # above), drop them from the selected names, and run the activation
+  # fixpoint on what remains.
   resolveActivation = {
     implications,
     known,

@@ -94,8 +94,8 @@
         trim-trailing-whitespace = {
           enable = lib.mkDefault true;
           args = [
-            # Preclude complaints about ending list items with
-            # hanging paragraphs with two trailing spaces.
+            # Preclude complaints about ending list items with hanging
+            # paragraphs with two trailing spaces.
             #
             # See https://github.com/pre-commit/pre-commit-hooks?tab=readme-ov-file#trailing-whitespace.
             "--markdown-linebreak-ext=md"

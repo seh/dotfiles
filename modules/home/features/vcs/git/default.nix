@@ -25,8 +25,8 @@ flakeLib.mkFeature "vcs/git" {
       signing = lib.mkIf commitSigning.hasKey {
         signByDefault = true;
         format = let
-          # NB: Home Manager's "programs.git.signing.format" option also
-          # accepts "x509" (S/MIME via "gpgsm"), but our
+          # NB: Home Manager's "programs.git.signing.format" option
+          # also accepts "x509" (S/MIME via "gpgsm"), but our
           # "dotfiles.vcs.commit-signing.backend" enumeration does not
           # yet offer a backend that maps to it. Add an "x509" entry
           # here in tandem with extending the enumeration if and when

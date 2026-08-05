@@ -22,22 +22,21 @@
       && lib.all builtins.isString entry.anyOf
     );
 in {
-  # Build the option type for a set of names that several modules
-  # may define on one option. Each definition is written as a Nix
-  # list—the only ergonomic literal for a set—and is normalized
-  # (sorted, deduplicated) before combining, so order and
-  # duplication carry no meaning, within one definition and across
-  # definitions. The empty list is accepted by default: an option
-  # whose empty set is itself a meaningful value (say, "no
-  # forbidding" for a machine-wide forbid list that defaults empty)
-  # needs no ceremony, and the empty list then serves as both the
-  # authored value and the default. A strict option passes "allowEmpty
-  # = false" to reject the empty list per definition, expressing "no
-  # constraint" by omitting the attribute entirely so that an
-  # accidental "[]" cannot pass silently while meaning something else.
-  # A combined result may still be empty (see the
-  # "intersection" policy below) regardless of "allowEmpty": that is
-  # a computed value, not an authored one.
+  # Build the option type for a set of names that several modules may
+  # define on one option. Each definition is written as a Nix list—the
+  # only ergonomic literal for a set—and is normalized (sorted,
+  # deduplicated) before combining, so order and duplication carry no
+  # meaning, within one definition and across definitions. The empty
+  # list is accepted by default: an option whose empty set is itself a
+  # meaningful value (say, "no forbidding" for the "forbidFeatures"
+  # option, which defaults empty) needs no ceremony, and the empty
+  # list then serves as both the authored value and the default. A
+  # strict option passes "allowEmpty = false" to reject the empty list
+  # per definition, expressing "no constraint" by omitting the
+  # attribute entirely so that an accidental "[]" cannot pass silently
+  # while meaning something else. A combined result may still be empty
+  # (see the "intersection" policy below) regardless of "allowEmpty":
+  # that is a computed value, not an authored one.
   #
   # The "merge" parameter selects how multiple definitions of one
   # option combine. The name deliberately echoes the module system's
@@ -50,12 +49,12 @@ in {
   #
   #   "union": the union of the normalized definitions.
   #
-  #   "intersection": the intersection of the normalized
-  #   definitions, which may legitimately be empty.
+  #   "intersection": the intersection of the normalized definitions,
+  #   which may legitimately be empty.
   #
   # An unknown value throws at type-construction time, listing the
-  # accepted values. The type's name and description carry the
-  # chosen policy so that a type-mismatch error names it.
+  # accepted values. The type's name and description carry the chosen
+  # policy so that a type-mismatch error names it.
   setOfNames = {
     merge,
     allowEmpty ? true,
@@ -128,7 +127,8 @@ in {
   # are its only consumers.
   preconditionSet = {}: let
     isGroup = entry: builtins.isAttrs entry;
-    # Canonical form of one group: its members sorted and deduplicated.
+    # Canonical form of one group: its members sorted and
+    # deduplicated.
     normalizeGroup = group: {anyOf = lib.sort lib.lessThan (lib.unique group.anyOf);};
     # Canonical form of a whole list: the bare names sorted and
     # deduplicated, then the deduplicated groups ordered by their

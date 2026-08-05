@@ -63,8 +63,8 @@ flakeLib.mkFeature "ssh" {
       };
 
       home.activation = lib.mkIf cfg.enableMultiplexing {
-        # Alternately, we could use a ".keep" file in this directory and
-        # create it via the "homo.file" attribute.
+        # Alternately, we could use a ".keep" file in this directory
+        # and create it via the "homo.file" attribute.
         prepareSSHDirectory = lib.hm.dag.entryAfter ["writeBoundary"] ''
           mkdir -p ${sshControlDir}
         '';

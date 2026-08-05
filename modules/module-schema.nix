@@ -45,10 +45,10 @@ in {
     };
     featureModules = lib.mkOption {
       # The "uniq" wrapper on the per-name leaf makes a second
-      # registration of one feature name within the same class a
-      # hard error rather than a silent merge of both bodies. The
-      # same name may still register in two different classes (the
-      # "nix" feature does, once for nix-darwin and once for NixOS).
+      # registration of one feature name within the same class a hard
+      # error rather than a silent merge of both bodies. The same name
+      # may still register in two different classes (the "nix" feature
+      # does, once for nix-darwin and once for NixOS).
       type = lib.types.lazyAttrsOf (lib.types.lazyAttrsOf (lib.types.uniq lib.types.deferredModule));
       default = {};
       description = ''

@@ -38,10 +38,11 @@ flakeLib.mkFeature "compat/bazel-fhs" {
       cfg = config.dotfiles.compat.bazel-fhs;
 
       # Wrapper script for bash that sets a default "PATH" environment
-      # variable when invoked with an empty or dummy environment (e.g.,
-      # via "env -"). NixOS's bash has a compiled-in default "PATH" value
-      # of "/no-such-path", so scripts that expect standard tools like
-      # "mktemp" fail when Bazel runs them with a sanitized environment.
+      # variable when invoked with an empty or dummy environment
+      # (e.g., via "env -"). NixOS's bash has a compiled-in default
+      # "PATH" value of "/no-such-path", so scripts that expect
+      # standard tools like "mktemp" fail when Bazel runs them with a
+      # sanitized environment.
       bashWithDefaultPath = pkgs.writeShellScriptBin "bash" ''
         if [ -z "$PATH" ] || [ "$PATH" = '/no-such-path' ]; then
           export PATH='/usr/bin:/bin'
@@ -98,8 +99,8 @@ flakeLib.mkFeature "compat/bazel-fhs" {
       environment.systemPackages = [bashWithDefaultPath];
 
       # Enable nix-ld to run unpatched binaries (e.g., hermetic Python
-      # from Bazel's rules_python). This provides the dynamic linker at
-      # /lib/ld-linux-aarch64.so.1 (or the equivalent for x86_64).
+      # from Bazel's rules_python). This provides the dynamic linker
+      # at /lib/ld-linux-aarch64.so.1 (or the equivalent for x86_64).
       programs.nix-ld = {
         enable = true;
         libraries = with pkgs; [

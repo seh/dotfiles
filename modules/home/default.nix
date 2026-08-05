@@ -13,11 +13,11 @@
         ../_assertions.nix
         ../_user-identity.nix
         # The "dotfiles.users" registry is declared in every class
-        # (see "modules/_users.nix"), but only a system
-        # configuration acts on its entries. In the home-manager
-        # class an entry would exist and do nothing. Such an idle
-        # attribute is an attractive nuisance, so demand that the
-        # registry stay empty here.
+        # (see "modules/_users.nix"), but only a system configuration
+        # acts on its entries. In the home-manager class an entry
+        # would exist and do nothing. Such an idle attribute is an
+        # attractive nuisance, so demand that the registry stay empty
+        # here.
         ({
           config,
           lib,

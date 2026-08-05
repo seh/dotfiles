@@ -141,11 +141,10 @@
 
   # The three lists each role carries: the names a machine or user
   # selects, the names it prunes from its own walk, and the names a
-  # machine forbids outright. Each entry reads its list off a role
-  # and spells that list's bare name, so the kind-mismatch check
-  # covers all three lists from one definition. Forbidding is
-  # machine-wide, so that list alone has no per-user counterpart to
-  # name.
+  # machine forbids outright. Each entry reads its list off a role and
+  # spells that list's bare name, so the kind-mismatch check covers
+  # all three lists from one definition. Forbidding is machine-wide,
+  # so that list alone has no per-user counterpart to name.
   listFamilies = [
     {
       entriesOf = role: role.selected;
@@ -369,6 +368,7 @@
   # since a contingent name written under "interests" would enter the
   # walk just the same; the role-mismatch assertion above objects to
   # the misfiling, and this one to the selection.
+  #
   # Every selection is authored, so the check applies uniformly, with
   # nothing suppressing it: the machine's own lists in a system
   # evaluator, and the machine's layered with that user's inside a
