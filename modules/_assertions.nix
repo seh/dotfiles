@@ -368,25 +368,75 @@
   };
 
   # A contingent feature activates only through its preconditions, so
-  # naming one among the selections would activate it in an
-  # inconsistent state, without the guarantee its body is written
-  # against. Both selection lists that feed the walk are checked,
-  # since a contingent name written under "interests" would enter the
-  # walk just the same; the role-mismatch assertion above objects to
-  # the misfiling, and this one to the selection.
+  # selecting one would activate it in an inconsistent state, without
+  # the guarantee its body is written against. Both selection lists
+  # that feed the walk are checked, since a contingent name written
+  # under the "interests" list would enter the walk just the same; the
+  # role-mismatch assertion above objects to the misfiling, and this
+  # one to the selection. Every selection is authored, so the check
+  # applies uniformly, with nothing suppressing it: the machine's own
+  # lists in a system evaluator, and the machine's layered with that
+  # user's inside a managed user's evaluator. The message specifies
+  # both surfaces because a name arriving at a nested per-user
+  # evaluator may have been written at either.
   #
-  # Every selection is authored, so the check applies uniformly, with
-  # nothing suppressing it: the machine's own lists in a system
-  # evaluator, and the machine's layered with that user's inside a
-  # managed user's evaluator. The message names both surfaces because
-  # a name arriving at a nested per-user evaluator may have been
-  # written at either.
+  # The message carries the preconditions this evaluator leaves unmet,
+  # since those are what a reader selects in the rejected feature's
+  # place. Each one arrives with its kind, because a feature and an
+  # interest are selected under different lists, and a member of an
+  # "anyOf" group stands apart from a plain conjunct, because
+  # activating any one member of a group satisfies it.
   selectedContingent =
     builtins.filter (n: builtins.elem n contingentNames) (host.features ++ host.interests);
+  # This evaluator's own resolved activation. Each precondition below
+  # answers to this set.
+  activeNames = config.dotfiles._host.activeFeatures;
+  # A precondition entry this evaluator's own activation does not
+  # satisfy: a bare name whose feature or interest is inactive, or a
+  # group none of whose members is active.
+  unmetEntry = entry:
+    if builtins.isString entry
+    then !(builtins.elem entry activeNames)
+    else !(lib.any (m: builtins.elem m activeNames) entry.anyOf);
+  # Describe a precondition name together with the kind it is
+  # registered under, since the two kinds are selected under different
+  # lists.
+  describeKindedName = name:
+    if builtins.elem name knownInterests
+    then ''the interest "${name}"''
+    else ''the feature "${name}"'';
+  # Join described phrases as an English enumeration with a serial
+  # comma: one phrase stands alone, two join with the conjunction, and
+  # three or more separate with commas before a final conjunction.
+  joinPhrases = conjunction: phrases:
+    if lib.length phrases == 1
+    then lib.head phrases
+    else if lib.length phrases == 2
+    then "${lib.head phrases} ${conjunction} ${lib.last phrases}"
+    else "${lib.concatStringsSep ", " (lib.init phrases)}, ${conjunction} ${lib.last phrases}";
+  # A group reads as a disjunction, so its alternatives join with "or"
+  # under a phrase saying that one of them suffices.
+  describeUnmetEntry = entry:
+    if builtins.isString entry
+    then describeKindedName entry
+    else "any one of ${joinPhrases "or" (map describeKindedName entry.anyOf)}";
+  describeSelectedContingent = name: let
+    unmet = builtins.filter unmetEntry featurePreconditions.${name};
+  in
+    if unmet == []
+    then ''The feature "${name}" is contingent, and this configuration already meets every one of its preconditions, so it activates without the selection.''
+    else ''The feature "${name}" is contingent, and this configuration does not meet these preconditions: ${joinPhrases "and" (map describeUnmetEntry unmet)}.'';
   contingentSelectionAssertion = {
     assertion = selectedContingent == [];
     message = ''
-      Resolving ${hostLabel}: the selections name the contingent feature(s) ${quoteNames selectedContingent} (written in "dotfiles.host.features" or "dotfiles.host.interests" or, on a multi-user host, in the matching "dotfiles.users.<name>" list), but a contingent feature activates automatically exactly when all of its preconditions are met and may not be selected directly. Select its preconditions instead.
+      Resolving ${hostLabel}:
+      ${lib.concatMapStringsSep " " describeSelectedContingent selectedContingent}
+      A contingent feature activates on its own exactly when every one
+      of its preconditions holds. You may not select one directly: not
+      in "dotfiles.host.features", not in "dotfiles.host.interests",
+      and not, on a multi-user host, in the matching
+      "dotfiles.users.<name>" list. Remove each such selection and
+      select the missing preconditions in its place.
     '';
   };
 
