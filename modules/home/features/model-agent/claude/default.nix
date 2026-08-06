@@ -1,5 +1,7 @@
 {flakeLib, ...}:
 flakeLib.mkFeature "model-agent/claude" {
+  unfreePackages = ["claude-code"];
+
   homeManager = {
     config,
     lib,

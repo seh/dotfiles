@@ -2,6 +2,16 @@
 #   https://github.com/midchildan/dotfiles/blob/152b40c3a412b18ba6057c3ecfb984748962282b/nix/home/modules/firefox.nix
 {flakeLib, ...}:
 flakeLib.mkFeature "web/firefox" {
+  # The default package below is Mozilla's own build, which serves
+  # every platform but Darwin, where Firefox arrives outside of Nix.
+  # Both the wrapper installed here and the unwrapped payload it
+  # carries bear the same unfree license, and each answers to its own
+  # name.
+  unfreePackages = [
+    "firefox-bin"
+    "firefox-bin-unwrapped"
+  ];
+
   homeManager = {
     options = {
       lib,

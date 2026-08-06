@@ -1,5 +1,10 @@
 {flakeLib, ...}:
 flakeLib.mkFeature "coder" {
+  # The nixpkgs "coder" package is itself free, while the wrapper it
+  # installs puts the "terraform" executable on the program's path, so
+  # instantiating it demands toleration for that.
+  unfreePackages = ["terraform"];
+
   homeManager = {
     options = {
       lib,

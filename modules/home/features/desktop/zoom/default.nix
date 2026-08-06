@@ -2,6 +2,9 @@
 # The Zoom conferencing client, installed on the platforms where
 # nixpkgs offers it.
 flakeLib.mkFeature "desktop/zoom" {
+  # The "zoom-us" package answers to the name "zoom".
+  unfreePackages = ["zoom"];
+
   homeManager = {
     lib,
     pkgs,
