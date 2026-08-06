@@ -50,6 +50,7 @@
   inherit (inputs.home-manager.lib) homeManagerConfiguration;
   inherit (inputs.nix-darwin.lib) darwinSystem;
   inherit (inputs.nixos.lib) nixosSystem;
+  inherit (import ./_diagnostics.nix) describeHost;
 
   # Build a "pkgs" instance for the given system, with this flake's
   # own nixpkgs overlay applied and its features' unfree packages
@@ -83,6 +84,36 @@
       }
     );
 
+  # The machine-wide forbid options, read together so that one walk
+  # over a user's selections covers both kinds.
+  forbidOptions = ["forbidFeatures" "forbidInterests"];
+
+  # The selections a user writes that "forbidFeatures" or
+  # "forbidInterests" overrules, one entry per pair of a selected name
+  # and whichever option forbids it. Both of the user's own lists are
+  # read together, since a name written under either enters the same
+  # activation walk.
+  overruledSelections = host: userCfg: let
+    selected = lib.unique (userCfg.features ++ userCfg.interests);
+  in
+    lib.concatMap (
+      option:
+        map (name: {inherit name option;})
+        (builtins.filter (n: builtins.elem n host.${option}) selected)
+    )
+    forbidOptions;
+
+  # Report one overruled selection to the user who wrote it. The
+  # forbid entry is absolute and the machine's owner is entitled to
+  # it, so the configuration stands and this is a warning rather than
+  # an error.
+  describeOverruledSelection = hostName: userName: {
+    name,
+    option,
+  }: ''
+    Resolving ${describeHost hostName}: the user "${userName}" selects "${name}", which "dotfiles.host.${option}" forbids machine-wide, so this user does not receive it. Forbidding prunes every activation walk, the machine's own and every user's, and no user may undo it; drop the entry from "dotfiles.host.${option}" to let this selection stand, or drop the selection.
+  '';
+
   # System-level module that, for each user assigned under
   # "config.dotfiles.users", creates the user's operating-system
   # account, spawns the user's nested home-manager evaluator, and
@@ -104,9 +135,11 @@
   # Layering lets an exclusion hold in three ways, applied alike to
   # the machine's features and interests:
   #   1. The machine's "forbidFeatures" and "forbidInterests" pass
-  #      through untouched—the "//" below never names them—and prune
-  #      every walk, so a user naming a forbidden thing still does not
-  #      receive it.
+  #      through untouched—the "//" below leaves them alone—and prune
+  #      every walk, so a user who selects a forbidden thing still
+  #      does not receive it. That user's own evaluator carries a
+  #      warning saying so, since forbidding is the one place where
+  #      this flake sets aside what a person wrote.
   #   2. The machine's "excludeFeatures" and "excludeInterests"
   #      withhold a name from what it provisions, yet a user who asks
   #      for that same name—selecting it directly, or selecting a
@@ -160,7 +193,7 @@
       else userCfg.features ++ userCfg.interests;
   in {
     home-manager.users =
-      lib.mapAttrs (_: userCfg: let
+      lib.mapAttrs (userName: userCfg: let
         entailed = entailedBy userCfg;
       in {
         imports = [userCfg.homeManagerConfig];
@@ -185,6 +218,9 @@
                 ++ lib.subtractLists entailed host.excludeInterests;
             };
         };
+        warnings =
+          map (describeOverruledSelection host.name userName)
+          (overruledSelections host userCfg);
       })
       config.dotfiles.users;
 
