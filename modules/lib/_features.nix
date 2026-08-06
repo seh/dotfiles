@@ -150,6 +150,17 @@
     );
   isImpliesList = value: builtins.isList value && lib.all isImpliesEntry value;
 
+  # An "unfreePackages" entry names one unfree package by the name
+  # that "lib.getName" yields for it, spelled out literally. A name
+  # computed from a package—"lib.getName pkgs.orbstack", say—would
+  # demand a package set at registration time, where none is
+  # available; such an attempt leaves its mark as string context, so
+  # an entry carrying any is rejected along with the empty name, which
+  # matches no package. Callers apply this only once the value is
+  # known to be a list of strings.
+  isLiteralPackageName = entry: entry != "" && !(builtins.hasContext entry);
+  nonLiteralPackageNames = value: builtins.filter (entry: !(isLiteralPackageName entry)) value;
+
   # The platform identifiers in a list that nixpkgs does not
   # recognize: those absent from the "lib.systems.doubles.all" list.
   # Callers apply this only once the value is known to be a list of
@@ -196,7 +207,7 @@
 
   # The module-class names that this flake's class aggregators
   # recognize. The set of keys a registration accepts is closed: once
-  # a constructor splits its reserved key off, every remaining key of
+  # a constructor splits its reserved keys off, every remaining key of
   # the argument attrset must be one of these names. A key outside the
   # set — a misspelled class name, most likely — would otherwise
   # register a body under a name that nothing ever reads, silently
@@ -205,7 +216,7 @@
 
   # The keys the "mkFeature" function claims for itself, split off the
   # argument attrset before the remainder is read as class bodies.
-  reservedKeys = ["implies" "preconditions" "supportedPlatforms"];
+  reservedKeys = ["implies" "preconditions" "supportedPlatforms" "unfreePackages"];
   checkBodyKeys = name: bodies: let
     unknownKeys = builtins.filter (key: !(builtins.elem key classNames)) (builtins.attrNames bodies);
   in
@@ -218,7 +229,7 @@
       }; a body stored under such a key would never be read. The accepted keys are ${enumerateNames classNames}, plus the reserved ${enumerateNames reservedKeys} keys.'';
 in {
   # In addition to the per-class bodies described in this file's
-  # header, the "mkFeature" function recognizes three reserved keys:
+  # header, the "mkFeature" function recognizes four reserved keys:
   #
   #   preconditions: a conjunction of entries whose joint satisfaction
   #   this feature's activation is conditioned on; listing a name here
@@ -271,6 +282,23 @@ in {
   #   recognizes—a member of the "lib.systems.doubles.all" list—so a
   #   misspelled identifier fails here at registration instead of
   #   silently constraining the feature away on every host.
+  #
+  #   unfreePackages: the unfree packages this feature installs, each
+  #   spelled as the string that "lib.getName" yields for the package
+  #   ("1password-cli" for "pkgs._1password-cli", "zoom" for
+  #   "pkgs.zoom-us"). Every entry must be that name written out
+  #   literally: computing one from a package would demand a package
+  #   set at registration time, where none is available. The names
+  #   accumulate across every feature into the "unfreePackages"
+  #   registry, which "modules/nixpkgs-config.nix" publishes as
+  #   "flake.allowUnfreePackages" and both nixpkgs instantiation sites
+  #   hand to nixpkgs' own "allowUnfreePackages" option. Name a
+  #   package here whenever this feature can install it, even on one
+  #   platform alone and even under a condition the host may not meet:
+  #   the toleration list is one flat set that every instantiation
+  #   receives, and tolerating a package that nothing installs costs
+  #   nothing while installing one without toleration halts
+  #   evaluation. An empty list, like an omitted key, names nothing.
   mkFeature = name: args: let
     bodies = builtins.removeAttrs args reservedKeys;
     declaredBadPlatforms =
@@ -290,6 +318,14 @@ in {
       then builtins.filter builtins.isAttrs args.preconditions
       else [];
     emptyGroup = lib.findFirst (g: g.anyOf == []) null preconditionGroups;
+    # The "unfreePackages" entries that are not literal package names,
+    # ready for the check below. Computed only once the value is known
+    # to be a list of strings, so a malformed value trips the earlier
+    # check instead.
+    unfreeNonLiteralNames =
+      if args ? unfreePackages && isListOfStrings args.unfreePackages
+      then nonLiteralPackageNames args.unfreePackages
+      else [];
     checks = lib.seq (checkName "mkFeature" name) (
       if args ? supportedPlatforms && !(isListOfStrings args.supportedPlatforms)
       then throw ''mkFeature: the feature "${name}" passes a "supportedPlatforms" value that is not a list of strings. Pass the Nixpkgs system identifiers on which the feature may activate.''
@@ -311,6 +347,14 @@ in {
           then "names no platform"
           else "name no platforms"
         } that nixpkgs recognizes (the "lib.systems.doubles.all" list).''
+      else if args ? unfreePackages && !(isListOfStrings args.unfreePackages)
+      then throw ''mkFeature: the feature "${name}" passes an "unfreePackages" value that is not a list of strings. Pass the unfree packages this feature installs, each spelled as the string that "lib.getName" yields for the package.''
+      else if unfreeNonLiteralNames != []
+      then throw ''mkFeature: the feature "${name}" names ${enumerateNames unfreeNonLiteralNames} among its unfree packages, which ${
+          if lib.length unfreeNonLiteralNames == 1
+          then "is not a literal package name"
+          else "are not literal package names"
+        }. Spell out each name: the empty name matches no package, and a name interpolated from a package demands a package set at registration time, where none is available.''
       else checkBodyKeys name bodies
     );
     registration = mkFeatureRegistration name bodies;
@@ -326,6 +370,13 @@ in {
       }
       // lib.optionalAttrs (args ? implies && args.implies != null && args.implies != []) {
         impliedEdges.${name} = args.implies;
+      }
+      # The toleration registry is one flat set rather than a record
+      # keyed by feature name, so this contribution is a bare list
+      # that the option's accumulating merge unions with every other
+      # feature's.
+      // lib.optionalAttrs (args ? unfreePackages) {
+        inherit (args) unfreePackages;
       };
   in
     lib.seq checks (
