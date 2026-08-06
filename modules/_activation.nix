@@ -36,6 +36,7 @@
   inherit (lib) mkOption types;
   inherit (config.dotfiles) host;
   inherit (import ./lib/_option-types.nix {inherit lib;}) setOfNames preconditionSet preconditionEntry;
+  inherit (import ./lib/_diagnostics.nix) describeHost;
 
   # Detect the host's platform from the evaluating package set. Every
   # real evaluator (Home Manager, nix-darwin, NixOS) provides one, so
@@ -622,7 +623,7 @@ in {
   # evaluator, so each evaluator reports only the exclusions idle
   # there.
   config = let
-    hostLabel = toString host.name;
+    hostLabel = describeHost host.name;
     # The unpruned walk also forces the dangling-edge check inside
     # "expandClosure" and the precondition-cycle check inside
     # "expandActivation" to run against the full tables. Pruning could
@@ -688,7 +689,7 @@ in {
     mkWarning = role: option: name: let
       forbidOption = forbidOptions.${role};
     in ''
-      Resolving host "${hostLabel}": ${option} entry "${name}" names a known ${role} that the selections in force here do not activate; the exclusion has no effect on this configuration and may be removed. A machine-wide forbid list that keeps ${describeKind role} inactive for every walk, the machine's own and every user's, is spelled "dotfiles.host.${forbidOption}".
+      Resolving ${hostLabel}: ${option} entry "${name}" names a known ${role} that the selections in force here do not activate; the exclusion has no effect on this configuration and may be removed. A machine-wide forbid list that keeps ${describeKind role} inactive for every walk, the machine's own and every user's, is spelled "dotfiles.host.${forbidOption}".
     '';
   in {
     dotfiles._knownNames = lib.unique (

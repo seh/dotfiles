@@ -38,7 +38,10 @@
   #
   # Shared inputs, used by several assertions below.
   inherit (config.dotfiles) host;
-  hostName = toString host.name;
+  inherit (import ./lib/_diagnostics.nix) describeHost;
+  # Every message below opens with this phrase, so that a host
+  # carrying no name reads as prose.
+  hostLabel = describeHost host.name;
   # The platform is detection-only: "modules/_activation.nix" computes
   # it from the evaluating package set and exposes it here. Host
   # records carry no platform attribute.
@@ -84,7 +87,7 @@
   in {
     assertion = shared == [];
     message = ''
-      Resolving host "${hostName}": the name(s) ${quoteNames shared} are registered as both ${describeKind here.kind} and ${describeKind there.kind}, but features and interests share one namespace, so a name may denote only one kind. Rename one of the registrations.
+      Resolving ${hostLabel}: the name(s) ${quoteNames shared} are registered as both ${describeKind here.kind} and ${describeKind there.kind}, but features and interests share one namespace, so a name may denote only one kind. Rename one of the registrations.
     '';
   };
 
@@ -206,7 +209,10 @@
   in {
     assertion = misplaced == [];
     message = ''
-      Resolving host "${hostName}": "${family.nameOf here}" lists ${lib.concatStringsSep ", " misplaced}, but each of these names is a known ${there.humanSingular}. ${lib.concatStringsSep " " advice}
+      Resolving ${hostLabel}: "${family.nameOf here}" lists
+      ${lib.concatStringsSep ", " misplaced}, but each of these names
+      is a known ${there.humanSingular}.
+      ${lib.concatStringsSep " " advice}
     '';
   };
 
@@ -229,7 +235,7 @@
   in {
     assertion = unknown == [];
     message = ''
-      Resolving host "${hostName}": selecting ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Add the corresponding ${role.humanSingular} module or remove the name(s) from "${hostOption role.name}".
+      Resolving ${hostLabel}: selecting ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Add the corresponding ${role.humanSingular} module or remove the name(s) from "${hostOption role.name}".
     '';
   };
 
@@ -247,7 +253,7 @@
   in {
     assertion = unknown == [];
     message = ''
-      Resolving host "${hostName}": excluding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${hostOption role.excludeName}".
+      Resolving ${hostLabel}: excluding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${hostOption role.excludeName}".
     '';
   };
 
@@ -268,7 +274,7 @@
   in {
     assertion = unknown == [];
     message = ''
-      Resolving host "${hostName}": forbidding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${hostOption role.forbidName}".
+      Resolving ${hostLabel}: forbidding ${role.humanPlural} that no imported ${role.humanSingular} module advertises: ${lib.concatStringsSep ", " unknown}. Correct the spelling or remove the name(s) from "${hostOption role.forbidName}".
     '';
   };
 
@@ -305,7 +311,7 @@
   preconditionUnknownAssertion = {
     assertion = unknownPreconditions == [];
     message = ''
-      Resolving host "${hostName}": ${lib.concatMapStringsSep " " (
+      Resolving ${hostLabel}: ${lib.concatMapStringsSep " " (
           edge: "${describePreconditionEdge edge}, but no imported module advertises that name as a feature or an interest."
         )
         unknownPreconditions} Correct each misspelling or register
@@ -342,7 +348,7 @@
   anyOfMemberContingentAssertion = {
     assertion = contingentAnyOfMembers == [];
     message = ''
-      Resolving host "${hostName}": the feature(s) ${quoteNames (lib.unique (map (e: e.feature) contingentAnyOfMembers))} list an "anyOf" precondition group naming the contingent feature(s) ${quoteNames (lib.unique (map (e: e.member) contingentAnyOfMembers))}, but a group's alternatives must be ordinary features or interests, never contingent features. A contingent alternative could form an unresolvable cycle; name a non-contingent feature or an interest instead.
+      Resolving ${hostLabel}: the feature(s) ${quoteNames (lib.unique (map (e: e.feature) contingentAnyOfMembers))} list an "anyOf" precondition group naming the contingent feature(s) ${quoteNames (lib.unique (map (e: e.member) contingentAnyOfMembers))}, but a group's alternatives must be ordinary features or interests, never contingent features. A contingent alternative could form an unresolvable cycle; name a non-contingent feature or an interest instead.
     '';
   };
 
@@ -357,7 +363,7 @@
   contingentRegistrationAssertion = {
     assertion = unregisteredContingent == [];
     message = ''
-      Resolving host "${hostName}": the preconditions table keys the contingent feature(s) ${quoteNames unregisteredContingent}, but no imported module registers these names as features. A contingent feature must be registered via the "mkFeature" function; a name known only as an interest may not carry preconditions. Register each name with the "mkFeature" function (passing its "preconditions" list there) or remove its entry from "dotfiles.featurePreconditions".
+      Resolving ${hostLabel}: the preconditions table keys the contingent feature(s) ${quoteNames unregisteredContingent}, but no imported module registers these names as features. A contingent feature must be registered via the "mkFeature" function; a name known only as an interest may not carry preconditions. Register each name with the "mkFeature" function (passing its "preconditions" list there) or remove its entry from "dotfiles.featurePreconditions".
     '';
   };
 
@@ -380,7 +386,7 @@
   contingentSelectionAssertion = {
     assertion = selectedContingent == [];
     message = ''
-      Resolving host "${hostName}": the selections name the contingent feature(s) ${quoteNames selectedContingent} (written in "dotfiles.host.features" or "dotfiles.host.interests" or, on a multi-user host, in the matching "dotfiles.users.<name>" list), but a contingent feature activates automatically exactly when all of its preconditions are met and may not be selected directly. Select its preconditions instead.
+      Resolving ${hostLabel}: the selections name the contingent feature(s) ${quoteNames selectedContingent} (written in "dotfiles.host.features" or "dotfiles.host.interests" or, on a multi-user host, in the matching "dotfiles.users.<name>" list), but a contingent feature activates automatically exactly when all of its preconditions are met and may not be selected directly. Select its preconditions instead.
     '';
   };
 
@@ -442,7 +448,7 @@
   contingentImplicationTargetAssertion = {
     assertion = contingentImplicationTargets == [];
     message = ''
-      Resolving host "${hostName}": the implication graph targets the contingent feature(s) ${quoteNames contingentImplicationTargets}, but a contingent feature activates automatically exactly when all of its preconditions are met and may not be an implied target. Remove the edge(s) from the implication graph.
+      Resolving ${hostLabel}: the implication graph targets the contingent feature(s) ${quoteNames contingentImplicationTargets}, but a contingent feature activates automatically exactly when all of its preconditions are met and may not be an implied target. Remove the edge(s) from the implication graph.
     '';
   };
 
@@ -454,7 +460,7 @@
   fabricatedInterestTargetAssertion = {
     assertion = fabricatedInterestEdges == [];
     message = ''
-      Resolving host "${hostName}": the implication graph has a feature imply the interest(s) ${quoteNames (lib.unique (map (e: e.target) fabricatedInterestEdges))}, but only another interest may imply an interest — a want is expressed by selection, not manufactured by a configuration unit. Remove the edge(s) from the source's "implies" list.
+      Resolving ${hostLabel}: the implication graph has a feature imply the interest(s) ${quoteNames (lib.unique (map (e: e.target) fabricatedInterestEdges))}, but only another interest may imply an interest — a want is expressed by selection, not manufactured by a configuration unit. Remove the edge(s) from the source's "implies" list.
     '';
   };
 
@@ -466,7 +472,7 @@
   interestCrossingAssertion = {
     assertion = interestCrossingEdges == [];
     message = ''
-      Resolving host "${hostName}": the interest(s) ${quoteNames (lib.unique (map (e: e.source) interestCrossingEdges))} imply non-interest names ${quoteNames (lib.unique (map (e: e.target) interestCrossingEdges))}, but an interest may imply only other interests, never a feature. Remove the crossing edge(s).
+      Resolving ${hostLabel}: the interest(s) ${quoteNames (lib.unique (map (e: e.source) interestCrossingEdges))} imply non-interest names ${quoteNames (lib.unique (map (e: e.target) interestCrossingEdges))}, but an interest may imply only other interests, never a feature. Remove the crossing edge(s).
     '';
   };
 
@@ -513,7 +519,7 @@
   mixedBodyAssertion = {
     assertion = mixedBodyFeatures == [];
     message = ''
-      Resolving host "${hostName}": ${lib.concatMapStringsSep " " (
+      Resolving ${hostLabel}: ${lib.concatMapStringsSep " " (
           entry: "${describeMixedFeature entry}, but a feature configures the machine or a user's home, never both. A system body follows the machine's own selections while a home body follows each user's, so a mixed feature activates only partially."
         )
         mixedBodyFeatures} Split each one into a machine-only feature
@@ -570,7 +576,7 @@
   userSystemOnlyFeatureAssertion = {
     assertion = userSystemOnlyFeatures == [];
     message = ''
-      Resolving host "${hostName}": ${
+      Resolving ${hostLabel}: ${
         lib.concatMapStringsSep " " describeSystemOnlySelection userSystemOnlyFeatures
       }
     '';
@@ -585,7 +591,7 @@
   platformDetectedAssertion = {
     assertion = host.name == null || platform != null;
     message = ''
-      Resolving host "${hostName}": the host has a name, but no platform could be detected because this evaluator provides no package set. Evaluate these modules with a package set, as the "mkHome", "mkDarwin", and "mkNixOS" constructors do.
+      Resolving ${hostLabel}: the host has a name, but no platform could be detected because this evaluator provides no package set. Evaluate these modules with a package set, as the "mkHome", "mkDarwin", and "mkNixOS" constructors do.
     '';
   };
 
@@ -615,7 +621,12 @@
   platformSupportAssertion = {
     assertion = unsupportedActiveNames == [];
     message = ''
-      Resolving host "${hostName}": ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveNames} may not activate on this host's platform, "${toString platform}". Remove the name(s) from "${hostOption "features"}" or, on a multi-user host, from the matching "dotfiles.users.<name>" list.
+      Resolving ${hostLabel}:
+      ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveNames}
+      may not activate on this host's platform,
+      "${toString platform}". Remove the name(s) from
+      "${hostOption "features"}" or, on a multi-user host, from the
+      matching "dotfiles.users.<name>" list.
     '';
   };
 in {
