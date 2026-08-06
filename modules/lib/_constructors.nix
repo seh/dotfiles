@@ -7,6 +7,7 @@
 # them as plain library functions:
 #
 #   inputs.dotfiles.lib.mkDarwin {
+#     hostPlatform = "aarch64-darwin";
 #     modules = [
 #       {
 #         dotfiles.users.seh = {
@@ -231,12 +232,99 @@
       config.dotfiles.users;
   };
 
+  # Format a list of names as a quoted, comma-separated English
+  # enumeration with a serial comma, matching the "enumerateNames"
+  # helper in the "modules/lib/_features.nix" file: one name renders
+  # as "a", two as "a" and "b", and three or more as "a", "b", and
+  # "c".
+  enumerateNames = names: let
+    quoted = map (n: "\"${n}\"") names;
+    count = lib.length quoted;
+  in
+    if count == 1
+    then lib.head quoted
+    else if count == 2
+    then "${lib.head quoted} and ${lib.last quoted}"
+    else "${lib.concatStringsSep ", " (lib.init quoted)}, and ${lib.last quoted}";
+
+  # Argument validation shared by the three constructors below,
+  # holding each to its contract in this flake's vocabulary. Each
+  # constructor forwards every argument it does not consume itself, so
+  # an unrecognized name passes through to home-manager, nix-darwin,
+  # or NixOS, where the complaint speaks that evaluator's vocabulary
+  # and specifies neither the constructor called nor what it would
+  # have accepted. A required name is held here too, rather than by
+  # the constructor's own function pattern, whose complaint specifies
+  # an anonymous lambda.
+  #
+  # The check wraps the configuration a constructor returns, so
+  # forcing that configuration raises the complaint first and every
+  # binding derived from an argument under complaint stays unread.
+  #
+  # The "accepted" argument lists every name the constructor takes:
+  # those it consumes itself, plus those its builder accepts, read
+  # from the builder's own argument pattern, less any the constructor
+  # withholds for a reason its own comment gives. The "required"
+  # argument lists the names the constructor has no basis to default.
+  #
+  # A supplied "pkgs" argument must build for the platform that the
+  # "hostPlatform" argument specifies. This is a throw rather than a
+  # module assertion because nothing forces the assertions on the way
+  # to an answer: the activation walk in the "modules/_activation.nix"
+  # file reads the platform from the package set, so a configuration
+  # whose two platforms disagree resolves its features from the
+  # package set's platform and answers every question put to it while
+  # the assertions go unread. Only a supplied "pkgs" argument can
+  # disagree, since the package set a constructor instantiates itself
+  # comes from the "hostPlatform" argument.
+  checkArguments = {
+    accepted,
+    args,
+    constructor,
+    hostPlatform ? null,
+    required ? [],
+  }: configuration: let
+    missing = builtins.filter (name: !(args ? ${name})) required;
+    unknown = builtins.attrNames (builtins.removeAttrs args accepted);
+    suppliedPlatform = args.pkgs.stdenv.hostPlatform.system;
+  in
+    if missing != []
+    then throw ''${constructor}: ${
+        if lib.length missing == 1
+        then "this call omits the required argument ${enumerateNames missing}, which has no default"
+        else "this call omits the required arguments ${enumerateNames missing}, which have no defaults"
+      }. The accepted arguments are ${enumerateNames accepted}.''
+    else if unknown != []
+    then throw ''${constructor}: ${
+        if lib.length unknown == 1
+        then "this constructor does not accept the argument ${enumerateNames unknown}"
+        else "this constructor does not accept the arguments ${enumerateNames unknown}"
+      }. The accepted arguments are ${enumerateNames accepted}.''
+    else if hostPlatform != null && args ? pkgs && suppliedPlatform != hostPlatform
+    then throw ''${constructor}: "hostPlatform" specifies the platform "${hostPlatform}" while the supplied "pkgs" builds for "${suppliedPlatform}". The two must agree, since the configuration declares the first while drawing its packages and resolving its features from the second. Either omit "pkgs" and let this constructor instantiate a package set for "${hostPlatform}", or supply one built for "${hostPlatform}".''
+    else configuration;
+
+  # The arguments the "mkHome" constructor accepts: "modules",
+  # "overlays", and "pkgs", which it consumes itself, together with
+  # the rest of what the "homeManagerConfiguration" function accepts,
+  # per the argument pattern in home-manager's "lib/eval-config.nix"
+  # file.
+  homeArguments = [
+    "check"
+    "extraSpecialArgs"
+    "lib"
+    "minimal"
+    "modules"
+    "overlays"
+    "pkgs"
+  ];
+
   mkHome = {
-    pkgs,
     overlays ? [],
     modules ? [],
     ...
   } @ args: let
+    inherit (args) pkgs;
     finalPkgs = pkgs.extend (
       lib.composeManyExtensions ([dotfilesFlake.overlays.nixpkgs] ++ overlays)
     );
@@ -267,32 +355,70 @@
       programs.home-manager.enable = lib.mkDefault true;
     };
   in
-    homeManagerConfiguration (
-      builtins.removeAttrs args [
-        "overlays"
-      ]
-      // {
-        pkgs = finalPkgs;
-        modules =
-          modules
-          ++ [
-            dotfilesFlake.modules.homeManager.default
-            homeDefaultsModule
-          ];
-      }
+    checkArguments {
+      constructor = "mkHome";
+      accepted = homeArguments;
+      required = ["pkgs"];
+      inherit args;
+    } (
+      homeManagerConfiguration (
+        builtins.removeAttrs args [
+          "overlays"
+        ]
+        // {
+          pkgs = finalPkgs;
+          modules =
+            modules
+            ++ [
+              dotfilesFlake.modules.homeManager.default
+              homeDefaultsModule
+            ];
+        }
+      )
     );
 
+  # The arguments the "mkDarwin" constructor accepts: "hostPlatform",
+  # "overlays", and "pkgs", which it consumes itself, together with
+  # the rest of what the "darwinSystem" function accepts—the "inputs"
+  # and "pkgs" arguments, which it handles itself, per its definition
+  # in nix-darwin's "flake.nix" file, plus everything it forwards to
+  # the "evalConfig" function, per the argument pattern in
+  # nix-darwin's "eval-config.nix" file.
+  #
+  # It does not accept the "system" argument, which the "darwinSystem"
+  # function takes as an older way to specify the platform, turning it
+  # into the "nixpkgs.system" option. The nixpkgs module ignores that
+  # option once the "nixpkgs.hostPlatform" or "nixpkgs.pkgs" option is
+  # set, and this constructor sets both, so a "system" argument that
+  # nominated another platform would pass the agreement check
+  # above—which reads only the "pkgs" argument—and stand in the
+  # configuration as a third opinion nothing builds for. The
+  # "hostPlatform" argument is the only way to specify the platform.
+  darwinArguments = [
+    "baseModules"
+    "check"
+    "enableNixpkgsReleaseCheck"
+    "hostPlatform"
+    "inputs"
+    "lib"
+    "modules"
+    "overlays"
+    "pkgs"
+    "specialArgs"
+  ];
+
   mkDarwin = {
-    hostPlatform ? "aarch64-darwin",
-    pkgs ?
-      pkgsFor {
-        system = hostPlatform;
-        applyOverlays = false;
-      },
     overlays ? [],
     modules ? [],
     ...
   } @ args: let
+    inherit (args) hostPlatform;
+    pkgs =
+      args.pkgs
+      or (pkgsFor {
+        system = hostPlatform;
+        applyOverlays = false;
+      });
     finalPkgs = pkgs.extend (
       lib.composeManyExtensions ([dotfilesFlake.overlays.nixpkgs] ++ overlays)
     );
@@ -314,37 +440,69 @@
       system.primaryUser = lib.mkDefault config.dotfiles.primaryUser;
     };
   in
-    darwinSystem (
-      builtins.removeAttrs args [
-        "hostPlatform"
-        "overlays"
-        "pkgs"
-      ]
-      // {
-        modules =
-          modules
-          ++ [
-            nixpkgsModule
-            dotfilesFlake.modules.darwin.default
-            inputs.home-manager.darwinModules.default
-            homeManagerSharedModule
-            machineDefaultsModule
-            (multiUserPropagationModule "/Users")
-          ];
-      }
+    checkArguments {
+      constructor = "mkDarwin";
+      accepted = darwinArguments;
+      required = ["hostPlatform"];
+      inherit args hostPlatform;
+    } (
+      darwinSystem (
+        builtins.removeAttrs args [
+          "hostPlatform"
+          "overlays"
+          "pkgs"
+        ]
+        // {
+          modules =
+            modules
+            ++ [
+              nixpkgsModule
+              dotfilesFlake.modules.darwin.default
+              inputs.home-manager.darwinModules.default
+              homeManagerSharedModule
+              machineDefaultsModule
+              (multiUserPropagationModule "/Users")
+            ];
+        }
+      )
     );
 
+  # The arguments the "mkNixOS" constructor accepts: "hostPlatform",
+  # "overlays", and "pkgs", which it consumes itself, together with
+  # the rest of what the "nixosSystem" function accepts, per its
+  # definition in nixpkgs' "flake.nix" file, which forwards everything
+  # but the "modules" argument to the argument pattern in nixpkgs'
+  # "nixos/lib/eval-config.nix" file.
+  #
+  # It does not accept the "system" argument either. The "nixosSystem"
+  # function turns that argument into the same "nixpkgs.system"
+  # option, ignored for the same reason, given with the
+  # "darwinArguments" list above.
+  nixosArguments = [
+    "baseModules"
+    "extraModules"
+    "hostPlatform"
+    "lib"
+    "modules"
+    "modulesLocation"
+    "overlays"
+    "pkgs"
+    "prefix"
+    "specialArgs"
+  ];
+
   mkNixOS = {
-    hostPlatform ? "aarch64-linux",
-    pkgs ?
-      pkgsFor {
-        system = hostPlatform;
-        applyOverlays = false;
-      },
     overlays ? [],
     modules ? [],
     ...
   } @ args: let
+    inherit (args) hostPlatform;
+    pkgs =
+      args.pkgs
+      or (pkgsFor {
+        system = hostPlatform;
+        applyOverlays = false;
+      });
     finalPkgs = pkgs.extend (
       lib.composeManyExtensions ([dotfilesFlake.overlays.nixpkgs] ++ overlays)
     );
@@ -362,24 +520,31 @@
       nixpkgs.hostPlatform = hostPlatform;
     };
   in
-    nixosSystem (
-      builtins.removeAttrs args [
-        "hostPlatform"
-        "overlays"
-        "pkgs"
-      ]
-      // {
-        modules =
-          modules
-          ++ [
-            nixpkgsModule
-            dotfilesFlake.modules.nixos.default
-            inputs.home-manager.nixosModules.home-manager
-            homeManagerSharedModule
-            machineDefaultsModule
-            (multiUserPropagationModule "/home")
-          ];
-      }
+    checkArguments {
+      constructor = "mkNixOS";
+      accepted = nixosArguments;
+      required = ["hostPlatform"];
+      inherit args hostPlatform;
+    } (
+      nixosSystem (
+        builtins.removeAttrs args [
+          "hostPlatform"
+          "overlays"
+          "pkgs"
+        ]
+        // {
+          modules =
+            modules
+            ++ [
+              nixpkgsModule
+              dotfilesFlake.modules.nixos.default
+              inputs.home-manager.nixosModules.home-manager
+              homeManagerSharedModule
+              machineDefaultsModule
+              (multiUserPropagationModule "/home")
+            ];
+        }
+      )
     );
 
   # Basis of inspiration:
