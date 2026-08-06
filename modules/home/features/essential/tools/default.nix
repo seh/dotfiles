@@ -3,6 +3,9 @@
 # packages installed into the user's profile and the programs that
 # home-manager configures directly.
 flakeLib.mkFeature "essential/tools" {
+  # The "_1password-cli" package answers to the name "1password-cli".
+  unfreePackages = ["1password-cli"];
+
   homeManager = {
     lib,
     pkgs,

@@ -1,5 +1,7 @@
 {flakeLib, ...}:
 flakeLib.mkFeature "model-agent/copilot" {
+  unfreePackages = ["github-copilot-cli"];
+
   homeManager = {
     lib,
     pkgs,
