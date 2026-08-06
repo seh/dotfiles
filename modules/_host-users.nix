@@ -24,6 +24,7 @@
   ...
 }: let
   inherit (lib) mkOption types;
+  inherit (import ./lib/_diagnostics.nix) describeHost;
 in {
   options.dotfiles = {
     primaryUser = mkOption {
@@ -65,7 +66,7 @@ in {
     # users' homes—which is why this is a warning rather than an
     # error.
     warnings = lib.optional (userNames != [] && machineSelections == []) ''
-      Resolving host "${toString host.name}": "dotfiles.users" lists ${lib.concatMapStringsSep ", " (n: "\"${n}\"") userNames}, but this machine selects nothing of its own, so it applies no system-class feature. A machine's system configuration follows only "dotfiles.host.features" and "dotfiles.host.interests", never its users' selections. If you meant to configure the machine, add its selections to those lists. If this machine exists only to provision its users' homes, you can ignore this warning.
+      Resolving ${describeHost host.name}: "dotfiles.users" lists ${lib.concatMapStringsSep ", " (n: "\"${n}\"") userNames}, but this machine selects nothing of its own, so it applies no system-class feature. A machine's system configuration follows only "dotfiles.host.features" and "dotfiles.host.interests", never its users' selections. If you meant to configure the machine, add its selections to those lists. If this machine exists only to provision its users' homes, you can ignore this warning.
     '';
   };
 }
