@@ -51,12 +51,14 @@
   inherit (inputs.nix-darwin.lib) darwinSystem;
   inherit (inputs.nixos.lib) nixosSystem;
 
-  nixpkgsDefaults = import ../_nixpkgs-defaults.nix;
-
   # Build a "pkgs" instance for the given system, with this flake's
-  # own nixpkgs overlay and shared "allowUnfreePackages" list applied.
-  # This is a fresh instantiation, independent of whatever the
-  # consumer's flake-parts "perSystem" may have produced.
+  # own nixpkgs overlay applied and its features' unfree packages
+  # tolerated. That toleration set is the union this flake publishes
+  # as the "allowUnfreePackages" output (see the
+  # "../nixpkgs-config.nix" file), so the package set built here
+  # tolerates exactly what the flake-parts evaluator's own does. This
+  # is a fresh instantiation, independent of whatever the consumer's
+  # flake-parts "perSystem" option may have produced.
   #
   # Pass "applyOverlays = false" to omit that overlay.
   #
@@ -74,8 +76,8 @@
     import inputs.nixpkgs (
       {
         inherit system;
+        config.allowUnfreePackages = dotfilesFlake.allowUnfreePackages;
       }
-      // nixpkgsDefaults
       // lib.optionalAttrs applyOverlays {
         overlays = [dotfilesFlake.overlays.nixpkgs];
       }
