@@ -210,7 +210,7 @@
       source:
         map (
           target: ''
-            implicationsFor: dangling edge ${source} -> ${target} (no such feature or interest is known via the "flake.knownFeatures" and "flake.knownInterests" options)
+            implicationsFor: dangling edge ${source} -> ${target} (no such feature or interest is registered under the "dotfiles.knownFeatures" and "dotfiles.knownInterests" options, which the "mkFeature" and "mkInterest" functions populate)
           ''
         ) (lib.filter (target: !(builtins.elem target known)) implications.${source})
     ) (builtins.attrNames implications);
