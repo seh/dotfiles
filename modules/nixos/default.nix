@@ -10,6 +10,7 @@
         ../_activation.nix
         ../_assertions.nix
         ../_host-users.nix
+        ../_nixos-user-accounts.nix
         {
           dotfiles = {
             _knownFeatures = flake.config.dotfiles.knownFeatures;
