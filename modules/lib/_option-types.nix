@@ -49,7 +49,7 @@ in {
   #
   # An unknown value throws at type-construction time, listing the
   # accepted values. The type's name and description carry the chosen
-  # policy so that a type-mismatch error names it.
+  # policy so that a type-mismatch error reports it.
   setOfNames = {
     merge,
     allowEmpty ? true,

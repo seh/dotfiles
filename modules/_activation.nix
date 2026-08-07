@@ -365,7 +365,7 @@ in {
                     type = types.bool;
                     description = ''
                       True when this evaluator's own
-                      "host.excludeFeatures" list names this feature:
+                      "host.excludeFeatures" list holds this feature:
                       the machine's own exclusions in a system
                       evaluator, and those in force for the user in a
                       managed user's evaluator.
@@ -610,7 +610,7 @@ in {
     };
   };
 
-  # Diagnose exclusions that name a known item this evaluator's own
+  # Diagnose exclusions that list a known item this evaluator's own
   # selections do not activate: the exclusion has no effect here and
   # may be removed. For each candidate name "n" in "excludeFeatures"
   # (or "excludeInterests"), recompute this evaluator's own activation
@@ -674,7 +674,7 @@ in {
     # "modules/_assertions.nix" reject outright and the walk ignores.
     redundantFeatures = redundantOf config.dotfiles._knownFeatures host.excludeFeatures;
     redundantInterests = redundantOf config.dotfiles._knownInterests host.excludeInterests;
-    # The machine-wide forbid option each kind answers to, named in
+    # The machine-wide forbid option each kind answers to, cited in
     # the warning below as the absolute alternative to an exclusion.
     forbidOptions = {
       feature = "forbidFeatures";
@@ -689,7 +689,7 @@ in {
     mkWarning = role: option: name: let
       forbidOption = forbidOptions.${role};
     in ''
-      Resolving ${hostLabel}: ${option} entry "${name}" names a known ${role} that the selections in force here do not activate; the exclusion has no effect on this configuration and may be removed. A machine-wide forbid list that keeps ${describeKind role} inactive for every walk, the machine's own and every user's, is spelled "dotfiles.host.${forbidOption}".
+      Resolving ${hostLabel}: ${option} entry "${name}" identifies a known ${role} that the selections in force here do not activate; the exclusion has no effect on this configuration and may be removed. A machine-wide forbid list that keeps ${describeKind role} inactive for every walk, the machine's own and every user's, is spelled "dotfiles.host.${forbidOption}".
     '';
   in {
     dotfiles._knownNames = lib.unique (

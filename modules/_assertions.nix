@@ -58,7 +58,7 @@
   quoteNames = names: lib.concatMapStringsSep ", " (n: "\"${n}\"") names;
 
   # Features and interests share one namespace: a name may denote only
-  # one kind. The check below names the offender and both kinds. This
+  # one kind. The check below cites the offender and both kinds. This
   # collision is the case the "uniq" guard on the module registries
   # cannot catch (an interest contributes no module body, so a body
   # under its name would count as a first definition, not a
@@ -91,24 +91,23 @@
     '';
   };
 
-  # Every authoring list named below sits directly under
-  # "dotfiles.host" at the machine level; each one but
-  # "forbidFeatures" and "forbidInterests" also has a per-user
-  # counterpart under "dotfiles.users.<name>". The messages below
-  # build both paths from a list's bare name, since a name arriving at
-  # a managed user's nested evaluator may have been written at either
-  # surface.
+  # Every authoring list below sits directly under "dotfiles.host" at
+  # the machine level; each one but "forbidFeatures" and
+  # "forbidInterests" also has a per-user counterpart under
+  # "dotfiles.users.<name>". The messages below build both paths from
+  # a list's bare name, since a name arriving at a managed user's
+  # nested evaluator may have been written at either surface.
   hostOption = attr: "dotfiles.host.${attr}";
   userOption = attr: "dotfiles.users.<name>.${attr}";
 
   # Role-parametric driver. Iterating over this list (rather than
   # hard-coding "features" and "interests") means that adding a third
   # role later—say, "bundles"—reduces to a single new entry. Each role
-  # names the three lists a machine or user authors under it and the
-  # registry of names it advertises, so that each kind's own registry
-  # judges its own lists. These are the authoring roles, one per kind;
-  # the activation walk carries one list and folds both kinds into it
-  # (see "modules/_activation.nix").
+  # identifies the three lists a machine or user authors under it and
+  # the registry of names it advertises, so that each kind's own
+  # registry judges its own lists. These are the authoring roles, one
+  # per kind; the activation walk carries one list and folds both
+  # kinds into it (see "modules/_activation.nix").
   roles = [
     {
       name = "features";
@@ -147,7 +146,7 @@
   # machine forbids outright. Each entry reads its list off a role and
   # spells that list's bare name, so the kind-mismatch check covers
   # all three lists from one definition. Forbidding is machine-wide,
-  # so that list alone has no per-user counterpart to name.
+  # so that list alone has no per-user counterpart.
   listFamilies = [
     {
       entriesOf = role: role.selected;
@@ -170,8 +169,8 @@
   # that are actually known as "there.name". The kinds are not
   # interchangeable—a feature carries configuration and may be
   # implied, while an interest carries none and is only selected or
-  # entailed—so a misfiled name is an error naming the list it belongs
-  # in.
+  # entailed—so a misfiled name is an error that cites the list it
+  # belongs in.
   #
   # A contingent feature misfiled into an exclusion list draws advice
   # of its own. A machine-level entry in the "excludeFeatures" list is
@@ -278,7 +277,7 @@
     '';
   };
 
-  # Every precondition must name a known feature or interest—never a
+  # Every precondition must cite a known feature or interest—never a
   # name nothing advertises. A group's members are subject to the same
   # hygiene, so flatten each feature's preconditions to every
   # referenced name: each bare entry, plus every member of each
@@ -304,7 +303,7 @@
   describePreconditionEdge = {
     feature,
     precondition,
-  }: ''The feature "${feature}" names "${precondition}" as a precondition'';
+  }: ''The feature "${feature}" lists "${precondition}" as a precondition'';
   unknownPreconditions =
     builtins.filter ({precondition, ...}: !(builtins.elem precondition knownNames))
     preconditionEdges;
@@ -348,7 +347,15 @@
   anyOfMemberContingentAssertion = {
     assertion = contingentAnyOfMembers == [];
     message = ''
-      Resolving ${hostLabel}: the feature(s) ${quoteNames (lib.unique (map (e: e.feature) contingentAnyOfMembers))} list an "anyOf" precondition group naming the contingent feature(s) ${quoteNames (lib.unique (map (e: e.member) contingentAnyOfMembers))}, but a group's alternatives must be ordinary features or interests, never contingent features. A contingent alternative could form an unresolvable cycle; name a non-contingent feature or an interest instead.
+      Resolving ${hostLabel}: the feature(s)
+      ${quoteNames (lib.unique (map (e: e.feature) contingentAnyOfMembers))}
+      list an "anyOf" precondition group that holds the contingent
+      feature(s)
+      ${quoteNames (lib.unique (map (e: e.member) contingentAnyOfMembers))},
+      but a group's alternatives must be ordinary features or
+      interests, never contingent features. A contingent alternative
+      could form an unresolvable cycle; list a non-contingent feature
+      or an interest instead.
     '';
   };
 

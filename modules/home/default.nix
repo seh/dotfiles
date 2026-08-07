@@ -31,7 +31,13 @@ in {
             {
               assertion = userNames == [];
               message = ''
-                Resolving ${describeHost config.dotfiles.host.name}: "dotfiles.users" names the user(s) ${lib.concatMapStringsSep ", " (n: "\"${n}\"") userNames}, but managed users exist only on hosts that a system configuration manages (nix-darwin or NixOS); a standalone home-manager configuration is one user's environment. Remove the entries.
+                Resolving ${describeHost config.dotfiles.host.name}:
+                "dotfiles.users" lists the user(s)
+                ${lib.concatMapStringsSep ", " (n: "\"${n}\"") userNames},
+                but managed users exist only on hosts that a system
+                configuration manages (nix-darwin or NixOS); a
+                standalone home-manager configuration is one user's
+                environment. Remove the entries.
               '';
             }
           ];

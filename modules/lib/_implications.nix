@@ -38,7 +38,7 @@
   # body-less bundle therefore folds into "all" the moment it is
   # registered, while a feature some bundle already implies stays out,
   # arriving through that bundle instead. A feature that configures
-  # something of its own stays out as well, so that "all" names the
+  # something of its own stays out as well, so that "all" covers the
   # body-less bundles alone and a feature with a body is one a host
   # asks for deliberately; the "featureClasses" argument reports which
   # names carry a body. A contingent feature stays out because its
@@ -46,7 +46,7 @@
   # because a feature's edges may target only features—so the
   # computation upholds on its own the two rules that the assertions
   # in "modules/_assertions.nix" police for declared edges, which
-  # never see these. Hosts decline what "all" brings along by naming
+  # never see these. Hosts decline what "all" brings along by listing
   # it under "excludeFeatures": declining is an exclusion, not an
   # absence.
   #
@@ -110,7 +110,7 @@
     # The name of the aggregate whose targets this function computes.
     # Bound once so that the two tests below—excluding it from its own
     # targets, and excluding its own declarations from the "implied
-    # elsewhere" reading—name the same feature.
+    # elsewhere" reading—denote the same feature.
     aggregateName = "all";
     # A bundle: a registered feature that declares no body of its own
     # and is not contingent. This one predicate decides both which
@@ -260,13 +260,14 @@
   # activate. A bare-name entry is satisfied when that name is active;
   # a group entry "{ anyOf = [...]; }" is satisfied when at least one
   # member is active. Preconditions have no pulling power: a listed
-  # name never becomes active by being named as a precondition.
-  # Exclusion trumps activation twice over: a contingent feature named
-  # in "excludeFeatures" never activates even when its preconditions
-  # hold (its entry is dropped from the table here), and one whose
-  # precondition is excluded never activates because the pruned walk
-  # can never bring that precondition into effect (the caller prunes
-  # the implication graph and filters "selected" as usual).
+  # name never becomes active by appearing in a precondition.
+  # Exclusion trumps activation twice over: a contingent feature
+  # listed in "excludeFeatures" never activates even when its
+  # preconditions hold (its entry is dropped from the table here), and
+  # one whose precondition is excluded never activates because the
+  # pruned walk can never bring that precondition into effect (the
+  # caller prunes the implication graph and filters "selected" as
+  # usual).
   #
   # The walk is a fixpoint: each pass runs the "expandClosure"
   # function over the implication graph, then activates every
@@ -310,7 +311,7 @@
     # are non-contingent by rule (an assertion in
     # "modules/_assertions.nix" enforces it), so a group can never
     # close a precondition cycle. Skip the group entries, then keep
-    # the bare names that name other contingent features.
+    # the bare names that refer to other contingent features.
     preconditionEdgesFrom = name:
       builtins.filter (r: preconditions ? ${r}) (
         builtins.filter builtins.isString preconditions.${name}
@@ -345,13 +346,13 @@
             ]
       ) []
       cyclicNames;
-    # One ruled sentence per cycle: a one-member cycle names the
-    # feature that names itself as a precondition, and a larger cycle
+    # One ruled sentence per cycle: a one-member cycle identifies the
+    # feature that lists itself as a precondition, and a larger cycle
     # enumerates its members.
     describeCycle = group:
       if lib.length group == 1
-      then "The feature \"${lib.head group}\" names itself as a precondition, which cannot be satisfied."
-      else "The following features name one another as preconditions in a cycle that cannot be satisfied: ${enumerateNames group}.";
+      then "The feature \"${lib.head group}\" lists itself as a precondition, which cannot be satisfied."
+      else "The following features list one another as preconditions in a cycle that cannot be satisfied: ${enumerateNames group}.";
     _cycleCheck =
       if cyclicNames != []
       then
