@@ -34,9 +34,7 @@ in {
   # strict option passes "allowEmpty = false" to reject the empty list
   # per definition, expressing "no constraint" by omitting the
   # attribute entirely so that an accidental "[]" cannot pass silently
-  # while meaning something else. A combined result may still be empty
-  # (see the "intersection" policy below) regardless of "allowEmpty":
-  # that is a computed value, not an authored one.
+  # while meaning something else.
   #
   # The "merge" parameter selects how multiple definitions of one
   # option combine. The name deliberately echoes the module system's
@@ -48,9 +46,6 @@ in {
   #   than a union.
   #
   #   "union": the union of the normalized definitions.
-  #
-  #   "intersection": the intersection of the normalized definitions,
-  #   which may legitimately be empty.
   #
   # An unknown value throws at type-construction time, listing the
   # accepted values. The type's name and description carry the chosen
@@ -72,18 +67,11 @@ in {
         phrase = "definitions combine as their union";
         combine = _loc: defs: normalize (lib.concatMap (def: def.value) defs);
       };
-      intersection = {
-        phrase = "definitions combine as their intersection, which may be empty";
-        combine = _loc: defs: let
-          values = map (def: normalize def.value) defs;
-        in
-          lib.foldl' lib.intersectLists (lib.head values) (lib.tail values);
-      };
     };
     policy =
       if policies ? ${merge}
       then policies.${merge}
-      else throw ''setOfNames: unknown "merge" policy "${merge}". The accepted values are "agreement", "union", and "intersection".'';
+      else throw ''setOfNames: unknown "merge" policy "${merge}". The accepted values are "agreement" and "union".'';
   in
     lib.seq policy (lib.mkOptionType {
       name =
