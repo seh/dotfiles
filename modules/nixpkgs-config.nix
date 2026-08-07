@@ -2,7 +2,7 @@
 # features declare, publish it for the constructors, and apply it to
 # the flake-parts evaluator's own package set.
 #
-# Each feature names the unfree packages it installs through the
+# Each feature lists the unfree packages it installs through the
 # "unfreePackages" argument of the "mkFeature" function, beside the
 # packages themselves; the "dotfiles.unfreePackages" registry (see
 # "./module-schema.nix") unions those contributions. Publishing the

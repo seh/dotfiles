@@ -28,7 +28,7 @@ in {
       readOnly = true;
       description = ''
         Per-feature module classes, keyed by feature name. Each value
-        names the classes ("homeManager", "nixDarwin", "nixOS") that
+        lists the classes ("homeManager", "nixDarwin", "nixOS") that
         register a body for that feature, in that order. This module
         computes it from the "featureModules" registry; the
         "mkFeature" function records nothing here. The record
@@ -91,8 +91,8 @@ in {
         feature or interest that brings the targets along. Each value
         is that source's "implies" list: an entry is either a bare
         target name or a record "{ name = "<target>";
-        supportedPlatforms = [<systems>]; }" naming an edge present
-        only when the host's platform is one of the listed systems. An
+        supportedPlatforms = [<systems>]; }" for an edge present only
+        when the host's platform is one of the listed systems. An
         interest source lists only bare interest names. Populated by
         the "mkFeature" and "mkInterest" functions from their
         "implies" argument. Definitions accumulate, so several modules
@@ -133,7 +133,7 @@ in {
         this flake or downstream consumers. An interest is a named
         want that participates in activation exactly as a feature
         does—a host may select or exclude it, and a contingent feature
-        may name it as a precondition—but carries no configuration.
+        may list it as a precondition—but carries no configuration.
         Accumulated and de-duplicated. Populates
         "dotfiles._knownInterests" in each class aggregator.
       '';
