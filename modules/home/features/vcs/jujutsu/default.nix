@@ -47,13 +47,28 @@ flakeLib.mkFeature "vcs/jujutsu" {
                   register-snapshot-trigger = true;
                 };
               };
+              git = {
+                # See https://jj-vcs.github.io/jj/latest/FAQ/#how-can-i-avoid-committing-my-local-only-changes-to-tracked-files.
+                # NB: Exclude "WIP:"-prefixed commits here via
+                # "wip()", as it's often useful to push such changes
+                # to topic branches for testing.
+                private-commits = "private()";
+              };
+              revsets = {
+                # Basis of inspiration: https://offby1.website/posts/how-i-jujutsu-bookmark-advance.html
+                bookmark-advance-to = "closest_pushable(@)";
+              };
               revset-aliases = {
+                # Basis of inspiration: https://offby1.website/posts/how-i-jujutsu-bookmark-advance.html
+                "closest_pushable(to)" = "heads(::to & mutable() & ~denied_for_publishing() & ~description(exact:'') & (~empty() | merges()))";
+                "denied_for_publishing()" = "wip() | private()";
                 "lagging_bookmarks" = ''
                   ::bookmarks()
                   & mutable()
                   & mine()
                   ~ trunk()::
                 '';
+                "private()" = "description(glob:'private:*')";
                 # stack(x, n) is the set of mutable commits reachable
                 # from 'x', with 'n' parents. 'n' is often useful to
                 # customize the display and return set for certain
@@ -64,6 +79,7 @@ flakeLib.mkFeature "vcs/jujutsu" {
                 "stack(x, n)" = "ancestors(reachable(x, mutable()), n)";
                 "stack(x)" = "stack(x, 2)";
                 "stack()" = "stack(@)";
+                "wip()" = "description(glob:'WIP:*') | description(glob:'wip:*')";
               };
               template-aliases = {
                 # Basis of inspiration:
@@ -93,6 +109,15 @@ flakeLib.mkFeature "vcs/jujutsu" {
                       boxquoted(diff.summary(), "summary"),
                       boxquoted(diff.stat(80), "stat")))
                 '';
+              };
+              ui = {
+                bookmark-list-sort-keys = [
+                  "committer-date"
+                  "name"
+                ];
+                diff-formatter = lib.mkIf (config.dotfiles._host.activatesFeature "dev/difftastic") difftasticMergeToolName;
+                log-word-wrap = true;
+                show-cryptographic-signatures = true;
               };
               user = {
                 name = userConfig.fullName;
@@ -157,7 +182,6 @@ flakeLib.mkFeature "vcs/jujutsu" {
                   };
                 };
                 ui = {
-                  diff-formatter = lib.mkIf (config.dotfiles._host.activatesFeature "dev/difftastic") difftasticMergeToolName;
                   editor = let
                     programName = "emacsclient-for-jj-describe";
                     emacsclientProgram = pkgs.writeShellApplication {
@@ -169,9 +193,7 @@ flakeLib.mkFeature "vcs/jujutsu" {
                     };
                   in
                     lib.getExe emacsclientProgram;
-                  log-word-wrap = true;
                   merge-editor = emacsMergeToolName;
-                  show-cryptographic-signatures = true;
                 };
               }
             )
