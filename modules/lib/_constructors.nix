@@ -237,13 +237,16 @@
   '';
 
   # System-level module that, for each user assigned under
-  # "config.dotfiles.users", creates the user's operating-system
-  # account, spawns the user's nested home-manager evaluator, and
-  # mirrors the user's identity and a layered host record into that
-  # evaluator. It assigns nothing into
-  # "dotfiles.host.{features,interests}" at the system level: those
-  # stay the machine's own selections, which alone decide the
-  # machine's own configuration.
+  # "config.dotfiles.users", gives the user's operating-system account
+  # its home directory, spawns the user's nested home-manager
+  # evaluator, and mirrors the user's identity and a layered host
+  # record into that evaluator. It serves both system classes, so it
+  # assigns only what nix-darwin and NixOS share; what NixOS alone
+  # insists upon lives in the "modules/_nixos-user-accounts.nix" file,
+  # which the NixOS class aggregator imports by itself. It assigns
+  # nothing into "dotfiles.host.{features,interests}" at the system
+  # level: those stay the machine's own selections, which alone decide
+  # the machine's own configuration.
   #
   # The nested home-manager evaluator sees:
   #   dotfiles.identity = <user>.identity
