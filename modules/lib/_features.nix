@@ -14,7 +14,7 @@
 #
 # The "bodies" attrset is keyed by class name as recognized by this
 # flake's class aggregators ("homeManager", "nixDarwin", "nixOS").
-# That key set is closed: a key naming no class (and not one of the
+# That key set is closed: a key matching no class (and not one of the
 # constructors' reserved keys) throws at registration rather than
 # storing a body that nothing ever reads. Each value is one of two
 # forms:
@@ -109,14 +109,14 @@
   };
 
   # Argument validation shared by the constructors below. Each
-  # rejected argument throws in the author's vocabulary, naming the
+  # rejected argument throws in the author's vocabulary, citing the
   # offending registration, so that no bare Nix coercion error escapes
-  # without naming the culprit.
+  # without citing the culprit.
   checkName = constructor: name:
     if !(builtins.isString name)
     then throw ''${constructor}: a registration's name must be a string, but a value of type "${builtins.typeOf name}" was passed.''
     else if name == ""
-    then throw ''${constructor}: a registration's name must not be the empty string; a nameless registration could never be selected, named as a precondition, or excluded.''
+    then throw ''${constructor}: a registration's name must not be the empty string; a nameless registration could never be selected, cited as a precondition, or excluded.''
     else null;
   isListOfStrings = value: builtins.isList value && lib.all builtins.isString value;
 
@@ -134,9 +134,9 @@
     );
   isPreconditionList = value: builtins.isList value && lib.all isPreconditionEntry value;
 
-  # An "implies" list names the features a source brings along. Each
+  # An "implies" list holds the features a source brings along. Each
   # entry is either a bare target name or a record "{ name =
-  # "<target>"; supportedPlatforms = [<systems>]; }" naming an edge
+  # "<target>"; supportedPlatforms = [<systems>]; }" for an edge
   # present only when the host's platform is one of the listed
   # systems.
   isImpliesEntry = entry:
@@ -150,7 +150,7 @@
     );
   isImpliesList = value: builtins.isList value && lib.all isImpliesEntry value;
 
-  # An "unfreePackages" entry names one unfree package by the name
+  # An "unfreePackages" entry specifies one unfree package by the name
   # that "lib.getName" yields for it, spelled out literally. A name
   # computed from a package—"lib.getName pkgs.orbstack", say—would
   # demand a package set at registration time, where none is
@@ -171,11 +171,11 @@
   unknownPlatforms = platforms:
     builtins.filter (p: !(builtins.elem p lib.systems.doubles.all)) platforms;
 
-  # Collect, deduplicated, the platform identifiers named across a
+  # Collect, deduplicated, the platform identifiers listed across a
   # valid "implies" list's record-form entries that nixpkgs does not
   # recognize. Callers apply this only after "isImpliesList" accepts
   # the value, so every record entry carries a string list under
-  # "supportedPlatforms"; a bare-name entry names no platform and
+  # "supportedPlatforms"; a bare-name entry lists no platform and
   # contributes nothing.
   impliesUnknownPlatforms = value:
     lib.unique (
@@ -224,8 +224,8 @@
     then null
     else throw ''mkFeature: the feature "${name}" passes ${
         if lib.length unknownKeys == 1
-        then "the key ${enumerateNames unknownKeys}, which names no module class"
-        else "the keys ${enumerateNames unknownKeys}, which name no module classes"
+        then "the key ${enumerateNames unknownKeys}, which matches no module class"
+        else "the keys ${enumerateNames unknownKeys}, which match no module classes"
       }; a body stored under such a key would never be read. The accepted keys are ${enumerateNames classNames}, plus the reserved ${enumerateNames reservedKeys} keys.'';
 in {
   # In addition to the per-class bodies described in this file's
@@ -242,10 +242,10 @@ in {
   #   feature or an interest, never a contingent feature — which keeps
   #   groups out of every precondition cycle; an assertion in
   #   "modules/_assertions.nix" enforces this. A bare entry may still
-  #   name a contingent feature. A feature carrying this key is a
+  #   list a contingent feature. A feature carrying this key is a
   #   "contingent feature": it activates automatically exactly when
   #   all of its preconditions are met, and that is its only
-  #   activation path—no host and no implied edge may name it directly
+  #   activation path—no host and no implied edge may list it directly
   #   (an assertion in "modules/_assertions.nix" enforces this). The
   #   registry option's type treats the list as a set — its merge
   #   normalizes each definition — so order and duplication are
@@ -258,12 +258,12 @@ in {
   #   error. A single-member "anyOf" group is accepted and behaves as
   #   the bare name.
   #
-  #   implies: a list naming the features this feature brings
-  #   along—the implied edges whose source is this feature. Each entry
-  #   is either a bare target name (an unconditional edge) or a record
-  #   "{ name = "<target>"; supportedPlatforms = [<systems>]; }" (an
-  #   edge present only when the host's platform is one of the listed
-  #   systems); every platform a record names must be one that nixpkgs
+  #   implies: a list of the features this feature brings along—the
+  #   implied edges whose source is this feature. Each entry is either
+  #   a bare target name (an unconditional edge) or a record "{ name =
+  #   "<target>"; supportedPlatforms = [<systems>]; }" (an edge
+  #   present only when the host's platform is one of the listed
+  #   systems); every platform a record lists must be one that nixpkgs
   #   recognizes (a member of the "lib.systems.doubles.all" list), so
   #   a misspelling fails here at registration. The "implicationsFor"
   #   function in "modules/lib/_implications.nix" assembles these into
@@ -292,13 +292,14 @@ in {
   #   accumulate across every feature into the "unfreePackages"
   #   registry, which "modules/nixpkgs-config.nix" publishes as
   #   "flake.allowUnfreePackages" and both nixpkgs instantiation sites
-  #   hand to nixpkgs' own "allowUnfreePackages" option. Name a
+  #   hand to nixpkgs' own "allowUnfreePackages" option. List a
   #   package here whenever this feature can install it, even on one
   #   platform alone and even under a condition the host may not meet:
   #   the toleration list is one flat set that every instantiation
   #   receives, and tolerating a package that nothing installs costs
   #   nothing while installing one without toleration halts
-  #   evaluation. An empty list, like an omitted key, names nothing.
+  #   evaluation. An empty list, like an omitted key, specifies
+  #   nothing.
   mkFeature = name: args: let
     bodies = builtins.removeAttrs args reservedKeys;
     declaredBadPlatforms =
@@ -332,25 +333,25 @@ in {
       else if declaredBadPlatforms != []
       then throw ''mkFeature: the feature "${name}" declares support for ${enumerateNames declaredBadPlatforms}, which ${
           if lib.length declaredBadPlatforms == 1
-          then "names no platform"
-          else "name no platforms"
+          then "matches no platform"
+          else "match no platforms"
         } that nixpkgs recognizes (the "lib.systems.doubles.all" list).''
       else if args ? preconditions && args.preconditions != null && !(isPreconditionList args.preconditions)
       then throw ''mkFeature: the feature "${name}" passes a "preconditions" value that is not a list of preconditions. Each entry is either a bare feature or interest name, or a group "{ anyOf = [ "<name>" ... ]; }" satisfied when any one member is active.''
       else if emptyGroup != null
       then throw ''mkFeature: the feature "${name}" passes an empty "anyOf" group; a group must offer at least one alternative.''
       else if args ? implies && args.implies != null && !(isImpliesList args.implies)
-      then throw ''mkFeature: the feature "${name}" passes an "implies" value that is not a list of edge declarations. Each entry names a target feature, written either as a bare name string or as a record "{ name = "<target>"; supportedPlatforms = [<systems>]; }" for an edge present only on the listed platforms.''
+      then throw ''mkFeature: the feature "${name}" passes an "implies" value that is not a list of edge declarations. Each entry identifies a target feature, written either as a bare name string or as a record "{ name = "<target>"; supportedPlatforms = [<systems>]; }" for an edge present only on the listed platforms.''
       else if impliesBadPlatforms != []
       then throw ''mkFeature: the feature "${name}" declares an "implies" edge supporting ${enumerateNames impliesBadPlatforms}, which ${
           if lib.length impliesBadPlatforms == 1
-          then "names no platform"
-          else "name no platforms"
+          then "matches no platform"
+          else "match no platforms"
         } that nixpkgs recognizes (the "lib.systems.doubles.all" list).''
       else if args ? unfreePackages && !(isListOfStrings args.unfreePackages)
       then throw ''mkFeature: the feature "${name}" passes an "unfreePackages" value that is not a list of strings. Pass the unfree packages this feature installs, each spelled as the string that "lib.getName" yields for the package.''
       else if unfreeNonLiteralNames != []
-      then throw ''mkFeature: the feature "${name}" names ${enumerateNames unfreeNonLiteralNames} among its unfree packages, which ${
+      then throw ''mkFeature: the feature "${name}" lists ${enumerateNames unfreeNonLiteralNames} among its unfree packages, which ${
           if lib.length unfreeNonLiteralNames == 1
           then "is not a literal package name"
           else "are not literal package names"
@@ -388,7 +389,7 @@ in {
 
   # Register an interest: a named want that participates in activation
   # exactly as a feature does — a host may select or exclude it, and a
-  # contingent feature may name it as a precondition — but that
+  # contingent feature may list it as a precondition — but that
   # carries no configuration of its own. Called with a closed attrset
   # pattern:
   #
@@ -406,7 +407,7 @@ in {
   # machinery folds in beside the feature names; a non-null
   # description enters the "interestDescriptions" registry.
   #
-  # The optional "implies" key names other interests this interest
+  # The optional "implies" key lists other interests this interest
   # brings along — a bundle. Selecting the bundle activates its
   # members through the implication closure, the way a feature bundle
   # fans out to the finer ones; the edges join the "impliedEdges"
@@ -473,7 +474,7 @@ in {
     checkOne = name:
       if builtins.elem name config.dotfiles._knownNames
       then null
-      else throw ''onlyWhen: the fragment names the precondition "${name}", but no imported module advertises that name as a feature or an interest.'';
+      else throw ''onlyWhen: the fragment cites the precondition "${name}", but no imported module advertises that name as a feature or an interest.'';
     checks =
       if !(isListOfStrings names)
       then throw "onlyWhen: the names argument must be a list of feature or interest names."
