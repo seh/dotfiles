@@ -23,14 +23,14 @@
 #   };
 #
 # without having to install any flake-parts module into the consumer
-# evaluator. All identity and behavior assignments (e.g.
+# evaluator. All identity and behavior assignments (e.g. the
 # "dotfiles.users.<name>.identity.email",
-# "dotfiles.users.<name>.features", "dotfiles.knownFeatures") happen
-# inside the modules the consumer passes through "modules = [...]",
-# flowing through the target evaluator's module-system merge where
-# those fields are actually read. That keeps assignments close to the
-# evaluator that reads them and avoids the flake-parts boundary
-# crossing that the retired "_flakeOptions" option used to bridge.
+# "dotfiles.users.<name>.features", and "dotfiles.knownFeatures"
+# options) happen inside the modules the consumer passes through the
+# "modules = [...]" argument, flowing through the target evaluator's
+# module-system merge where those fields are actually read. That keeps
+# assignments close to the evaluator that reads them, with no
+# flake-parts boundary to cross.
 #
 # For the system constructors ("mkDarwin" and "mkNixOS"), each user
 # assigned under "dotfiles.users" is mirrored into
