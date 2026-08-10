@@ -114,7 +114,7 @@ flakeLib.mkFeature "model-agent/claude" {
             pr = "";
             sessionUrl = false;
           };
-          model = "claude-opus-4-8";
+          model = "claude-opus-5";
           hooks = {
             PostToolUse = let
               jq = lib.getExe pkgs.jq;
