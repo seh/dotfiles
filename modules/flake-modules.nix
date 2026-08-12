@@ -2,10 +2,9 @@
 # "flake.modules.flake" so consumers can opt into them from their
 # own evaluators.
 #
-# "flake.modules.flake.checks" and "flake.modules.flake.style" are
-# consumer-facing extensions: a consumer importing either one
-# installs the corresponding "perSystem" contributions into its own
-# evaluator.
+# The "flake.modules.flake.style" module is a consumer-facing
+# extension: a consumer importing it installs the corresponding
+# "perSystem" contributions into its own evaluator.
 #
 # There is deliberately no "flake.modules.flake.default": the
 # constructors ("lib.mkHome", "lib.mkDarwin", "lib.mkNixOS") are
@@ -25,7 +24,6 @@
     inputs.flake-parts.flakeModules.modules
   ];
   flake.modules.flake = {
-    checks = ./checks.nix;
     style = ./style.nix;
   };
 }
