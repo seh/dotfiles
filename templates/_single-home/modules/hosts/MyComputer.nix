@@ -11,10 +11,16 @@
   identity = import ../../identity.nix;
 in {
   flake.homeConfigurations = let
-    # Instantiate "pkgs" once for this host so that adding
-    # further users below reuses the same package set rather
-    # than instantiating nixpkgs again per user.
-    pkgs = inputs.dotfiles.lib.pkgsFor {system = hostPlatform;};
+    # Instantiate the "pkgs" package set once for this host so that
+    # adding further users below reuses the same package set rather
+    # than instantiating nixpkgs again per user. The "mkHome" function
+    # extends whatever package set it receives with the dotfiles
+    # flake's own nixpkgs overlay, so withhold that overlay here;
+    # asking for it in both places applies it twice.
+    pkgs = inputs.dotfiles.lib.pkgsFor {
+      system = hostPlatform;
+      applyOverlays = false;
+    };
 
     # Per-user records for this host. Each entry's key is the
     # username; each value carries that user's identity record
