@@ -6,6 +6,7 @@
  column-number-mode t
  indent-tabs-mode nil
  make-backup-files nil ; Aquamacs disables this by default.
+ sentence-end-double-space nil ; Honor only one space after a period.
  truncate-lines t)
 
 (setq show-paren-style 'parenthesis) ; or 'mixed
