@@ -77,6 +77,7 @@
         features = [
           "cloud/aws"
           "cloud/azure"
+          "cloud/fly"
           "cloud/gcp"
           "coder"
           "dev/editorconfig"
