@@ -19,6 +19,7 @@
     "ngrok"
     "orbstack"
     "slack"
+    "sprite"
     "terraform"
     "zoom"
   ];
