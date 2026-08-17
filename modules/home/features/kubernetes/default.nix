@@ -14,7 +14,7 @@ flakeLib.mkFeature "kubernetes" {
         kubernetes-helm
         kustomize
       ]
-      # NB: On Darwin, "kubectl" is provided by OrbStack.
+      # NB: On Darwin, the "kubectl" program is provided by OrbStack.
       ++ lib.optionals (!pkgs.stdenv.hostPlatform.isDarwin) [
         kubectl
       ];
