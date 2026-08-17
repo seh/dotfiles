@@ -10,7 +10,7 @@
       (lib.attrValues (config.dotfiles.featureModules.homeManager or {}))
       ++ (lib.attrValues (config.dotfiles.profileModules.homeManager or {}))
       ++ [
-        ../_tags.nix
+        ../_activation.nix
         ../_assertions.nix
         ../_user-identity.nix
         {

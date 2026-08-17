@@ -11,7 +11,7 @@
 #
 # The "knownProfiles" and "knownFeatures" registries consulted here
 # are flake-wide by design; see the comment block in
-# "modules/_tags.nix" near the declaration of
+# "modules/_activation.nix" near the declaration of
 # "dotfiles._knownProfiles" for the rationale.
 {
   lib,
@@ -142,7 +142,7 @@
     '';
   };
 
-  # A declared host must know its platform: "modules/_tags.nix"
+  # A declared host must know its platform: "modules/_activation.nix"
   # detects one from the evaluating package set, and a host may
   # assign one explicitly, so this fires only when both sources are
   # absent (for example, in a bare instantiation of these modules).

@@ -8,7 +8,7 @@
       (lib.attrValues (config.dotfiles.featureModules.nixDarwin or {}))
       ++ (lib.attrValues (config.dotfiles.profileModules.nixDarwin or {}))
       ++ [
-        ../_tags.nix
+        ../_activation.nix
         ../_assertions.nix
         ../_host-users.nix
         ./_reload-launch-agents.nix

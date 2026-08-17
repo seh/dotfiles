@@ -8,7 +8,7 @@
       (lib.attrValues (config.dotfiles.featureModules.nixOS or {}))
       ++ (lib.attrValues (config.dotfiles.profileModules.nixOS or {}))
       ++ [
-        ../_tags.nix
+        ../_activation.nix
         ../_assertions.nix
         ../_host-users.nix
         {
