@@ -10,7 +10,7 @@
 # independent of this one—a user's zsh still loads and reads that
 # configuration wherever this feature is absent.
 #
-# This name carries a nix-darwin body as well, in
+# This name registers a nix-darwin body as well, in
 # "modules/nix-darwin/features/shell/zsh/integration/default.nix". The
 # concern is the same on either system class, so one name selected
 # once serves whichever class the machine runs, the way the "nix"
