@@ -68,7 +68,8 @@ flakeLib.mkFeature "vcs/git" {
             enabled = 1;
             autoupdate = 1;
           };
-          # Per https://golang.org/doc/faq#git_https, for gopls against private repositories:
+          # Per https://golang.org/doc/faq#git_https, for gopls
+          # against private repositories:
           url = {
             "ssh://git@github.com/" = {
               insteadOf = "https://github.com/";
@@ -79,7 +80,7 @@ flakeLib.mkFeature "vcs/git" {
             name = userConfig.fullName;
           };
         }
-        # TODO(seh): Specify "includes"?
+        # TODO(seh): Specify the "includes" option?
         # SSH signing needs the allowed signers file for verification.
         (lib.mkIf commitSigning.hasAllowedSigners {
           gpg.ssh.allowedSignersFile = "${commitSigning.sshAllowedSignersFile}";

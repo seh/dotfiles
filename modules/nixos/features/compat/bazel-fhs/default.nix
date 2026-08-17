@@ -66,6 +66,7 @@ flakeLib.mkFeature "compat/bazel-fhs" {
         grep = "${pkgs.gnugrep}/bin/grep";
         gzip = "${pkgs.gzip}/bin/gzip";
         head = "${pkgs.coreutils}/bin/head";
+        id = "${pkgs.coreutils}/bin/id";
         install = "${pkgs.coreutils}/bin/install";
         ln = "${pkgs.coreutils}/bin/ln";
         ls = "${pkgs.coreutils}/bin/ls";
@@ -76,18 +77,24 @@ flakeLib.mkFeature "compat/bazel-fhs" {
         paste = "${pkgs.coreutils}/bin/paste";
         printf = "${pkgs.coreutils}/bin/printf";
         python3 = "${pkgs.python3}/bin/python3";
+        readlink = "${pkgs.coreutils}/bin/readlink";
         realpath = "${pkgs.coreutils}/bin/realpath";
         rm = "${pkgs.coreutils}/bin/rm";
+        rmdir = "${pkgs.coreutils}/bin/rmdir";
         sed = "${pkgs.gnused}/bin/sed";
+        sha1sum = "${pkgs.coreutils}/bin/sha1sum";
+        sha256sum = "${pkgs.coreutils}/bin/sha256sum";
         sort = "${pkgs.coreutils}/bin/sort";
         tail = "${pkgs.coreutils}/bin/tail";
         tar = "${pkgs.gnutar}/bin/tar";
+        tee = "${pkgs.coreutils}/bin/tee";
         touch = "${pkgs.coreutils}/bin/touch";
         tr = "${pkgs.coreutils}/bin/tr";
-        uniq = "${pkgs.coreutils}/bin/uniq";
         uname = "${pkgs.coreutils}/bin/uname";
+        uniq = "${pkgs.coreutils}/bin/uniq";
         wc = "${pkgs.coreutils}/bin/wc";
         whoami = "${pkgs.coreutils}/bin/whoami";
+        xargs = "${pkgs.findutils}/bin/xargs";
       };
 
       # Merge defaults with user-provided tools, then filter out null
