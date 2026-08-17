@@ -6,12 +6,13 @@
 # normal user or a system user, and it must belong to a group—and the
 # options expressing those rules exist in NixOS alone, so the NixOS
 # class aggregator imports this module by itself. It sits beside the
-# "_darwin-primary-user.nix" file, which carries what nix-darwin makes
-# of the same registry. Being imported at all settles which class
-# evaluates here, which is why the assignment below stands unguarded.
+# "_darwin-primary-user.nix" file, which declares what nix-darwin
+# makes of the same registry. Being imported at all settles which
+# class evaluates here, which is why the assignment below stands
+# unguarded.
 #
 # The propagation module in the "modules/lib/_constructors.nix" file
-# serves both system classes, so it carries only what the two share:
+# serves both system classes, so it declares only what the two share:
 # the account's home directory, and the user's nested home-manager
 # evaluator. This module supplies the remainder here.
 {

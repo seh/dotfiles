@@ -7,7 +7,7 @@
 # helpers imports it explicitly.
 {
   # The phrase that opens a diagnostic addressed to one host, ready to
-  # follow the word "Resolving": the quoted name when the host carries
+  # follow the word "Resolving": the quoted name when the host has
   # one, and a plain stand-in when it does not. The
   # "dotfiles.host.name" option is optional and purely
   # descriptive—nothing derives a value from it—so a host without a

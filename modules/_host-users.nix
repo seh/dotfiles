@@ -4,7 +4,7 @@
 # by the "_users.nix" module, which every class imports, so that the
 # registry is visible wherever the activation substrate in
 # "_activation.nix" evaluates, the home-manager class included. This
-# module carries the options that are meaningful only where a system
+# module declares the options that are meaningful only where a system
 # configuration manages the host: the primary-user designation and the
 # host-wide Lix channel, shared across all users. What nix-darwin
 # requires of that designation—a default drawn from a sole user, and
