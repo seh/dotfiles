@@ -21,10 +21,10 @@
   #
   # The verdict on each precondition entry comes from the "missing"
   # list that the evaluator's own "dotfiles._host.latentFeatures"
-  # record already carries, so this report and the activation walk
-  # agree by construction. Each candidate's "inEffect" flag reads that
-  # same evaluator's own predicate, which is what tells the reader of
-  # a satisfied group which alternative satisfied it.
+  # record already holds, so this report and the activation walk agree
+  # by construction. Each candidate's "inEffect" flag reads that same
+  # evaluator's own predicate, which is what tells the reader of a
+  # satisfied group which alternative satisfied it.
   findingsFor = {
     class,
     contingentFeatures,
@@ -195,9 +195,9 @@
     # instead would place a feature one selection away far from
     # satisfaction.
     #
-    # For a feature carrying N preconditions, N at least one since the
-    # "preconditionSet" type rejects an empty list, partly met means
-    # at most N-1 met and at least "min (N - 1) 1" met.
+    # For a feature declaring N preconditions, N at least one since
+    # the "preconditionSet" type rejects an empty list, partly met
+    # means at most N-1 met and at least "min (N - 1) 1" met.
     #
     # The upper bound keeps out a feature every precondition of which
     # holds, because its preconditions have nothing left to say about

@@ -35,9 +35,9 @@ in {
         therefore stays faithful to the bodies actually present: a
         feature registered by name alone, with no bodies, is absent. A
         feature may configure the machine alone—the "apps" feature
-        carries a nix-darwin body and nothing else—so this record also
-        diagnoses a user selecting such a feature. The keys alone tell
-        which features configure something, which is how the
+        registers a nix-darwin body and nothing else—so this record
+        also diagnoses a user selecting such a feature. The keys alone
+        tell which features configure something, which is how the
         "implicationsFor" function keeps the computed "all" feature on
         the body-less bundles. Each class aggregator mirrors it into
         "dotfiles._featureClasses".
@@ -133,7 +133,7 @@ in {
         this flake or downstream consumers. An interest is a named
         want that participates in activation exactly as a feature
         does—a host may select or exclude it, and a contingent feature
-        may list it as a precondition—but carries no configuration.
+        may list it as a precondition—but declares no configuration.
         Accumulated and de-duplicated. Populates
         "dotfiles._knownInterests" in each class aggregator.
       '';

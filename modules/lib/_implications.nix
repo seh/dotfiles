@@ -1,13 +1,13 @@
 {lib}: let
   # Assemble the per-host implication graph from the co-located
-  # "implies" declarations that each feature and interest carries. An
+  # "implies" declarations that each feature and interest makes. An
   # implied edge is a property of its source, so it lives in the
-  # source's own file; the "impliedEdges" argument carries those
+  # source's own file; the "impliedEdges" argument holds those
   # declarations, keyed by source name, and this function turns them
   # into the graph that the "expandClosure" function consumes: a map
   # from each source name to the names it brings along.
   #
-  # Features and interests share this one graph. A feature carries
+  # Features and interests share this one graph. A feature declares
   # configuration and an interest is a payload-free want, yet both
   # enter one activation walk, so an edge here targets a name without
   # regard to which kind it denotes. The rules that do turn on
@@ -33,15 +33,15 @@
   # along a target on some platforms and not others.
   #
   # This function computes the "all" feature's targets rather than
-  # reading a declared edge: "all" targets every feature that carries
-  # no class body, is not contingent, and no other feature implies. A
+  # reading a declared edge: "all" targets every feature that has no
+  # class body, is not contingent, and no other feature implies. A
   # body-less bundle therefore folds into "all" the moment it is
   # registered, while a feature some bundle already implies stays out,
   # arriving through that bundle instead. A feature that configures
   # something of its own stays out as well, so that "all" covers the
   # body-less bundles alone and a feature with a body is one a host
   # asks for deliberately; the "featureClasses" argument reports which
-  # names carry a body. A contingent feature stays out because its
+  # names have a body. A contingent feature stays out because its
   # preconditions are its only way in, and an interest stays out
   # because a feature's edges may target only features—so the
   # computation upholds on its own the two rules that the assertions
@@ -55,7 +55,7 @@
   # longer cycle at runtime.
   implicationsFor = {
     # Nixpkgs system string (e.g. "aarch64-darwin"), or null when the
-    # host record does not carry one.
+    # host record has none.
     platform ? null,
     # Per-name platform support, keyed by feature name; each value
     # lists the platforms on which that name may activate. A name
@@ -74,10 +74,10 @@
     # missing here never arrives at a host through "all".
     knownFeatures ? [],
     # The module classes that register a body for each feature, keyed
-    # by feature name and holding only the names that carry one. Read
+    # by feature name and holding only the names that have one. Read
     # here only to recognize which features configure something, since
     # the "all" feature targets the body-less bundles alone; a name
-    # absent from this record carries no body and so qualifies.
+    # absent from this record has no body and so qualifies.
     featureClasses ? {},
     # Per-feature preconditions, keyed by contingent feature name.
     # Read here only to recognize which names are contingent, since
@@ -294,7 +294,7 @@
   # of an implied edge. The assertion in the "modules/_assertions.nix"
   # file already forbids an implied edge that TARGETS a contingent
   # feature; this is the mirror rule. Were a contingent feature to
-  # carry outgoing edges, its activation would activate further
+  # declare outgoing edges, its activation would activate further
   # features, and every activation must be explainable by selection or
   # a precondition alone.
   expandActivation = {

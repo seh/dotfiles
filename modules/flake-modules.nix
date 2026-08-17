@@ -10,7 +10,7 @@
 # importing it gains the "latentFeatures" output, the on-demand report
 # described in the "_latent-feature-report.nix" file. That module
 # closes over this flake's own library, which the "flakeLib" module
-# argument carries here and no consumer evaluator has.
+# argument supplies here and no consumer evaluator has.
 #
 # There is deliberately no "flake.modules.flake.default": the
 # constructors ("lib.mkHome", "lib.mkDarwin", "lib.mkNixOS") are
