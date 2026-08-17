@@ -42,8 +42,8 @@
 # "dotfiles.host" extended with the user's cascade inputs (profiles,
 # features, excludeProfiles, excludedFeatures) under "dotfiles.host".
 # The latter arrangement lets the existing "dotfiles._resolved"
-# derivation in "modules/_tags.nix" continue to read its inputs from
-# one place inside the nested home-manager evaluator without
+# derivation in "modules/_activation.nix" continue to read its inputs
+# from one place inside the nested home-manager evaluator without
 # modification.
 {
   lib,
