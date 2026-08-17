@@ -34,10 +34,12 @@
 #
 # For the system constructors ("mkDarwin" and "mkNixOS"), each user
 # assigned under "dotfiles.users" is mirrored into
-# "home-manager.users.<name>.dotfiles" in two places: the user's
-# identity fields under "dotfiles.identity", and the machine's
-# "dotfiles.host" record with its selections and exclusions layered
-# with that user's own under "dotfiles.host". The mirroring assigns
+# "home-manager.users.<name>.dotfiles": the user's identity fields
+# under "dotfiles.identity", the machine's "dotfiles.host" record with
+# its selections and exclusions layered with that user's own, and the
+# user's own exclusion lists under "_ownExcludedFeatures" and
+# "_ownExcludedInterests", kept apart so a diagnostic can tell a
+# user's own exclusion from the machine's. The mirroring assigns
 # nothing into "dotfiles.host.{features,interests}" at the system
 # level: those stay the machine's own selections, which alone decide
 # the machine's own configuration.
@@ -238,17 +240,20 @@
   # System-level module that, for each user assigned under
   # "config.dotfiles.users", gives the user's operating-system account
   # its home directory, spawns the user's nested home-manager
-  # evaluator, and mirrors the user's identity and a layered host
-  # record into that evaluator. It serves both system classes, so it
-  # assigns only what nix-darwin and NixOS share; what NixOS alone
-  # insists upon lives in the "modules/_nixos-user-accounts.nix" file,
-  # which the NixOS class aggregator imports by itself. It assigns
-  # nothing into "dotfiles.host.{features,interests}" at the system
-  # level: those stay the machine's own selections, which alone decide
-  # the machine's own configuration.
+  # evaluator, and mirrors the user's identity, a layered host record,
+  # and the user's own exclusion lists into that evaluator. It serves
+  # both system classes, so it assigns only what nix-darwin and NixOS
+  # share; what NixOS alone insists upon lives in the
+  # "modules/_nixos-user-accounts.nix" file, which the NixOS class
+  # aggregator imports by itself. It assigns nothing into
+  # "dotfiles.host.{features,interests}" at the system level: those
+  # stay the machine's own selections, which alone decide the
+  # machine's own configuration.
   #
   # The nested home-manager evaluator sees:
   #   dotfiles.identity = <user>.identity
+  #   dotfiles._ownExcludedFeatures = <user>.excludedFeatures
+  #   dotfiles._ownExcludedInterests = <user>.excludedInterests
   #   dotfiles.host = the machine's record, its selections and
   #                   exclusions layered with that user's own
   # so the "dotfiles._resolved" record in "modules/_activation.nix"
@@ -330,11 +335,18 @@
         dotfiles = {
           inherit (userCfg) identity;
           # What the machine forbids, written where no module of this
-          # user's can displace it. The "host" record below carries
-          # the same two lists, but a user's own module may rewrite
-          # that record, so the walk reads both and these two hold.
+          # user's can displace it. The "host" record below holds the
+          # same two lists, but a user's own module may rewrite that
+          # record, so the walk reads both and these two hold.
           _machineForbidFeatures = host.forbiddenFeatures;
           _machineForbidInterests = host.forbiddenInterests;
+          # The lists this user excludes on their own account,
+          # recorded beside the merged ones below so that a diagnostic
+          # can tell a user's own exclusion from the machine's. A user
+          # countermands the machine's by selecting the name; their
+          # own always holds.
+          _ownExcludedFeatures = userCfg.excludedFeatures;
+          _ownExcludedInterests = userCfg.excludedInterests;
           host =
             host
             // {

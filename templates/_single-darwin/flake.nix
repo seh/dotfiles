@@ -29,6 +29,9 @@
     flake-parts.lib.mkFlake {inherit inputs;} {
       imports = [
         inputs.dotfiles.modules.flake.style # optional
+        # Publishes the "latentFeatures" output; read it with the
+        # command "nix eval --raw .#latentFeatures.report".
+        inputs.dotfiles.modules.flake.latentFeatures
         (import-tree ./modules)
       ];
 
