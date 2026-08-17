@@ -85,6 +85,18 @@
   exclusionsInForce =
     ofKind config.dotfiles._knownFeatures host.excludeFeatures
     ++ ofKind config.dotfiles._knownInterests host.excludeInterests;
+  # The exclusions this evaluator writes on its own account. Every
+  # evaluator but a managed user's nested one writes the "host" lists
+  # directly, so its own lists are those.
+  ownExcludeFeatures =
+    if config.dotfiles._ownExcludeFeatures != null
+    then config.dotfiles._ownExcludeFeatures
+    else host.excludeFeatures;
+  ownExcludeInterests =
+    if config.dotfiles._ownExcludeInterests != null
+    then config.dotfiles._ownExcludeInterests
+    else host.excludeInterests;
+
   # Fold what "host.forbidFeatures" and "host.forbidInterests" forbid
   # into this evaluator's own exclusions: both prune every walk before
   # the "resolveActivation" function, so a forbidden name activates
@@ -160,20 +172,25 @@ in {
             type = types.listOf types.str;
             default = [];
             description = ''
-              Feature names its author deletes from its own
-              implication graph before the activation walk. Both their
-              out-edges
-              (the features they would bring along) and their in-edges
-              (the features that target them) are removed, so a
-              feature still reachable through a non-excluded path
-              remains active while one reachable only through excluded
-              vertices drops out. Excluding a contingent feature by
-              name keeps it inactive even when its preconditions are
-              all met. The machine's own entries withhold a feature
-              from what the machine provisions its users, yet yield to
-              a user who selects that same name; a user's own entries
-              apply to that user alone. The list no user may undo is
-              "forbidFeatures".
+              The features its author deletes from its own implication
+              graph before the activation walk. The walk drops each
+              excluded vertex with its out-edges (the features it
+              would bring along) and its in-edges (the edges that
+              target it). A feature still reachable through a
+              non-excluded path stays active; one reachable only
+              through excluded vertices drops out. The machine's own
+              entries withhold a feature from what the machine
+              provisions its users, yet yield to a user who selects
+              that same name; a user's own entries apply to that user
+              alone. The one list no user may undo is
+              "forbidFeatures". A user may exclude a contingent
+              feature, and that exclusion holds like any other. A
+              machine that provisions users may not: no user may
+              select a contingent feature, so no user could opt back
+              in. The "contingentExclusionAssertion" assertion in the
+              "modules/_assertions.nix" file rejects such an entry and
+              points instead to "forbidFeatures", the list that
+              withholds a name from every selector outright.
             '';
           };
           excludeInterests = mkOption {
@@ -361,14 +378,75 @@ in {
                       is absent.
                     '';
                   };
-                  excluded = mkOption {
+                  excludedBy = mkOption {
+                    type = types.nullOr (
+                      types.enum [
+                        "machine"
+                        "own"
+                      ]
+                    );
+                    description = ''
+                      Whose exclusion holds this feature, or null
+                      where none does. "own" means the
+                      "excludeFeatures" list this evaluator writes for
+                      itself; "machine" means the machine's own
+                      "excludeFeatures" list, arriving at a managed
+                      user through the propagation module. Only the
+                      feature list of either author counts: the walk
+                      holds each exclusion list to its own kind, so a
+                      feature's name written into an interest list
+                      withholds nothing and earns a kind-mismatch
+                      complaint from the assertions instead. The
+                      "contingentExclusionAssertion" assertion in the
+                      "modules/_assertions.nix" file rejects the
+                      "machine" case, but that assertion guards a
+                      build, and a system configuration's record
+                      answers reads without one. (A home configuration
+                      that manages nobody else forces its assertions
+                      on any read.) A report consulted before a
+                      successful build can therefore still meet the
+                      "machine" case, and it must say so rather than
+                      blame the user.
+                    '';
+                  };
+                  unsupportedOn = mkOption {
+                    type = types.nullOr (types.listOf types.str);
+                    description = ''
+                      The platforms this feature declares, where the
+                      host's platform is not among them, and null
+                      where the feature declares none or the host runs
+                      one it declares. Preconditions cannot bring such
+                      a feature into effect however many of them hold,
+                      since the "expandActivation" function in the
+                      "modules/lib/_implications.nix" file withholds
+                      it there, so the report states the requirement
+                      rather than inviting work that cannot pay off.
+                      Selecting one directly would activate it, which
+                      the "platformSupportAssertion" assertion
+                      refuses, so no valid configuration does it, and
+                      no one may select a contingent feature at all.
+                    '';
+                  };
+                  forbidden = mkOption {
                     type = types.bool;
                     description = ''
-                      True when this evaluator's own
-                      "host.excludeFeatures" list holds this feature:
-                      the machine's own exclusions in a system
-                      evaluator, and those in force for the user in a
-                      managed user's evaluator.
+                      True when the machine-wide "forbidFeatures" list
+                      holds this feature. Only that list counts: the
+                      walk lets "forbidFeatures" forbid features alone
+                      and "forbidInterests" forbid interests alone, so
+                      a feature's name in the "forbidInterests" list
+                      is a kind-mismatch the assertions refuse and the
+                      walk ignores, never a prohibition. The machine's
+                      forbidding passes through to every managed user
+                      untouched, so a user inherits everything it
+                      forbids. The field can still differ between two
+                      evaluators of one configuration: the
+                      "forbidFeatures" option merges its definitions
+                      as their union, so a module inside one user's
+                      home configuration adds a name to that user's
+                      copy alone. An exclusion never sets it; the
+                      "excludedBy" field beside this one reports
+                      exclusions.
                     '';
                   };
                 };
@@ -377,13 +455,21 @@ in {
             readOnly = true;
             description = ''
               Contingent features latent for this evaluator, keyed by
-              name. A contingent feature already
-              active here (present in "activeFeatures") is left out
-              and never also reported latent; the entry for each of
-              the rest carries the per-field reasons declared below.
-              Each managed user's nested evaluator computes its own
-              "latentFeatures" from the selections in force for that
-              user.
+              name. A contingent feature already active here (present
+              in the "activeFeatures" field) never appears; the entry
+              for each of the rest holds the per-field reasons
+              declared below. Each managed user's nested evaluator
+              computes its own "latentFeatures" field from the
+              selections that hold for that user.
+
+              A flake that imports the
+              "inputs.dotfiles.modules.flake.latentFeatures" module
+              gathers these records across every evaluator of every
+              configuration it publishes and presents them as its own
+              "latentFeatures" output. The "modules/lib/_reports.nix"
+              file decides which of these entries that output admits
+              and computes the report, and nothing evaluates it until
+              someone asks.
             '';
           };
         };
@@ -418,7 +504,25 @@ in {
             lib.mapAttrs (name: preconditions: {
               inherit preconditions;
               missing = builtins.filter entryUnmet preconditions;
-              excluded = builtins.elem name host.excludeFeatures;
+              # Only the "excludeFeatures" lists can hold a feature
+              # back, since the walk holds each exclusion list to its
+              # own kind. An evaluator's own exclusion outranks a
+              # machine's, because removing the machine's would leave
+              # the evaluator's own still standing, so it is the one a
+              # reader can act on.
+              excludedBy =
+                if builtins.elem name ownExcludeFeatures
+                then "own"
+                else if builtins.elem name host.excludeFeatures
+                then "machine"
+                else null;
+              forbidden = builtins.elem name host.forbidFeatures;
+              unsupportedOn = let
+                declared = config.dotfiles._supportedPlatforms.${name} or null;
+              in
+                if declared == null || (platform != null && builtins.elem platform declared)
+                then null
+                else declared;
             })
             (lib.filterAttrs (name: _: !(builtins.elem name namesInEffect))
               config.dotfiles._featurePreconditions);
@@ -593,6 +697,34 @@ in {
         computation reads it to drop an unsupported name from every
         target list. The platform-support assertion in the
         "modules/_assertions.nix" file reads it as well.
+      '';
+    };
+
+    _ownExcludeFeatures = mkOption {
+      type = types.nullOr (types.listOf types.str);
+      default = null;
+      internal = true;
+      description = ''
+        The features this evaluator excludes on its own account, as
+        against the ones a machine passes down to it. Null in an
+        evaluator that writes its own "host.excludeFeatures" list
+        directly, which is every one but a managed user's nested
+        evaluator; the propagation module in the
+        "modules/lib/_constructors.nix" file sets it there to that
+        user's own list. A diagnostic needs the two apart, since a
+        user countermands a machine's exclusion by selecting the name
+        and cannot countermand their own.
+      '';
+    };
+
+    _ownExcludeInterests = mkOption {
+      type = types.nullOr (types.listOf types.str);
+      default = null;
+      internal = true;
+      description = ''
+        The interests this evaluator excludes on its own account, the
+        companion to the "_ownExcludeFeatures" option and null in the
+        same places.
       '';
     };
 

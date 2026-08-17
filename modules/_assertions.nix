@@ -466,7 +466,61 @@
   forbidOverriddenAssertion = {
     assertion = forbidOverridden == [];
     message = ''
-      Resolving host "${hostName}": something in this user's own configuration removed ${quoteNames forbidOverridden} from the "${hostOption "forbidFeatures"}" or "${hostOption "forbidInterests"}" list. Those lists are the machine's, and the walk prunes what the machine forbids whatever this configuration says, so the name stays inactive and the line accomplishes nothing. Remove the line. To decline a name the machine merely excludes, select it instead.
+      Resolving ${hostLabel}: something in this user's own configuration removed ${quoteNames forbidOverridden} from the "${hostOption "forbidFeatures"}" or "${hostOption "forbidInterests"}" list. Those lists are the machine's, and the walk prunes what the machine forbids whatever this configuration says, so the name stays inactive and the line accomplishes nothing. Remove the line. To decline a name the machine merely excludes, select it instead.
+    '';
+  };
+
+  # A machine that provisions users may not exclude a contingent
+  # feature. An entry in the machine's "excludeFeatures" list is one
+  # an affected user countermands by asking for the same
+  # name—selecting it directly, or selecting a bundle that entails
+  # it—and that chance to opt back in is the whole of what separates
+  # it from the "forbidFeatures" list; selecting a contingent feature
+  # is refused and no implied edge may target one, so every way in is
+  # closed and the exclusion holds absolutely while sitting in the
+  # list that promises otherwise. A machine that wants a contingent
+  # feature never to activate writes it in "forbidFeatures", the list
+  # whose entries already hold absolutely.
+  #
+  # Only the machine's "excludeFeatures" list is judged: the walk
+  # holds each exclusion list to its own kind, so a contingent
+  # feature's name in the "excludeInterests" list withholds nothing,
+  # and the role-mismatch assertion alone objects to that misfiling.
+  #
+  # A user's own exclusion is legitimate: it always holds, for that
+  # user alone, and nothing needs to countermand it. The check
+  # therefore runs only where the "config.dotfiles.users" registry is
+  # non-empty—the evaluator that provisions other people. A managed
+  # user's nested evaluator sees it empty, as does a standalone home
+  # configuration, so a user's own exclusion stands. Gating on it also
+  # surfaces one machine-level mistake once rather than once per
+  # managed user, and lets the message point at the machine's own list
+  # exactly.
+  #
+  # Deferred alternative: an administrator may legitimately want
+  # features A and B but not C, where C activates automatically from
+  # them, without imposing that on every user. Accommodating that wish
+  # needs a way for a user to relax a machine-level exclusion that is
+  # not selection—an un-exclusion. Removing a suppression adds no way
+  # for a name to come into effect, so the guarantee that a contingent
+  # feature is active exactly when its preconditions hold would stand.
+  # The cost is a second mechanism for relaxing an exclusion, used
+  # only by contingent features, beside the existing one in which
+  # selecting a name relaxes it.
+  excludedContingent =
+    lib.optionals (config.dotfiles.users != {})
+    (lib.unique (builtins.filter (n: builtins.elem n contingentNames) host.excludeFeatures));
+  contingentExclusionAssertion = {
+    assertion = excludedContingent == [];
+    message = ''
+      Resolving ${hostLabel}: "${hostOption "excludeFeatures"}" lists
+      the contingent feature(s) ${quoteNames excludedContingent}. This
+      machine provisions users, and a machine-level exclusion yields
+      only to a user who asks for the name. Nobody can ask for a
+      contingent feature: no user may select one, and no implied edge
+      may target one, so this entry could never yield. Remove each
+      name; to keep the feature inactive everywhere, list it in
+      "${hostOption "forbidFeatures"}" instead.
     '';
   };
 
@@ -678,6 +732,30 @@
       )
       config.dotfiles._host.activeFeatures;
   describeUnsupported = name: ''the feature "${name}" (supports only ${lib.concatStringsSep ", " supportedPlatforms.${name}})'';
+  # A platform constraint belongs to a feature, never to an interest.
+  # An interest is a want, and a want holds wherever a person holds
+  # it; what runs on some platforms and not others is the feature that
+  # satisfies the want, which declares its own platforms. The
+  # "mkInterest" function refuses the key already, so this rejects the
+  # remaining way in: a hand-written entry in the flake-level
+  # registry, whose keys are bare names. Without it the constraint
+  # would sit in two places at once and could disagree with itself.
+  platformConstrainedInterests =
+    builtins.filter (name: builtins.elem name knownInterests)
+    (builtins.attrNames supportedPlatforms);
+  interestPlatformAssertion = {
+    assertion = platformConstrainedInterests == [];
+    message = ''
+      Resolving ${hostLabel}: "dotfiles.supportedPlatforms" has
+      entries for the interest(s)
+      ${quoteNames platformConstrainedInterests}, but an interest
+      holds on every platform: a platform limits the feature that
+      satisfies a want, never the want itself. Declare
+      "supportedPlatforms" on each such feature instead, and remove
+      these entries from "dotfiles.supportedPlatforms".
+    '';
+  };
+
   platformSupportAssertion = {
     assertion = unsupportedActiveNames == [];
     message = ''
@@ -707,12 +785,14 @@ in {
       anyOfMemberContingentAssertion
       contingentRegistrationAssertion
       contingentSelectionAssertion
+      contingentExclusionAssertion
       contingentImplicationTargetAssertion
       fabricatedInterestTargetAssertion
       interestCrossingAssertion
       mixedBodyAssertion
       userSystemOnlyFeatureAssertion
       platformDetectedAssertion
+      interestPlatformAssertion
       platformSupportAssertion
       forbidOverriddenAssertion
     ];
