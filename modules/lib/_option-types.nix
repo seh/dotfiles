@@ -11,7 +11,7 @@
   # one member); only an empty group, an extra key, or a non-string
   # member is rejected. Shared by the "preconditionEntry" and
   # "preconditionSet" types below so the group form is enforced
-  # identically wherever a preconditions value is carried.
+  # identically wherever a preconditions value appears.
   isPreconditionEntry = entry:
     builtins.isString entry
     || (
@@ -25,7 +25,7 @@ in {
   # Build the option type for a set of names that several modules may
   # define on one option. Each definition is written as a Nix list—the
   # only ergonomic literal for a set—and is normalized (sorted,
-  # deduplicated) before combining, so order and duplication carry no
+  # deduplicated) before combining, so order and duplication have no
   # meaning, within one definition and across definitions. The empty
   # list is accepted by default: an option whose empty set is itself a
   # meaningful value (say, "no forbidding" for the "forbidFeatures"
@@ -48,7 +48,7 @@ in {
   #   "union": the union of the normalized definitions.
   #
   # An unknown value throws at type-construction time, listing the
-  # accepted values. The type's name and description carry the chosen
+  # accepted values. The type's name and description state the chosen
   # policy so that a type-mismatch error reports it.
   setOfNames = {
     merge,
@@ -82,7 +82,7 @@ in {
         if allowEmpty
         then "list"
         else "non-empty list"
-      } of strings; order and duplication carry no meaning";
+      } of strings; order and duplication have no meaning";
       check = v: builtins.isList v && (allowEmpty || v != []) && lib.all builtins.isString v;
       merge = policy.combine;
     });
@@ -91,9 +91,9 @@ in {
   # types that permit emptiness (e.g. the unmet-subset "missing" field
   # of the "latentFeatures" diagnostic, an "attrsOf preconditionEntry"
   # list that may be empty), where "preconditionSet"'s non-empty-list
-  # constraint would be wrong. Carries no merge of its own; a consumer
-  # wraps it in "listOf" (or similar) and inherits that combinator's
-  # merge.
+  # constraint would be wrong. Declares no merge of its own; a
+  # consumer wraps it in "listOf" (or similar) and inherits that
+  # combinator's merge.
   preconditionEntry = lib.mkOptionType {
     name = "preconditionEntry";
     description = ''precondition entry: a name or an "{anyOf=[...];}" group'';
@@ -106,7 +106,7 @@ in {
   # string) or an "anyOf" group "{ anyOf = [ "<name>" ... ]; }" whose
   # sole key holds a non-empty list of names. Like "setOfNames", each
   # definition is normalized to a canonical form before combining, so
-  # order and duplication carry no meaning—within one definition and
+  # order and duplication have no meaning—within one definition and
   # across definitions—and the merge demands agreement: definitions
   # denoting the same set merge, and ones denoting different sets are
   # a conflicting-definitions error. Takes no policy arguments; the
@@ -137,7 +137,7 @@ in {
   in
     lib.mkOptionType {
       name = "preconditionSet";
-      description = ''set of preconditions (definitions must agree), each entry a name or an "{anyOf=[...];}" group, written as a non-empty list; order and duplication carry no meaning'';
+      description = ''set of preconditions (definitions must agree), each entry a name or an "{anyOf=[...];}" group, written as a non-empty list; order and duplication have no meaning'';
       check = v:
         builtins.isList v
         && v != []

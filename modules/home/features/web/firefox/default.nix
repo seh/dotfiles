@@ -4,9 +4,8 @@
 flakeLib.mkFeature "web/firefox" {
   # The default package below is Mozilla's own build, which serves
   # every platform but Darwin, where Firefox arrives outside of Nix.
-  # Both the wrapper installed here and the unwrapped payload it
-  # carries bear the same unfree license, and each answers to its own
-  # name.
+  # Both the wrapper installed here and the unwrapped payload it wraps
+  # bear the same unfree license, and each answers to its own name.
   unfreePackages = [
     "firefox-bin"
     "firefox-bin-unwrapped"

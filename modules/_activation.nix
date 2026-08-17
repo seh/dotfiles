@@ -12,9 +12,9 @@
 #
 # Each evaluation resolves its own activation alone, from the
 # "dotfiles.host" record that evaluator sees. In a system evaluator
-# that record carries the machine's own selections, so a system-class
+# that record holds the machine's own selections, so a system-class
 # body follows those alone and no user may configure the machine. In a
-# managed user's evaluator it carries the machine's selections layered
+# managed user's evaluator it holds the machine's selections layered
 # with that user's own (see the propagation module in
 # "modules/lib/_constructors.nix"), so the machine provisions every
 # user it manages and each user adds to that.
@@ -40,9 +40,9 @@
 
   # Detect the host's platform from the evaluating package set. Every
   # real evaluator (Home Manager, nix-darwin, NixOS) provides one, so
-  # the detected value is authoritative; host records carry no
-  # platform attribute. Null arises only in a bare instantiation of
-  # this module without a package set.
+  # the detected value is authoritative; host records have no platform
+  # attribute. Null arises only in a bare instantiation of this module
+  # without a package set.
   platform =
     if pkgs != null
     then pkgs.stdenv.hostPlatform.system
@@ -66,10 +66,9 @@
     else null;
   # The features and interests this evaluator itself selects. See the
   # "dotfiles.host" submodule description for the machine and per-user
-  # readings. The walk carries one list spanning every registered
-  # name, so the selected interests join the selected features there:
-  # each kind has its own authoring list, and activation treats them
-  # alike.
+  # readings. The walk keeps one list spanning every registered name,
+  # so the selected interests join the selected features there: each
+  # kind has its own authoring list, and activation treats them alike.
   selected = host.features ++ host.interests;
   # Keep each feature and interest list to the names its own kind's
   # registry advertises before the walk reads it. The role-mismatch
@@ -180,7 +179,7 @@ in {
               that guard contingent features, such as a programming
               language in use here. Expansion starts from these
               selected names together with "features". An interest
-              carries no configuration of its own, so selecting one
+              declares no configuration of its own, so selecting one
               activates only the contingent features whose
               preconditions it completes. A feature name belongs in
               "features" instead; the two kinds are not
@@ -291,11 +290,11 @@ in {
             type = types.nullOr types.str;
             readOnly = true;
             description = ''
-              The host's platform: the Nixpkgs system identifier
-              (e.g. "aarch64-darwin") detected from the evaluating
-              package set, or null when this module is instantiated
-              without one. Detection is the only source; host
-              records carry no platform attribute.
+              The host's platform: the Nixpkgs system identifier (e.g.
+              "aarch64-darwin") detected from the evaluating package
+              set, or null when this module is instantiated without
+              one. Detection is the only source; host records have no
+              platform attribute.
             '';
           };
           activeFeatures = mkOption {
@@ -330,10 +329,11 @@ in {
             description = ''
               Interests expressed by this evaluator, whether it
               expressed one directly or another name implied it. An
-              interest carries no configuration of its own; expressing
-              one only completes the preconditions of the contingent
-              features citing it. Declaring that an interest exists,
-              via the "mkInterest" function, does not express it.
+              interest declares no configuration of its own;
+              expressing one only completes the preconditions of the
+              contingent features citing it. Declaring that an
+              interest exists, via the "mkInterest" function, does not
+              express it.
             '';
           };
           inEffect = mkOption {

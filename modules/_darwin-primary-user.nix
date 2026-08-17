@@ -9,7 +9,7 @@
 # The "dotfiles.primaryUser" option itself is declared in
 # "_host-users.nix", which every system class aggregator imports, and
 # the per-user registry it reads is declared in "_users.nix". This
-# module carries only what nix-darwin makes of the two.
+# module declares only what nix-darwin makes of the two.
 {
   lib,
   config,

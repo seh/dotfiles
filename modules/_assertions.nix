@@ -39,12 +39,12 @@
   # Shared inputs, used by several assertions below.
   inherit (config.dotfiles) host;
   inherit (import ./lib/_diagnostics.nix) describeHost;
-  # Every message below opens with this phrase, so that a host
-  # carrying no name reads as prose.
+  # Every message below opens with this phrase, so that a host lacking
+  # a name reads as prose.
   hostLabel = describeHost host.name;
   # The platform is detection-only: "modules/_activation.nix" computes
   # it from the evaluating package set and exposes it here. Host
-  # records carry no platform attribute.
+  # records have no platform attribute.
   platform = config.dotfiles._host.platform;
 
   knownFeatures = config.dotfiles._knownFeatures;
@@ -106,8 +106,8 @@
   # identifies the three lists a machine or user authors under it and
   # the registry of names it advertises, so that each kind's own
   # registry judges its own lists. These are the authoring roles, one
-  # per kind; the activation walk carries one list and folds both
-  # kinds into it (see "modules/_activation.nix").
+  # per kind; the activation walk keeps one list and folds both kinds
+  # into it (see "modules/_activation.nix").
   roles = [
     {
       name = "features";
@@ -141,7 +141,7 @@
     )
     roles;
 
-  # The three lists each role carries: the names a machine or user
+  # The three lists each role holds: the names a machine or user
   # selects, the names it prunes from its own walk, and the names a
   # machine forbids outright. Each entry reads its list off a role and
   # spells that list's bare name, so the kind-mismatch check covers
@@ -167,8 +167,8 @@
 
   # Role-mismatch assertion: names written into one of "here"'s lists
   # that are actually known as "there.name". The kinds are not
-  # interchangeable—a feature carries configuration and may be
-  # implied, while an interest carries none and is only selected or
+  # interchangeable—a feature declares configuration and may be
+  # implied, while an interest declares none and is only selected or
   # entailed—so a misfiled name is an error that cites the list it
   # belongs in.
   #
@@ -370,7 +370,7 @@
   contingentRegistrationAssertion = {
     assertion = unregisteredContingent == [];
     message = ''
-      Resolving ${hostLabel}: the preconditions table keys the contingent feature(s) ${quoteNames unregisteredContingent}, but no imported module registers these names as features. A contingent feature must be registered via the "mkFeature" function; a name known only as an interest may not carry preconditions. Register each name with the "mkFeature" function (passing its "preconditions" list there) or remove its entry from "dotfiles.featurePreconditions".
+      Resolving ${hostLabel}: the preconditions table keys the contingent feature(s) ${quoteNames unregisteredContingent}, but no imported module registers these names as features. A contingent feature must be registered via the "mkFeature" function; a name known only as an interest may not declare preconditions. Register each name with the "mkFeature" function (passing its "preconditions" list there) or remove its entry from "dotfiles.featurePreconditions".
     '';
   };
 
@@ -387,7 +387,7 @@
   # both surfaces because a name arriving at a nested per-user
   # evaluator may have been written at either.
   #
-  # The message carries the preconditions this evaluator leaves unmet,
+  # The message states the preconditions this evaluator leaves unmet,
   # since those are what a reader selects in the rejected feature's
   # place. Each one arrives with its kind, because a feature and an
   # interest are selected under different lists, and a member of an
@@ -594,8 +594,8 @@
   # divide between the machine and a user's home: a "nixDarwin" or
   # "nixOS" body configures the machine and follows the machine's own
   # selections, while a "homeManager" body configures one user's home
-  # and follows that user's. One feature carrying both configures the
-  # machine and a user's home at once, so a user who selects it
+  # and follows that user's. One feature registering both configures
+  # the machine and a user's home at once, so a user who selects it
   # activates the home half alone. Registering one name across both
   # system classes stays legal—the "nix" feature and the
   # "shell/zsh/integration" feature each do exactly that.
@@ -619,9 +619,9 @@
       in
         builtins.elem homeClass classes && systemClassesOf classes != []
     ) (builtins.attrNames featureClasses));
-  # Name the bodies a mixed feature carries, leading with the home
-  # body: "both a home-manager body and a nixDarwin body" when one
-  # system class registers, and a serial enumeration when both do.
+  # Describe the bodies a mixed feature registers, leading with the
+  # home body: "both a home-manager body and a nixDarwin body" when
+  # one system class registers, and a serial enumeration when both do.
   describeMixedBodies = system:
     if lib.length system == 1
     then ''both a home-manager body and a ${lib.head system} body''
@@ -629,7 +629,7 @@
   describeMixedFeature = {
     feature,
     system,
-  }: ''The feature "${feature}" carries ${describeMixedBodies system}'';
+  }: ''The feature "${feature}" registers ${describeMixedBodies system}'';
   mixedBodyAssertion = {
     assertion = mixedBodyFeatures == [];
     message = ''
@@ -652,7 +652,7 @@
   # contingent feature takes it as a precondition—and only the user's
   # own authoring is at fault.
   #
-  # A name absent from the class record carries no bodies at all: a
+  # A name absent from the class record has no bodies at all: a
   # name-only registration, an interest, or a misspelling that the
   # unknown-name checks above already diagnose. None is flagged here.
   userRecords = config.dotfiles.users;
@@ -686,7 +686,7 @@
     user,
     name,
     classes,
-  }: ''the user "${user}" selects the feature "${name}", which carries configuration ${describeSystemOnlyClasses classes} and so does nothing for a user; select it in "${hostOption "features"}" so the machine applies it.'';
+  }: ''the user "${user}" selects the feature "${name}", which declares configuration ${describeSystemOnlyClasses classes} and so does nothing for a user; select it in "${hostOption "features"}" so the machine applies it.'';
   userSystemOnlyFeatureAssertion = {
     assertion = userSystemOnlyFeatures == [];
     message = ''
@@ -697,7 +697,7 @@
   };
 
   # A host with a name must know its platform, and detection from the
-  # evaluating package set is the only source: host records carry no
+  # evaluating package set is the only source: host records have no
   # platform attribute. This assertion fails only when a named host is
   # evaluated without a package set (for example, in a bare
   # instantiation of these modules). Without a platform, the
