@@ -93,7 +93,7 @@
     else throw "mkFeature: body for \"${name}\" must be a function or an attrset with \"options\" and/or \"config\"";
 
   # Register a name under "knownFeatures" and, for each class body it
-  # carries, a gated deferred module under "featureModules".
+  # declares, a gated deferred module under "featureModules".
   mkFeatureRegistration = name: bodies: {
     dotfiles =
       {
@@ -155,7 +155,7 @@
   # computed from a package—"lib.getName pkgs.orbstack", say—would
   # demand a package set at registration time, where none is
   # available; such an attempt leaves its mark as string context, so
-  # an entry carrying any is rejected along with the empty name, which
+  # an entry holding any is rejected along with the empty name, which
   # matches no package. Callers apply this only once the value is
   # known to be a list of strings.
   isLiteralPackageName = entry: entry != "" && !(builtins.hasContext entry);
@@ -174,7 +174,7 @@
   # Collect, deduplicated, the platform identifiers listed across a
   # valid "implies" list's record-form entries that nixpkgs does not
   # recognize. Callers apply this only after "isImpliesList" accepts
-  # the value, so every record entry carries a string list under
+  # the value, so every record entry holds a string list under
   # "supportedPlatforms"; a bare-name entry lists no platform and
   # contributes nothing.
   impliesUnknownPlatforms = value:
@@ -242,7 +242,7 @@ in {
   #   feature or an interest, never a contingent feature — which keeps
   #   groups out of every precondition cycle; an assertion in
   #   "modules/_assertions.nix" enforces this. A bare entry may still
-  #   list a contingent feature. A feature carrying this key is a
+  #   list a contingent feature. A feature declaring this key is a
   #   "contingent feature": it activates automatically exactly when
   #   all of its preconditions are met, and that is its only
   #   activation path—no host and no implied edge may list it directly
@@ -390,7 +390,7 @@ in {
   # Register an interest: a named want that participates in activation
   # exactly as a feature does — a host may select or exclude it, and a
   # contingent feature may list it as a precondition — but that
-  # carries no configuration of its own. Called with a closed attrset
+  # declares no configuration of its own. Called with a closed attrset
   # pattern:
   #
   #   flakeLib.mkInterest {

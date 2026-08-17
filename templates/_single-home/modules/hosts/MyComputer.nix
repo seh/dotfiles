@@ -22,7 +22,7 @@ in {
     };
 
     # Per-user records for this host. Each entry's key is the
-    # username; each value carries that user's identity record and the
+    # username; each value holds that user's identity record and the
     # list of modules supplied to "mkHome".
     #
     # To add a second user, add another entry here with its own
