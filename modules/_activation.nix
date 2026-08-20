@@ -111,6 +111,12 @@
   # selected and forbidden together stays with the machine that
   # authored both lines.
   managedUser = config.dotfiles._ownFeatures != null;
+  # A machine that provisions users, gated the same way as the
+  # "contingentExclusionAssertion" assertion in the
+  # "modules/_assertions.nix" file: a managed user's nested evaluator
+  # and a standalone home configuration both see the "dotfiles.users"
+  # registry empty.
+  provisionsUsers = config.dotfiles.users != {};
 
   # Fold what "host.forbidFeatures" and "host.forbidInterests" forbid
   # into this evaluator's own exclusions: both prune every walk before
@@ -814,18 +820,25 @@ in {
   # Second, a name a machine both selects and forbids. Forbidding
   # admits no exception, so that selection can never take effect.
   #
-  # Third, an exclusion that changes nothing. Each candidate name "n"
-  # among the exclusions its author wrote is judged by what dropping
-  # that author's own line would change. Where an entry the machine
-  # wrote survives beside it, the answer is nothing, with no walk
-  # needed: the same set prunes either way. Elsewhere every copy of
-  # "n" in force here is the author's own, so the activation is
-  # recomputed with them dropped, every other exclusion still pruning
-  # and everything the machine forbids still folded in; "n" absent
-  # from the result means it would not have been active anyway. An
-  # idle line may be removed, and the warning says so. A name already
-  # reported under the first diagnostic is left out of this one, since
-  # that message already asks its author to drop one of two lines.
+  # Third, an exclusion that changes nothing. A machine that
+  # provisions users answers here only for an exclusion beside a name
+  # it also forbids: its other exclusions exist to withhold names from
+  # what it provisions, yielding to a user who asks, so judging them
+  # by the machine's own activation would call a line doing exactly
+  # its job useless. For a standalone home configuration and for a
+  # managed user, whose exclusion lists bind their author alone, each
+  # candidate name "n" among the exclusions its author wrote is judged
+  # by what dropping that author's own line would change. Where an
+  # entry the machine wrote survives beside it, the answer is nothing,
+  # with no walk needed: the same set prunes either way. Elsewhere
+  # every copy of "n" in force here is the author's own, so the
+  # activation is recomputed with them dropped, every other exclusion
+  # still pruning and everything the machine forbids still folded in;
+  # "n" absent from the result means it would not have been active
+  # anyway. An idle line may be removed, and the warning says so. A
+  # name already reported under the first diagnostic is left out of
+  # this one, since that message already asks its author to drop one
+  # of two lines.
   config = let
     hostLabel = describeHost host.name;
     # The unpruned walk also forces the dangling-edge check inside
@@ -879,16 +892,30 @@ in {
       };
     in
       othersExclude own name || !(builtins.elem name activation);
-    redundantOf = registry: excluded:
-      if hasImplicationsLib
-      then builtins.filter (n: builtins.elem n registry && isRedundant excluded n) excluded
-      else [];
-    # Each exclusion list is judged against its own kind's registry:
-    # "excludeFeatures" against the known features and
-    # "excludeInterests" against the known interests, matching the
-    # walk, which holds each list to its own kind. A name written
-    # under the wrong list is a kind mismatch, which the assertions in
-    # "modules/_assertions.nix" reject outright and the walk ignores.
+    # A machine that provisions users skips the recomputation: its
+    # exclusions exist to withhold names from what it provisions,
+    # yielding to a user who asks for them, so whether the machine's
+    # own walk would have activated the name is the wrong question,
+    # and a line doing exactly its job would read as useless. Only an
+    # exclusion beside a name it also forbids is reported there:
+    # forbidding withholds the name from every walk and never yields,
+    # so the exclusion adds nothing anywhere, and whether the machine
+    # forbids the name decides that with no walk. Elsewhere the
+    # recomputation decides.
+    redundantOf = registry: forbidden: excluded:
+      if !hasImplicationsLib
+      then []
+      else if provisionsUsers
+      then builtins.filter (n: builtins.elem n registry && builtins.elem n forbidden) excluded
+      else builtins.filter (n: builtins.elem n registry && isRedundant excluded n) excluded;
+    # Each exclusion list is judged against its own kind's registry
+    # and what it forbids: "excludeFeatures" against the known
+    # features and "forbidFeatures", "excludeInterests" against the
+    # known interests and "forbidInterests", matching the walk, which
+    # holds each list to its own kind. A name written under the wrong
+    # list is a kind mismatch, which the assertions in the
+    # "modules/_assertions.nix" file reject outright and the walk
+    # ignores.
     #
     # An entry its author also selects is reported as a contradiction
     # below, and that message already asks its author to drop one of
@@ -897,10 +924,10 @@ in {
     # earns its place is moot while a selection beside it disagrees.
     redundantFeatures =
       lib.subtractLists contradictoryFeatures
-      (redundantOf config.dotfiles._knownFeatures ownExcludeFeatures);
+      (redundantOf config.dotfiles._knownFeatures host.forbidFeatures ownExcludeFeatures);
     redundantInterests =
       lib.subtractLists contradictoryInterests
-      (redundantOf config.dotfiles._knownInterests ownExcludeInterests);
+      (redundantOf config.dotfiles._knownInterests host.forbidInterests ownExcludeInterests);
     # What the machine forbids, keyed by kind.
     forbidOf = {
       feature = host.forbidFeatures;
@@ -917,12 +944,15 @@ in {
       interest = ownExcludeInterests;
     };
     # An idle exclusion reads one of three ways. Where the machine
-    # already forbids the name, the exclusion adds nothing and the
-    # forbid entry is the reason. Where the machine's own exclusion
-    # still withholds the name here, this line repeats it and the
-    # machine's entry is the reason. Elsewhere nothing here calls for
-    # the name at all, and forbidding is worth mentioning as the way
-    # to hold it down for every user rather than here alone.
+    # already forbids the name, the exclusion adds nothing and what
+    # the machine forbids is the reason; this is the only way a
+    # machine that provisions users hears, since the "redundantOf"
+    # function above holds such a machine to its forbid-shadowed
+    # entries. Where the machine's own exclusion still withholds the
+    # name here, this line repeats it and the machine's entry is the
+    # reason. Elsewhere nothing here calls for the name at all, and
+    # forbidding is worth mentioning as the way to hold it down for
+    # every user rather than here alone.
     #
     # All three cite the exclusion list by its full path, since the
     # judged list is the one this machine or this user wrote, and a
