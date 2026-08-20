@@ -218,9 +218,9 @@
       role = roleByPrefix.${prefix};
       name = rest;
     };
-    # Toposort over the combined universe of (role, name) pairs so
+    # Toposort over every (role, name) pair the table mentions, so
     # that cycles anywhere in the graph are rejected.
-    universeList =
+    mentionedPairs =
       lib.concatMap (
         role: let
           edges = implications.${role};
@@ -248,7 +248,7 @@
           ++ reachedHere
       )
       roles;
-    universe = lib.unique (
+    mentionedKeys = lib.unique (
       map (
         {
           role,
@@ -256,14 +256,14 @@
         }:
           mkKey role name
       )
-      universeList
+      mentionedPairs
     );
     edgesFrom = key: let
       p = parseKey key;
       targets = implications.${p.role}.${p.name} or {};
     in
       lib.concatMap (targetRole: map (n: mkKey targetRole n) (targets.${targetRole} or [])) roles;
-    sorted = lib.lists.toposort (a: b: builtins.elem b (edgesFrom a)) universe;
+    sorted = lib.lists.toposort (a: b: builtins.elem b (edgesFrom a)) mentionedKeys;
     # Build the start set by mapping each role's selected names
     # through "mkKey". Roles missing from "selected" default to [].
     startSet = lib.concatMap (role: map (n: {key = mkKey role n;}) (selected.${role} or [])) roles;
@@ -334,8 +334,8 @@
   # function over the implication graph, then activates every
   # not-yet-active contingent feature whose preconditions are all
   # present, feeding the grown set back until no further feature
-  # activates. The name universe is finite and each pass only adds
-  # names, so this terminates.
+  # activates. The set of known names is finite and each pass only
+  # adds names, so this terminates.
   #
   # Before the fixpoint runs, precondition cycles among contingent
   # features are rejected with a hard error. A member of such a cycle

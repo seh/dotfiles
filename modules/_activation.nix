@@ -41,7 +41,7 @@
     flakeLib != null && flakeLib ? implicationsFor && flakeLib ? resolveActivation;
   knownByRole = {
     profiles = config.dotfiles._knownProfiles;
-    features = config.dotfiles._featureUniverse;
+    features = config.dotfiles._knownNames;
   };
   preconditions = config.dotfiles._featurePreconditions;
   implications =
@@ -464,25 +464,27 @@ in {
         Interest names that imported modules declare via the
         "mkInterest" function. Mirrored from the flake-level
         "dotfiles.knownInterests" registry by each class aggregator.
-        Folded into the feature universe for activation, exclusion,
-        and preconditions, and kept apart so that kind-aware checks
-        (such as the namespace-disjointness assertion in
-        "modules/_assertions.nix") can tell interests from features.
+        Folded in beside the known feature names for activation,
+        exclusion, and preconditions, and kept apart so that
+        kind-aware checks (such as the namespace-disjointness
+        assertion in "modules/_assertions.nix") can tell interests
+        from features.
       '';
     };
 
-    _featureUniverse = mkOption {
+    _knownNames = mkOption {
       type = types.listOf types.str;
       readOnly = true;
       internal = true;
       description = ''
-        The names usable wherever a feature name is expected: the
-        known feature names and the known interest names, combined and
-        de-duplicated. Interests share the feature universe—a host
-        selects or excludes an interest, and a precondition may name
-        it, exactly as with a feature—while the separate registries
-        let kind-aware checks tell the kinds apart. Computed from
-        "dotfiles._knownFeatures" and "dotfiles._knownInterests".
+        The names a selection, an exclusion, or a precondition may
+        cite: the known feature names and the known interest names,
+        one list without duplicates. This module computes it from
+        "dotfiles._knownFeatures" and "dotfiles._knownInterests",
+        which stay apart so that kind-aware checks can tell interests
+        from features. The two kinds stand together here because a
+        host selects or excludes an interest, and a precondition may
+        list it, exactly as with a feature.
       '';
     };
 
@@ -611,7 +613,7 @@ in {
       then builtins.filter (n: builtins.elem n known && isRedundant role n) excluded
       else [];
     redundantProfiles = redundantOf "profiles" config.dotfiles._knownProfiles host.excludeProfiles;
-    redundantFeatures = redundantOf "features" config.dotfiles._featureUniverse host.excludeFeatures;
+    redundantFeatures = redundantOf "features" config.dotfiles._knownNames host.excludeFeatures;
     mkWarning = role: option: name: let
       forbidOption =
         if role == "feature"
@@ -621,7 +623,7 @@ in {
       Resolving host "${hostLabel}": ${option} entry "${name}" names a known ${role} that this machine's own selections do not activate; the exclusion has no effect on the machine and may be removed. A machine-wide forbid list that keeps a ${role} inactive for every selector is spelled "dotfiles.host.${forbidOption}".
     '';
   in {
-    dotfiles._featureUniverse = lib.unique (
+    dotfiles._knownNames = lib.unique (
       config.dotfiles._knownFeatures ++ config.dotfiles._knownInterests
     );
 

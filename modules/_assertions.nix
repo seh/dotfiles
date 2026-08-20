@@ -40,7 +40,7 @@
   knownProfiles = config.dotfiles._knownProfiles;
   knownFeatures = config.dotfiles._knownFeatures;
   knownInterests = config.dotfiles._knownInterests;
-  featureUniverse = config.dotfiles._featureUniverse;
+  knownNames = config.dotfiles._knownNames;
 
   featurePreconditions = config.dotfiles._featurePreconditions;
   contingentNames = builtins.attrNames featurePreconditions;
@@ -123,7 +123,7 @@
       selected = host.features;
       excluded = host.excludeFeatures;
       forbidden = host.forbidFeatures;
-      known = featureUniverse;
+      known = knownNames;
       humanSingular = "feature";
       humanPlural = "feature(s)";
       selectOption = "dotfiles.host.features";
@@ -233,7 +233,7 @@
   unknownPreconditions =
     builtins.filter (
       {precondition, ...}:
-        !(builtins.elem precondition featureUniverse)
+        !(builtins.elem precondition knownNames)
         && !(builtins.elem precondition knownProfiles)
     )
     preconditionEdges;
