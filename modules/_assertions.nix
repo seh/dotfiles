@@ -189,9 +189,9 @@
   # Unknown-forbid assertion: any name listed under a role's
   # machine-wide "forbid" option must also appear in that role's known
   # set. Forbidding is an exclusion applied to every selector, so a
-  # misspelled name would silently veto nothing, just as a misspelled
-  # exclusion would fail to suppress. A contingent feature may be
-  # forbidden (it simply never activates), so no separate check
+  # misspelled name would silently forbid nothing, just as a
+  # misspelled exclusion would fail to suppress. A contingent feature
+  # may be forbidden (it simply never activates), so no separate check
   # objects to that.
   unknownForbidAssertion = role: let
     unknown = builtins.filter (n: !(builtins.elem n role.known)) role.forbidden;
