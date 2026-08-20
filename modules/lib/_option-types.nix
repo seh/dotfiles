@@ -11,13 +11,13 @@
   # duplication carry no meaning, within one definition and across
   # definitions. The empty list is accepted by default: an option
   # whose empty set is itself a meaningful value (say, "no
-  # forbidding" for a machine-wide veto that defaults empty) needs no
-  # ceremony, and the empty list then serves as both the authored
-  # value and the default. A strict option passes "allowEmpty =
-  # false" to reject the empty list per definition, expressing "no
+  # forbidding" for a machine-wide forbid list that defaults empty)
+  # needs no ceremony, and the empty list then serves as both the
+  # authored value and the default. A strict option passes "allowEmpty
+  # = false" to reject the empty list per definition, expressing "no
   # constraint" by omitting the attribute entirely so that an
-  # accidental "[]" cannot pass silently while meaning something
-  # else. A combined result may still be empty (see the
+  # accidental "[]" cannot pass silently while meaning something else.
+  # A combined result may still be empty (see the
   # "intersection" policy below) regardless of "allowEmpty": that is
   # a computed value, not an authored one.
   #
