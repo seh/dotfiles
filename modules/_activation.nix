@@ -814,15 +814,18 @@ in {
   # Second, a name a machine both selects and forbids. Forbidding
   # admits no exception, so that selection can never take effect.
   #
-  # Third, an exclusion that changes nothing. For each candidate name
-  # "n" among the exclusions its author wrote, recompute the
-  # activation with every exclusion of "n" in force here dropped,
-  # every other exclusion still pruning and the machine's forbid lists
-  # still folded in. If "n" is absent from the result it would not
-  # have been active anyway, so the line may be removed. A name
-  # already reported under the first diagnostic is left out of this
-  # one, since that message already asks its author to drop one of two
-  # lines.
+  # Third, an exclusion that changes nothing. Each candidate name "n"
+  # among the exclusions its author wrote is judged by what dropping
+  # that author's own line would change. Where an entry the machine
+  # wrote survives beside it, the answer is nothing, with no walk
+  # needed: the same set prunes either way. Elsewhere every copy of
+  # "n" in force here is the author's own, so the activation is
+  # recomputed with them dropped, every other exclusion still pruning
+  # and everything the machine forbids still folded in; "n" absent
+  # from the result means it would not have been active anyway. An
+  # idle line may be removed, and the warning says so. A name already
+  # reported under the first diagnostic is left out of this one, since
+  # that message already asks its author to drop one of two lines.
   config = let
     hostLabel = describeHost host.name;
     # The unpruned walk also forces the dangling-edge check inside
@@ -838,34 +841,47 @@ in {
           supportedPlatforms = config.dotfiles._supportedPlatforms;
         }
       else null;
-    # Redundancy test: an excluded name "n" is redundant when, with
-    # "n" removed from the exclusion list (but every other exclusion
-    # still pruning), the resulting activation does not contain "n"
-    # anyway. The test runs the full fixpoint: an exclusion
-    # suppressing a contingent feature that would otherwise activate
-    # has real effect, and a walk that never activates contingent
-    # features would misreport it as removable.
-    # The recomputation removes every exclusion entry bearing the
-    # candidate name and then folds the machine-wide forbid lists back
-    # in. Those lists must stay: dropping the name from them as well
-    # would let a forbidden name activate here and earn the verdict
-    # "this exclusion matters", when forbidding in fact keeps it
-    # inactive whatever the exclusion says. Removing every entry at
-    # once errs only toward silence: where two of the exclusions in
-    # force here share the name, the recomputation can activate it and
-    # stay quiet about a line whose removal alone would have changed
-    # nothing.
-    isRedundant = name: let
+    # A surviving exclusion of the name that the advised author did
+    # not write: on a managed user's walk, the machine's. The layered
+    # lists hold the author's own entries and the machine's surviving
+    # ones together, so a count tells them apart even where both
+    # authors wrote the name.
+    othersExclude = own: name:
+      builtins.length (builtins.filter (m: m == name) exclusionsInForce)
+      > builtins.length (builtins.filter (m: m == name) own);
+    # Redundancy test: an exclusion is idle when dropping the advised
+    # author's own line would change nothing. Where an entry the
+    # machine wrote also holds the name—surviving into a managed
+    # user's walk because that user does not ask for it—no walk is
+    # needed: the pruning set is the same with or without the author's
+    # line. Only where every copy in force is the author's own does
+    # the recomputation decide: drop them all, keep every other
+    # exclusion pruning and everything the machine forbids folded in,
+    # and call the line idle when the name stays inactive anyway. The
+    # test runs the full fixpoint: an exclusion suppressing a
+    # contingent feature that would otherwise activate has real
+    # effect, and a walk that never activates contingent features
+    # would misreport it as removable.
+    #
+    # What the machine forbids must stay: dropping the name from it as
+    # well would let a forbidden name activate here and earn the
+    # verdict "this exclusion matters", when forbidding in fact keeps
+    # it inactive whatever the exclusion says. One case still errs
+    # toward silence: an author who wrote the same name twice loses
+    # both copies at once, so the recomputation can activate the name
+    # and stay quiet about a line whose removal alone would have
+    # changed nothing.
+    isRedundant = own: name: let
       activation = flakeLib.resolveActivation {
         inherit implications known platform selected preconditions;
         supportedPlatforms = config.dotfiles._supportedPlatforms;
         excluded = withForbidden (lib.filter (m: m != name) exclusionsInForce);
       };
     in
-      !(builtins.elem name activation);
+      othersExclude own name || !(builtins.elem name activation);
     redundantOf = registry: excluded:
       if hasImplicationsLib
-      then builtins.filter (n: builtins.elem n registry && isRedundant n) excluded
+      then builtins.filter (n: builtins.elem n registry && isRedundant excluded n) excluded
       else [];
     # Each exclusion list is judged against its own kind's registry:
     # "excludeFeatures" against the known features and
@@ -894,20 +910,32 @@ in {
       feature = "forbidFeatures";
       interest = "forbidInterests";
     };
-    # An idle exclusion reads one of two ways. Where the machine
+    # The exclusion list each kind's own entries live in, for the
+    # machine's-entry test below.
+    ownExclusionsOf = {
+      feature = ownExcludeFeatures;
+      interest = ownExcludeInterests;
+    };
+    # An idle exclusion reads one of three ways. Where the machine
     # already forbids the name, the exclusion adds nothing and the
-    # forbid entry is the reason; elsewhere nothing here calls for the
-    # name at all, and forbidding is worth mentioning as the way to
-    # hold it down for every user rather than here alone.
+    # forbid entry is the reason. Where the machine's own exclusion
+    # still withholds the name here, this line repeats it and the
+    # machine's entry is the reason. Elsewhere nothing here calls for
+    # the name at all, and forbidding is worth mentioning as the way
+    # to hold it down for every user rather than here alone.
     #
-    # Both cite the exclusion list by its full path, since the judged
-    # list is the one this machine or this user wrote, and a bare
-    # option name would read as the machine's where a user cannot edit
-    # it.
+    # All three cite the exclusion list by its full path, since the
+    # judged list is the one this machine or this user wrote, and a
+    # bare option name would read as the machine's where a user cannot
+    # edit it.
     mkWarning = role: option: name:
       if builtins.elem name forbidOf.${role}
       then ''
         Resolving ${hostLabel}: "${ownListPrefix}.${option}" lists "${name}", but "dotfiles.host.${forbidOptionOf.${role}}" already forbids that ${role} machine-wide, so the entry changes nothing and you can remove it. Forbidding keeps the name inactive in every activation walk, the machine's own and every user's.
+      ''
+      else if othersExclude ownExclusionsOf.${role} name
+      then ''
+        Resolving ${hostLabel}: "${ownListPrefix}.${option}" lists "${name}", but the machine's own "dotfiles.host.${option}" entry already withholds that ${role} here, so the entry changes nothing and you can remove it. The machine's entry yields only to a user who asks for the name, not to one who also excludes it.
       ''
       else ''
         Resolving ${hostLabel}: "${ownListPrefix}.${option}" lists "${name}", but nothing in this configuration turns that ${role} on, so the entry changes nothing and you can remove it. A machine-wide "dotfiles.host.${forbidOptionOf.${role}}" entry would keep the ${role} inactive in every activation walk, the machine's own and every user's.
