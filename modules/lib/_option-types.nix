@@ -1,7 +1,7 @@
 # Option types shared by the registry options in the
 # "modules/module-schema.nix" file. They live in this library file so
 # that probes and future consumers can construct every variant
-# directly, rather than reaching only the instances embedded in the
+# directly, rather than settling for the instances embedded in the
 # schema's option declarations.
 {lib}: {
   # Build the option type for a set of names that several modules
