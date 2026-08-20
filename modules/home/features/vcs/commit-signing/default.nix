@@ -111,7 +111,9 @@ flakeLib.mkFeature "vcs/commit-signing" {
           default = allowedSignersFile;
           readOnly = true;
           internal = true;
-          description = "Path to the allowed_signers file in the Nix store.";
+          description = ''
+            Path to the allowed_signers file in the Nix store.
+          '';
         };
       };
     };
