@@ -358,7 +358,7 @@ in {
   # "inEffect" gate that the "mkFeature" function already wraps around
   # the whole body: the fragment takes effect exactly when the
   # enclosing feature AND every named feature or interest are active.
-  # Reach for a contingent feature (the "preconditions" argument of
+  # Declare a contingent feature (via the "preconditions" argument of
   # the "mkFeature" function) instead when the pairing deserves its
   # own name, file, and excludability; this combinator suits pairings
   # too slight for that.

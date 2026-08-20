@@ -26,14 +26,15 @@
   #
   # This function includes a record-form edge ("{ name = "<target>";
   # supportedPlatforms = [<systems>]; }") only when the host's
-  # platform is one of the listed systems; this is how a source
-  # reaches a target on some platforms and not others.
+  # platform is one of the listed systems; this is how a source brings
+  # along a target on some platforms and not others.
   #
   # This function computes the "all" entry's targets from
   # "knownProfiles" rather than reading a declared edge, since "all"
   # is not a co-located edge: introducing a new profile folds it into
   # "all" automatically, and hosts that want to skip one of the
-  # profiles it reaches list that profile under "excludeProfiles".
+  # profiles it brings along list that profile under
+  # "excludeProfiles".
   #
   # The graph across all roles MUST form a DAG; the "expandClosure"
   # function rejects cycles at runtime.
@@ -105,9 +106,9 @@
         })
         (builtins.filter (source: isProfile source == wantProfiles) (builtins.attrNames impliedEdges))
       );
-    # The "all" profile reaches every other profile; this function
-    # computes its targets rather than reading a declared edge (see
-    # this function's header).
+    # The "all" profile brings along every other profile; this
+    # function computes its targets rather than reading a declared
+    # edge (see this function's header).
     allEntry = {
       profiles = lib.subtractLists ["all"] knownProfiles;
       features = [];
@@ -316,8 +317,8 @@
     else "${lib.concatStringsSep ", " (lib.init quoted)}, and ${lib.last quoted}";
 
   # Expand the selected names to their full activation: everything the
-  # implication graph reaches, plus every contingent feature whose
-  # preconditions the result meets.
+  # implication graph brings along, plus every contingent feature
+  # whose preconditions the result meets.
   #
   # "preconditions" maps each contingent feature's name to the list of
   # feature or interest names that must all be active for it to
@@ -327,8 +328,8 @@
   # "excludeFeatures" never activates even when its preconditions hold
   # (its entry is dropped from the table here), and one whose
   # precondition is excluded never activates because the pruned walk
-  # can never reach that precondition (the caller prunes the
-  # implication graph and filters "selected" as usual).
+  # can never bring that precondition into effect (the caller prunes
+  # the implication graph and filters "selected" as usual).
   #
   # The walk is a fixpoint: each pass runs the "expandClosure"
   # function over the implication graph, then activates every

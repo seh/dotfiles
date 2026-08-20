@@ -259,10 +259,10 @@ in {
               absent. These active features decide whether each
               feature's system-class configuration applies, tested via
               "inEffect". An inactive feature contributes nothing, as
-              though it were never defined. The walk reaches interests
-              as well as features, since a precondition may cite
-              either kind. This list holds the features alone; see
-              "expressedInterests" for the interests.
+              though it were never defined. The walk includes
+              interests as well as features, since a precondition may
+              cite either kind. This list holds the features alone;
+              see "expressedInterests" for the interests.
             '';
           };
           expressedInterests = mkOption {
@@ -379,7 +379,7 @@ in {
           # Diagnostics that describe one selector read the machine's
           # own activation directly.
           activeProfiles = activeSet.profiles;
-          # Every name the union reached: active features and
+          # Every name the union includes: active features and
           # expressed interests together, since a precondition may
           # cite either kind. The two are published apart, so keep the
           # union to this scope.

@@ -2,7 +2,7 @@
 # by both:
 #
 #   - "./default.nix", which assigns the result to "flake.lib" so
-#     downstream consumers can reach it via "inputs.dotfiles.lib.*".
+#     downstream consumers can call it via "inputs.dotfiles.lib.*".
 #
 #   - "../../flake.nix", which threads the result through
 #     "mkFlake"'s "specialArgs" as the "flakeLib" module argument

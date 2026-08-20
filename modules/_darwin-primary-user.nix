@@ -2,7 +2,7 @@
 #
 # "system.primaryUser" is a nix-darwin concept with no counterpart in
 # the NixOS or standalone home-manager evaluators, so the nix-darwin
-# class aggregator imports this module alone. Being reached at all
+# class aggregator imports this module alone. Being imported at all
 # settles which class evaluates here, which is why the default and the
 # assertion below stand unguarded.
 #
