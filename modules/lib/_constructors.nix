@@ -84,6 +84,21 @@
       }
     );
 
+  # Format a list of names as a quoted, comma-separated English
+  # enumeration with a serial comma, matching the "enumerateNames"
+  # helper in the "modules/lib/_features.nix" file: one name renders
+  # as "a", two as "a" and "b", and three or more as "a", "b", and
+  # "c".
+  enumerateNames = names: let
+    quoted = map (n: "\"${n}\"") names;
+    count = lib.length quoted;
+  in
+    if count == 1
+    then lib.head quoted
+    else if count == 2
+    then "${lib.head quoted} and ${lib.last quoted}"
+    else "${lib.concatStringsSep ", " (lib.init quoted)}, and ${lib.last quoted}";
+
   # The machine-wide forbid options, read together so that one walk
   # over a user's selections covers both kinds.
   forbidOptions = ["forbidFeatures" "forbidInterests"];
@@ -93,13 +108,62 @@
   # and whichever option forbids it. Both of the user's own lists are
   # read together, since a name written under either enters the same
   # activation walk.
-  overruledSelections = host: userCfg: let
-    selected = lib.unique (userCfg.features ++ userCfg.interests);
-  in
+  # What forbidding costs one user. Both warnings below draw on this:
+  # a user who writes a forbidden name and a user whose bundle entails
+  # one lose the same names, so they deserve the same account of the
+  # loss.
+  forbidCost = {
+    closureOf,
+    featureClasses,
+    host,
+    userCfg,
+  }: let
+    forbidden = lib.concatMap (option: host.${option}) forbidOptions;
+    ownExclusions = userCfg.excludeFeatures ++ userCfg.excludeInterests;
+    closureFrom = roots: closureOf roots ownExclusions;
+    written = lib.unique (userCfg.features ++ userCfg.interests);
+    entailed = closureFrom written;
+    # Everything forbidding costs: the walk without it, less the walk
+    # with it.
+    withheld = lib.subtractLists (closureOf written (ownExclusions ++ forbidden)) entailed;
+    # A feature whose body serves a system class alone never reaches a
+    # user's home environment, so naming it as this user's loss would
+    # name something they were never going to receive. The
+    # "userSystemOnlyFeatureAssertion" assertion refuses a user who
+    # selects one directly, for that same reason.
+    reachesUser = name: let
+      classes = featureClasses.${name} or [];
+    in
+      classes == [] || builtins.elem "homeManager" classes;
+  in {
+    inherit closureFrom entailed written;
+    # The withheld names lying beyond one forbidden name: what goes
+    # with it. A name the machine forbids outright draws its own
+    # warning and stays out, which also keeps the closing advice
+    # true—every name left arrives once nothing forbidden lies on the
+    # way to it. A name leaves the walk only when each way to it
+    # crosses a forbidden vertex, so every withheld name lies beyond
+    # at least one of them and some warning names it.
+    beyond = name:
+      builtins.filter (
+        n:
+          n
+          != name
+          && builtins.elem n withheld
+          && !(builtins.elem n forbidden)
+          && reachesUser n
+      )
+      (closureFrom [name]);
+  };
+
+  overruledSelections = cost: host:
     lib.concatMap (
       option:
-        map (name: {inherit name option;})
-        (builtins.filter (n: builtins.elem n host.${option}) selected)
+        map (name: {
+          inherit name option;
+          alsoWithheld = cost.beyond name;
+        })
+        (builtins.filter (n: builtins.elem n host.${option}) cost.written)
     )
     forbidOptions;
 
@@ -107,11 +171,69 @@
   # forbid entry is absolute and the machine's owner is entitled to
   # it, so the configuration stands and this is a warning rather than
   # an error.
+  # The clause naming what a forbidden name takes with it, empty when
+  # it takes nothing. Both messages carry it, since both report the
+  # same loss.
+  describeCollateral = alsoWithheld:
+    if alsoWithheld == []
+    then ""
+    else " Withholding it withholds ${enumerateNames alsoWithheld} as well, which this user's selections bring along only by way of a forbidden name, and each of those arrives once nothing forbidden lies on the way to it.";
+
   describeOverruledSelection = hostName: userName: {
+    alsoWithheld,
     name,
     option,
   }: ''
-    Resolving ${describeHost hostName}: the user "${userName}" selects "${name}", which "dotfiles.host.${option}" forbids machine-wide, so this user does not receive it. Forbidding prunes every activation walk, the machine's own and every user's, and no user may undo it; drop the entry from "dotfiles.host.${option}" to let this selection stand, or drop the selection.
+    Resolving ${describeHost hostName}: the user "${userName}" selects "${name}", which "dotfiles.host.${option}" forbids machine-wide, so this user does not receive it.${describeCollateral alsoWithheld} Forbidding prunes every activation walk, the machine's own and every user's, and no user may undo it; drop the entry from "dotfiles.host.${option}" to let this selection stand, or drop the selection.
+  '';
+
+  # The names a user's selections entail that the machine forbids,
+  # though the user wrote none of them: the closure of the user's
+  # selections computed by the "closureOf" function with only that
+  # user's own exclusions pruning, filtered to what it forbids. A name
+  # the user wrote directly is left out, since the
+  # "overruledSelections" function above already covers it and one
+  # withheld name deserves one warning; a name the user's own
+  # exclusions prune never enters the closure, so a user who declines
+  # such a name hears nothing. Each entry lists the written selections
+  # whose own closures hold the name, for the warning to cite.
+  overruledEntailments = cost: host:
+    lib.concatMap (
+      option:
+        map (name: {
+          inherit name option;
+          alsoWithheld = cost.beyond name;
+          through =
+            builtins.filter
+            (root: builtins.elem name (cost.closureFrom [root]))
+            cost.written;
+        })
+        (builtins.filter (
+            name: builtins.elem name host.${option} && !(builtins.elem name cost.written)
+          )
+          cost.entailed)
+    )
+    forbidOptions;
+
+  # Report a withheld entailed name to the user whose selections
+  # entail it. The user did not write the name, so the message
+  # identifies the written selections that entail it instead—the name
+  # is reachable from at least one of them by construction, so the
+  # "through" list is never empty—and says that the rest of what those
+  # selections entail still arrives.
+  describeOverruledEntailment = hostName: userName: {
+    alsoWithheld,
+    name,
+    option,
+    through,
+  }: let
+    one = lib.length through == 1;
+    entailment =
+      if one
+      then "selects ${enumerateNames through}, and that selection entails"
+      else "selects ${enumerateNames through}, and those selections entail";
+  in ''
+    Resolving ${describeHost hostName}: the user "${userName}" ${entailment} "${name}", which "dotfiles.host.${option}" forbids machine-wide, so this user does not receive it.${describeCollateral alsoWithheld} Forbidding prunes every activation walk, the machine's own and every user's, and no user may undo it; drop the entry from "dotfiles.host.${option}" to let the name activate here.
   '';
 
   # System-level module that, for each user assigned under
@@ -134,13 +256,14 @@
   #
   # Layering lets an exclusion hold in three ways, applied alike to
   # the machine's features and interests:
-  #   1. The machine's "forbidFeatures" and "forbidInterests" pass
-  #      through untouched—the "//" below leaves them alone—and prune
-  #      every walk, so a user who selects a forbidden thing still
-  #      does not receive it. That user's own evaluator carries a
-  #      warning saying so, since forbidding is the one place where
-  #      this flake sets aside what a person wrote.
-  #   2. The machine's "excludeFeatures" and "excludeInterests"
+  #   1. The machine's "forbidFeatures" and "forbidInterests" lists
+  #      pass through untouched—the "//" operator below leaves them
+  #      alone—and prune every walk, so a user who asks for a
+  #      forbidden thing—selecting it directly, or selecting a bundle
+  #      that entails it—still does not receive it. That user's own
+  #      evaluator emits a warning saying so, since forbidding is the
+  #      one place where this flake sets aside what a person wrote.
+  #   2. The machine's "excludeFeatures" and "excludeInterests" lists
   #      withhold a name from what it provisions, yet a user who asks
   #      for that same name—selecting it directly, or selecting a
   #      bundle that brings it along—drops it from the exclusions in
@@ -163,6 +286,24 @@
           featureClasses = config.dotfiles._featureClasses;
         }
       else null;
+    # The closure of the given selections along the implication graph,
+    # with the given exclusions pruned as vertices, so a name
+    # reachable only through a pruned one stays out. Without the
+    # implications library the selections stand unexpanded. The
+    # preconditions table stays empty on purpose: a contingent feature
+    # cannot be selected, so no selection asks for one, and an
+    # exclusion of one never yields.
+    selectionClosure = selected: excluded:
+      if hasImplicationsLib
+      then
+        flakeLib.resolveActivation {
+          inherit implications selected excluded;
+          known = config.dotfiles._knownNames;
+          platform = config.dotfiles._host.platform;
+          preconditions = {};
+          supportedPlatforms = config.dotfiles._supportedPlatforms;
+        }
+      else selected;
     # Everything one user's own selections entail: those selections
     # expanded along the implication graph, after that user's own
     # exclusions and everything the machine forbids prune it. The
@@ -170,27 +311,14 @@
     # selecting a bundle asks for everything it brings along, so the
     # layering below subtracts this closure rather than the bare lists
     # the user wrote: a bundle then opts back in exactly as selecting
-    # each of its members directly would. The preconditions table
-    # stays empty on purpose: a contingent feature cannot be selected,
-    # so no selection asks for one, and an exclusion of one never
-    # yields.
+    # each of its members directly would.
     entailedBy = userCfg:
-      if hasImplicationsLib
-      then
-        flakeLib.resolveActivation {
-          inherit implications;
-          known = config.dotfiles._knownNames;
-          platform = config.dotfiles._host.platform;
-          preconditions = {};
-          supportedPlatforms = config.dotfiles._supportedPlatforms;
-          selected = userCfg.features ++ userCfg.interests;
-          excluded =
-            userCfg.excludeFeatures
-            ++ userCfg.excludeInterests
-            ++ host.forbidFeatures
-            ++ host.forbidInterests;
-        }
-      else userCfg.features ++ userCfg.interests;
+      selectionClosure (userCfg.features ++ userCfg.interests) (
+        userCfg.excludeFeatures
+        ++ userCfg.excludeInterests
+        ++ host.forbidFeatures
+        ++ host.forbidInterests
+      );
   in {
     home-manager.users =
       lib.mapAttrs (userName: userCfg: let
@@ -218,9 +346,17 @@
                 ++ lib.subtractLists entailed host.excludeInterests;
             };
         };
-        warnings =
+        warnings = let
+          cost = forbidCost {
+            inherit host userCfg;
+            closureOf = selectionClosure;
+            featureClasses = config.dotfiles._featureClasses;
+          };
+        in
           map (describeOverruledSelection host.name userName)
-          (overruledSelections host userCfg);
+          (overruledSelections cost host)
+          ++ map (describeOverruledEntailment host.name userName)
+          (overruledEntailments cost host);
       })
       config.dotfiles.users;
 
@@ -269,21 +405,6 @@
       })
       config.dotfiles.users;
   };
-
-  # Format a list of names as a quoted, comma-separated English
-  # enumeration with a serial comma, matching the "enumerateNames"
-  # helper in the "modules/lib/_features.nix" file: one name renders
-  # as "a", two as "a" and "b", and three or more as "a", "b", and
-  # "c".
-  enumerateNames = names: let
-    quoted = map (n: "\"${n}\"") names;
-    count = lib.length quoted;
-  in
-    if count == 1
-    then lib.head quoted
-    else if count == 2
-    then "${lib.head quoted} and ${lib.last quoted}"
-    else "${lib.concatStringsSep ", " (lib.init quoted)}, and ${lib.last quoted}";
 
   # Argument validation shared by the three constructors below,
   # holding each to its contract in this flake's vocabulary. Each
