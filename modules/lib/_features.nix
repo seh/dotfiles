@@ -302,8 +302,8 @@ in {
   # attribute — a "homeManager" body, say — with its precise
   # unexpected-argument error, keeping configuration out of
   # interests by construction. The name enters the "knownInterests"
-  # registry, which the activation machinery folds into the same
-  # universe as feature names; a non-null description enters the
+  # registry, which the activation machinery folds in beside the
+  # feature names; a non-null description enters the
   # "interestDescriptions" registry.
   #
   # The optional "implies" key names other interests this interest
@@ -372,7 +372,7 @@ in {
   # so it does not stop at the first inactive name.
   onlyWhen = config: names: fragment: let
     checkOne = name:
-      if builtins.elem name config.dotfiles._featureUniverse
+      if builtins.elem name config.dotfiles._knownNames
       then null
       else if builtins.elem name config.dotfiles._knownProfiles
       then throw ''onlyWhen: the fragment's precondition "${name}" names a known profile, but a precondition may name only a feature or an interest.''
