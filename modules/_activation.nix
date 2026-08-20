@@ -60,15 +60,14 @@
   selected = {
     inherit (host) profiles features;
   };
-  # Fold the machine-wide veto into a selector's own exclusions:
-  # "host.forbidProfiles"/"host.forbidFeatures" prune every
-  # selector's walk before "resolveActivation", so a forbidden name
-  # activates nowhere. Because the host record conveys the veto and
-  # keeps it intact when that record is mirrored into each nested
-  # home-manager evaluator (see the propagation module in
-  # "modules/lib/_constructors.nix"), each user's own home
-  # environment respects the veto through this same logic, with no
-  # extra wiring.
+  # Fold the machine-wide forbid lists into a selector's own
+  # exclusions: "host.forbidProfiles"/"host.forbidFeatures" prune
+  # every selector's walk before "resolveActivation", so a forbidden
+  # name activates nowhere. Because the host record conveys the two
+  # lists and keeps them intact when that record is mirrored into each
+  # nested home-manager evaluator (see the propagation module in
+  # "modules/lib/_constructors.nix"), each user's own home environment
+  # respects them through this same logic, with no extra wiring.
   withForbidden = excluded: {
     profiles = excluded.profiles ++ host.forbidProfiles;
     features = excluded.features ++ host.forbidFeatures;
@@ -179,24 +178,24 @@ in {
             type = setOfNames {merge = "union";};
             default = [];
             description = ''
-              A machine-wide veto: each named profile is pruned from
-              every selector's activation, the machine's own and every
-              user's, so it activates nowhere and no user receives it.
-              Forbidding is the machine-wide counterpart to the
-              per-selector "excludeProfiles", which prunes only its own
-              selector's walk.
+              Machine-wide forbidding: each named profile is pruned
+              from every selector's activation, the machine's own and
+              every user's, so it activates nowhere and no user
+              receives it. Forbidding is the machine-wide counterpart
+              to the per-selector "excludeProfiles", which prunes only
+              its own selector's walk.
             '';
           };
           forbidFeatures = mkOption {
             type = setOfNames {merge = "union";};
             default = [];
             description = ''
-              A machine-wide veto: each named feature is pruned from
-              every selector's activation, the machine's own and every
-              user's, so it activates nowhere and no user receives it.
-              Forbidding is the machine-wide counterpart to the
-              per-selector "excludeFeatures", which prunes only its own
-              selector's walk.
+              Machine-wide forbidding: each named feature is pruned
+              from every selector's activation, the machine's own and
+              every user's, so it activates nowhere and no user
+              receives it. Forbidding is the machine-wide counterpart
+              to the per-selector "excludeFeatures", which prunes only
+              its own selector's walk.
             '';
           };
         };
@@ -205,7 +204,7 @@ in {
       description = ''
         The machine's own host record: its selected "profiles" and
         "features", the exclusions it applies to its own walk, and
-        the machine-wide "forbidProfiles"/"forbidFeatures" veto. The
+        the machine-wide "forbidProfiles"/"forbidFeatures" lists. The
         machine is a first-class selector, resolved alongside the
         users in "dotfiles.users". On a system host these fields
         carry the machine's own wants, standing alongside its users,
@@ -619,7 +618,7 @@ in {
         then "forbidFeatures"
         else "forbidProfiles";
     in ''
-      Resolving host "${hostLabel}": ${option} entry "${name}" names a known ${role} that this machine's own selections do not activate; the exclusion has no effect on the machine and may be removed. A machine-wide veto that keeps a ${role} inactive for every selector is spelled "dotfiles.host.${forbidOption}".
+      Resolving host "${hostLabel}": ${option} entry "${name}" names a known ${role} that this machine's own selections do not activate; the exclusion has no effect on the machine and may be removed. A machine-wide forbid list that keeps a ${role} inactive for every selector is spelled "dotfiles.host.${forbidOption}".
     '';
   in {
     dotfiles._featureUniverse = lib.unique (
