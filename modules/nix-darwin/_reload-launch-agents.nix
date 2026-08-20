@@ -24,7 +24,12 @@ in {
     type = lib.types.listOf lib.types.str;
     default = [];
     example = ["org.nixos.timemachine-nas-backup"];
-    description = "The launchd \"Label\"s of the per-user LaunchAgents to reload, with \"launchctl bootout\"/\"bootstrap\", after each activation. Empty (the default) runs no reload. See the \"TODO\" at the top of this module for why this workaround exists.";
+    description = ''
+      The launchd "Label"s of the per-user LaunchAgents to reload,
+      with "launchctl bootout"/"bootstrap", after each activation.
+      Empty (the default) runs no reload. See the "TODO" at the top of
+      this module for why this workaround exists.
+    '';
   };
 
   config = lib.mkIf (labels != []) {

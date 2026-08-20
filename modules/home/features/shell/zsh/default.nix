@@ -8,7 +8,10 @@ flakeLib.mkFeature "shell/zsh" {
         enablePowerlevel10k = lib.mkOption {
           type = lib.types.bool;
           default = true;
-          description = "Whether to install and activate the Powerlevel10k theme for zsh.";
+          description = ''
+            Whether to install and activate the Powerlevel10k theme
+            for zsh.
+          '';
         };
       };
     };
