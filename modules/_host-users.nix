@@ -1,7 +1,7 @@
 # System-level multi-user options for nix-darwin and NixOS hosts.
 #
-# The per-user registry itself—the "dotfiles.users" option—is
-# declared in shared scope by the "_users.nix" module, so that the
+# The per-user registry itself—the "dotfiles.users" option—is declared
+# by the "_users.nix" module, which every class imports, so that the
 # activation substrate in "_activation.nix" can compute the per-user
 # activation union in every class. This module carries the options
 # that are meaningful only where a system configuration manages the
