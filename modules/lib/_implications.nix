@@ -210,7 +210,7 @@
       source:
         map (
           target: ''
-            implicationsFor: dangling edge ${source} -> ${target} (no such feature or interest is registered under the "dotfiles.knownFeatures" and "dotfiles.knownInterests" options, which the "mkFeature" and "mkInterest" functions populate)
+            implicationsFor: the edge ${source} -> ${target} dangles: no imported module registers "${target}" as a feature or an interest. The "mkFeature" and "mkInterest" functions populate the "dotfiles.knownFeatures" and "dotfiles.knownInterests" registries.
           ''
         ) (lib.filter (target: !(builtins.elem target known)) implications.${source})
     ) (builtins.attrNames implications);
@@ -346,13 +346,12 @@
             ]
       ) []
       cyclicNames;
-    # One ruled sentence per cycle: a one-member cycle identifies the
-    # feature that lists itself as a precondition, and a larger cycle
-    # enumerates its members.
+    # One ruled sentence per cycle: a one-member cycle says the
+    # feature lists itself, and a larger cycle enumerates its members.
     describeCycle = group:
       if lib.length group == 1
-      then "The feature \"${lib.head group}\" lists itself as a precondition, which cannot be satisfied."
-      else "The following features list one another as preconditions in a cycle that cannot be satisfied: ${enumerateNames group}.";
+      then "The feature \"${lib.head group}\" lists itself as a precondition, so it can never activate."
+      else "The features ${enumerateNames group} list one another as preconditions in a cycle, so none of them can ever activate.";
     _cycleCheck =
       if cyclicNames != []
       then
@@ -367,7 +366,7 @@
       builtins.filter (name: preconditions ? ${name}) (builtins.attrNames implications);
     _contingentSourceCheck =
       if contingentSources != []
-      then throw ''expandActivation: the implication graph gives the contingent feature(s) ${enumerateNames contingentSources} outgoing edges, but a contingent feature activates automatically exactly when all of its preconditions are met and may not activate other features. Express each relationship as a precondition instead.''
+      then throw ''expandActivation: the contingent feature(s) ${enumerateNames contingentSources} declare outgoing "implies" edges, but a contingent feature activates on its own exactly when every one of its preconditions holds, and it may not activate other features. Express each relationship as a precondition instead.''
       else null;
     # A contingent feature activates only where the host's platform
     # supports it. Support is tested here as well as on implied edges,

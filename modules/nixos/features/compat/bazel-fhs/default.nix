@@ -21,9 +21,10 @@ flakeLib.mkFeature "compat/bazel-fhs" {
             }
           '';
           description = ''
-            Additional tools to symlink into /usr/bin, or null to exclude
-            a tool from the default set. Each attribute name is the
-            symlink name, and the value is the path to the target binary.
+            Additional tools to symlink into /usr/bin, or null to
+            exclude a tool from the default set. Each attribute name
+            is the symlink name, and the value is the path to the
+            target binary.
           '';
         };
       };

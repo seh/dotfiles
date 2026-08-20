@@ -24,7 +24,10 @@
 
     gpgKey = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      description = "The GPG key ID to use for commit signing throughout this flake.";
+      description = ''
+        The GPG key ID to use for commit signing throughout this
+        flake.
+      '';
       default = null;
     };
 
@@ -76,7 +79,9 @@
           options = {
             email = lib.mkOption {
               type = lib.types.str;
-              description = "Email address associated with this signer.";
+              description = ''
+                Email address associated with this signer.
+              '';
             };
             key = lib.mkOption {
               type = lib.types.str;

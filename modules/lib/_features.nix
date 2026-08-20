@@ -90,7 +90,7 @@
         lib.optional (body ? options) body.options
         ++ lib.optional (body ? config) (wrap name body.config);
     }
-    else throw "mkFeature: body for \"${name}\" must be a function or an attrset with \"options\" and/or \"config\"";
+    else throw "mkFeature: the body for \"${name}\" must be a function or an attrset with \"options\" and/or \"config\"";
 
   # Register a name under "knownFeatures" and, for each class body it
   # declares, a gated deferred module under "featureModules".
@@ -114,9 +114,9 @@
   # without citing the culprit.
   checkName = constructor: name:
     if !(builtins.isString name)
-    then throw ''${constructor}: a registration's name must be a string, but a value of type "${builtins.typeOf name}" was passed.''
+    then throw ''${constructor}: a registration's name must be a string, but this call passes a value of type "${builtins.typeOf name}".''
     else if name == ""
-    then throw ''${constructor}: a registration's name must not be the empty string; a nameless registration could never be selected, cited as a precondition, or excluded.''
+    then throw ''${constructor}: a registration's name must not be the empty string; nobody could select a nameless registration, cite it as a precondition, or exclude it.''
     else null;
   isListOfStrings = value: builtins.isList value && lib.all builtins.isString value;
 
@@ -226,7 +226,7 @@
         if lib.length unknownKeys == 1
         then "the key ${enumerateNames unknownKeys}, which matches no module class"
         else "the keys ${enumerateNames unknownKeys}, which match no module classes"
-      }; a body stored under such a key would never be read. The accepted keys are ${enumerateNames classNames}, plus the reserved ${enumerateNames reservedKeys} keys.'';
+      }; nothing ever reads a body stored under such a key. The accepted keys are ${enumerateNames classNames}, plus the reserved ${enumerateNames reservedKeys} keys.'';
 in {
   # In addition to the per-class bodies described in this file's
   # header, the "mkFeature" function recognizes four reserved keys:
@@ -341,7 +341,7 @@ in {
       else if emptyGroup != null
       then throw ''mkFeature: the feature "${name}" passes an empty "anyOf" group; a group must offer at least one alternative.''
       else if args ? implies && args.implies != null && !(isImpliesList args.implies)
-      then throw ''mkFeature: the feature "${name}" passes an "implies" value that is not a list of edge declarations. Each entry identifies a target feature, written either as a bare name string or as a record "{ name = "<target>"; supportedPlatforms = [<systems>]; }" for an edge present only on the listed platforms.''
+      then throw ''mkFeature: the feature "${name}" passes an "implies" value that is not a list of edge declarations. Each entry is either a bare target-feature name or a record "{ name = "<target>"; supportedPlatforms = [<systems>]; }" for an edge present only on the listed platforms.''
       else if impliesBadPlatforms != []
       then throw ''mkFeature: the feature "${name}" declares an "implies" edge supporting ${enumerateNames impliesBadPlatforms}, which ${
           if lib.length impliesBadPlatforms == 1
@@ -477,7 +477,7 @@ in {
       else throw ''onlyWhen: the fragment cites the precondition "${name}", but no imported module advertises that name as a feature or an interest.'';
     checks =
       if !(isListOfStrings names)
-      then throw "onlyWhen: the names argument must be a list of feature or interest names."
+      then throw ''onlyWhen: the "names" argument must be a list of feature or interest names.''
       else lib.foldl' (acc: name: lib.seq (checkOne name) acc) null names;
   in
     lib.mkIf (lib.seq checks (lib.all config.dotfiles._host.inEffect names)) fragment;
