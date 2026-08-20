@@ -24,22 +24,27 @@ in {
     type = lib.types.listOf lib.types.str;
     default = [];
     example = ["org.nixos.timemachine-nas-backup"];
-    description = "The launchd \"Label\"s of the per-user LaunchAgents to reload, with \"launchctl bootout\"/\"bootstrap\", after each activation. Empty (the default) runs no reload. See the \"TODO\" at the top of this module for why this workaround exists.";
+    description = ''
+      The launchd "Label"s of the per-user LaunchAgents to reload,
+      with "launchctl bootout"/"bootstrap", after each activation.
+      Empty (the default) runs no reload. See the "TODO" at the top of
+      this module for why this workaround exists.
+    '';
   };
 
   config = lib.mkIf (labels != []) {
     assertions = [
       {
         assertion = config.system.primaryUser != null;
-        message = "dotfiles.darwin.launchAgentLabelsToReload is set, so \"system.primaryUser\" must be set: the reload runs in that user's GUI domain.";
+        message = "The \"dotfiles.darwin.launchAgentLabelsToReload\" option has entries, so also set \"system.primaryUser\": the reload runs in that user's GUI domain.";
       }
     ];
 
-    # Append to "postActivation" so this runs late in activation,
-    # after the agents' plists are written. "mkAfter" only orders this
-    # within "postActivation", not against nix-darwin's own
-    # ineffective reload; that is fine, since this reload works from
-    # the on-disk plist regardless.
+    # Append to "postActivation" so this runs late in activation, after
+    # nix-darwin has written the agents' plists. "mkAfter" only orders
+    # this within "postActivation", not against nix-darwin's own
+    # ineffective reload; that is fine, since this reload reads the
+    # plist from disk regardless.
     system.activationScripts.postActivation.text =
       lib.mkAfter "${reloadExe} --user ${lib.escapeShellArg config.system.primaryUser} ${lib.escapeShellArgs labels}";
   };

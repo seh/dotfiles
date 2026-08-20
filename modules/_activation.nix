@@ -159,7 +159,11 @@ in {
           name = mkOption {
             type = types.nullOr types.str;
             default = null;
-            description = "Resolved host name, or null when unset.";
+            description = ''
+              The host's name, or null when the configuration does not
+              set one. Purely descriptive: diagnostics cite it, and
+              nothing derives configuration from it.
+            '';
           };
           features = mkOption {
             type = types.listOf types.str;
@@ -291,10 +295,10 @@ in {
             readOnly = true;
             description = ''
               The host's platform: the Nixpkgs system identifier (e.g.
-              "aarch64-darwin") detected from the evaluating package
-              set, or null when this module is instantiated without
-              one. Detection is the only source; host records have no
-              platform attribute.
+              "aarch64-darwin") that this module detects from the
+              evaluating package set, or null in a bare instantiation
+              without one. Detection is the only source; host records
+              have no platform attribute.
             '';
           };
           activeFeatures = mkOption {
@@ -306,7 +310,7 @@ in {
               deletes this evaluator's exclusions from the implication
               graph, walks the remaining edges from the selected
               features and interests, and activates every contingent
-              feature whose preconditions the result meets; a feature
+              feature whose preconditions the result meets. A feature
               reachable only through an excluded bundle is
               automatically absent. These active features decide
               whether each feature's configuration for this
@@ -350,27 +354,27 @@ in {
             type = types.listOf types.str;
             readOnly = true;
             description = ''
-              Features advertised via "dotfiles._knownFeatures" that
-              are not active for this evaluator, whatever keeps them
-              out: nothing here selected them, an exclusion pruned
-              them, or the machine's platform does not support them.
-              Exposed as a diagnostic aid: each entry is a name a
-              selector could select, so the list leaves out the
-              contingent features, which no selector may select; see
-              "latentFeatures" for those.
+              The known features not active for this evaluator,
+              whatever keeps them out: nothing here selected them, an
+              exclusion pruned them, or the machine's platform does
+              not support them. The imported modules advertise these
+              names through "dotfiles._knownFeatures". This list
+              serves diagnosis: each entry is a name a selector could
+              select, so it leaves out the contingent features, which
+              no selector may select; see "latentFeatures" for those.
             '';
           };
           unexpressedInterests = mkOption {
             type = types.listOf types.str;
             readOnly = true;
             description = ''
-              Interests advertised via "dotfiles._knownInterests" that
-              this evaluator does not express, whether nothing
-              expressed them, an exclusion pruned them, or the
-              machine's platform does not support them. Exposed as a
-              diagnostic aid: each entry is an interest a selector
-              could express, leaving the contingent features citing it
-              latent.
+              The known interests this evaluator does not express,
+              whether nothing expressed them, an exclusion pruned
+              them, or the machine's platform does not support them.
+              The imported modules advertise these names through
+              "dotfiles._knownInterests". This list serves diagnosis:
+              each entry is an interest a selector could express,
+              leaving the contingent features citing it latent.
             '';
           };
           latentFeatures = mkOption {
@@ -551,9 +555,11 @@ in {
       };
       default = {};
       description = ''
-        Computed activation record built from "dotfiles.host", the
-        implication graph, and the detected platform. All fields are
-        read-only.
+        The activation record this module computes from
+        "dotfiles.host", the implication graph, and the detected
+        platform. Feature bodies consult it through "inEffect"; the
+        assertions and the latent-feature report read the rest. This
+        module alone defines its fields; nothing else may set them.
       '';
     };
 
@@ -618,12 +624,13 @@ in {
       type = types.listOf types.str;
       default = [];
       description = ''
-        Feature names that imported feature modules declare they
-        respond to. Accumulated via "listOf"'s append-merge semantics.
-        Used to catch typos in a host's selected "features" list, to
-        diagnose role mismatches, and by "flake.lib.implicationsFor"
-        as the full set of names from which it computes the "all"
-        feature's targets.
+        The names of every feature an imported module advertises.
+        Definitions accumulate through "listOf"'s append-merge. The
+        unknown-name assertions read it to catch typos in a host's
+        selected "features" list. The role-mismatch assertions read it
+        to catch a name filed under the wrong kind.
+        "flake.lib.implicationsFor" reads it as the full set of names
+        from which it computes the "all" feature's targets.
       '';
     };
 
@@ -631,14 +638,14 @@ in {
       type = types.listOf types.str;
       default = [];
       description = ''
-        Interest names that imported modules declare via the
-        "mkInterest" function. Mirrored from the flake-level
-        "dotfiles.knownInterests" registry by each class aggregator.
-        Folded in beside the known feature names for activation,
-        exclusion, and preconditions, and kept apart so that
-        kind-aware checks (such as the namespace-disjointness
-        assertion in "modules/_assertions.nix") can tell interests
-        from features.
+        The interest names the imported modules declare via the
+        "mkInterest" function. Each class aggregator mirrors it from
+        the flake-level "dotfiles.knownInterests" registry.
+        Activation, exclusion, and preconditions accept these names
+        beside the known feature names, while the separate registry
+        lets kind-aware checks (such as the namespace-disjointness
+        assertion in "modules/_assertions.nix") tell interests from
+        features.
       '';
     };
 
@@ -684,13 +691,13 @@ in {
         the keyed contingent feature activates. An entry is either a
         bare feature or interest name (satisfied when that name is
         active) or a group "{ anyOf = [ "<name>" ... ]; }" (satisfied
-        when any one member is active). Mirrored from the flake-level
-        "dotfiles.featurePreconditions" registry by each class
-        aggregator. Consulted by the activation fixpoint in
-        "flake.lib.expandActivation", by the assertions in
-        "modules/_assertions.nix", and by "flake.lib.implicationsFor",
-        which reads the keys alone to keep the computed "all" feature
-        off every contingent feature.
+        when any one member is active). Each class aggregator mirrors
+        it from the flake-level "dotfiles.featurePreconditions"
+        registry. The activation fixpoint in
+        "flake.lib.expandActivation" reads it, the assertions in
+        "modules/_assertions.nix" read it, and
+        "flake.lib.implicationsFor" reads the keys alone to keep the
+        computed "all" feature off every contingent feature.
       '';
     };
 
@@ -699,11 +706,11 @@ in {
       default = {};
       description = ''
         Per-source implied edges, keyed by source feature or interest
-        name; each value is that source's "implies" list. Mirrored
-        from the flake-level "dotfiles.impliedEdges" registry by each
-        class aggregator. Passed to "flake.lib.implicationsFor", which
-        assembles the implication graph from these co-located
-        declarations.
+        name. Each value is that source's "implies" list. Each class
+        aggregator mirrors it from the flake-level
+        "dotfiles.impliedEdges" registry, and
+        "flake.lib.implicationsFor" assembles the implication graph
+        from these co-located declarations.
       '';
     };
 
@@ -801,10 +808,10 @@ in {
       internal = true;
       description = ''
         This flake's "flake.lib" record, which the activation
-        computation here ("activeFeatures") reads. Populated by each
-        class aggregator. Kept nullable so that direct instantiations
-        of this module (e.g. for tests) remain possible without a
-        flake-parts context.
+        computation here ("activeFeatures") reads. Each class
+        aggregator fills it. It stays nullable so that a direct
+        instantiation of this module (e.g. for tests) remains possible
+        without a flake-parts context.
       '';
     };
   };
