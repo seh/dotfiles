@@ -47,10 +47,10 @@ if ! uid="$(/usr/bin/id -u -- "${user}")"; then
   exit 1
 fi
 
-# The "bootout"/"bootstrap" verbs act on the user's GUI (Aqua) domain,
-# which exists only while that user is logged in at the console. With
-# no such session there is nothing loaded to reload, so exit quietly
-# rather than emit a spurious error for every agent (e.g. over SSH).
+# "bootout" and "bootstrap" act on the user's GUI (Aqua) domain, which
+# exists only while that user has a console session. Exit quietly
+# when that session is absent, rather than print an error for every
+# agent, as would happen over SSH.
 if ! /bin/launchctl asuser "${uid}" /bin/launchctl print "gui/${uid}" >/dev/null 2>&1; then
   exit 0
 fi
@@ -72,8 +72,8 @@ for label in "$@"; do
     esac
   fi
 
-  # "bootout" can lag behind its own return, so retry "bootstrap" a few
-  # times to ride out that teardown race before giving up.
+  # "bootout" can return before the job has finished shutting down, so
+  # retry "bootstrap" a few times before reporting failure.
   attempt=0
   until /bin/launchctl asuser "${uid}" /usr/bin/sudo --user="${user}" -- \
     /bin/launchctl bootstrap "gui/${uid}" "${plist}"; do

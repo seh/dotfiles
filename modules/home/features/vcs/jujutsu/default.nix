@@ -12,7 +12,9 @@ flakeLib.mkFeature "vcs/jujutsu" {
         extraSettings = lib.mkOption {
           inherit (tomlFormat) type;
           default = {};
-          description = "Additional settings to add to jujutsu's configuration file";
+          description = ''
+            Additional settings to add to jujutsu's configuration file
+          '';
         };
       };
     };

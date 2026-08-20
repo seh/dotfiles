@@ -54,8 +54,8 @@ in {
       description = ''
         Per-class feature modules, keyed by module class
         ("homeManager", "nixDarwin", "nixOS") and then by feature
-        name. Each leaf value is a deferred module to be imported into
-        that class's aggregate.
+        name. Each leaf value is a deferred module that the class's
+        aggregate imports.
 
         Features and interests share one namespace: a feature may not
         share its name with an interest. An assertion in the
@@ -68,19 +68,19 @@ in {
       description = ''
         Per-feature preconditions, keyed by feature name. Each value
         is a conjunction of entries that must all be satisfied before
-        keyed contingent feature activates; listing a name here
+        the keyed contingent feature activates; listing a name here
         never activates it. An entry is either a bare feature or
         interest name (satisfied when that name is active) or a group
         "{ anyOf = [ "<name>" ... ]; }" (satisfied when at least one
         member is active). A feature present in this registry is a
         "contingent feature": it activates automatically exactly when
         every one of its preconditions is satisfied, and only then.
-        Populated by the "mkFeature" function from its "preconditions"
+        The "mkFeature" function fills it from its "preconditions"
         argument. The value is a set of preconditions: the type's
         merge normalizes each definition, so definitions that spell
         the same set merge, and the merge rejects ones that differ.
-        Populates "dotfiles._featurePreconditions" in each class
-        aggregator.
+        Each class aggregator mirrors it into
+        "dotfiles._featurePreconditions".
       '';
     };
     impliedEdges = lib.mkOption {
@@ -89,29 +89,28 @@ in {
       description = ''
         Per-source implied edges, keyed by the name of the source
         feature or interest that brings the targets along. Each value
-        is that source's "implies" list: an entry is either a bare
+        is that source's "implies" list. An entry is either a bare
         target name or a record "{ name = "<target>";
         supportedPlatforms = [<systems>]; }" for an edge present only
         when the host's platform is one of the listed systems. An
-        interest source lists only bare interest names. Populated by
-        the "mkFeature" and "mkInterest" functions from their
+        interest source lists only bare interest names. The
+        "mkFeature" and "mkInterest" functions fill it from their
         "implies" argument. Definitions accumulate, so several modules
         may extend one source's edges. The "implicationsFor" function
         in "modules/lib/_implications.nix" assembles these into the
-        implication graph. Populates "dotfiles._impliedEdges" in each
-        class aggregator.
+        implication graph. Each class aggregator mirrors it into
+        "dotfiles._impliedEdges".
       '';
     };
     interestDescriptions = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = {};
       description = ''
-        Per-interest prose descriptions, keyed by interest name.
-        Populated by the "mkInterest" function from its optional
-        "description" field. Nothing consumes this registry yet: it
-        waits for a diagnostic or documentation surface that wants
-        the prose, and until one arrives the field is stored here
-        and nowhere else.
+        Per-interest prose descriptions, keyed by interest name. The
+        "mkInterest" function fills it from its optional "description"
+        argument. Nothing consumes this registry yet: it waits for a
+        diagnostic or documentation surface that wants the prose, and
+        until one arrives this registry alone contains it.
       '';
     };
     knownFeatures = lib.mkOption {
@@ -119,9 +118,11 @@ in {
       default = [];
       apply = lib.unique;
       description = ''
-        Feature names advertised by feature modules in this flake or
-        downstream consumers. Accumulated and de-duplicated. Populates
-        "dotfiles._knownFeatures" in each class aggregator.
+        The names of every feature a feature module advertises, in
+        this flake or a downstream consumer. Definitions accumulate
+        through "listOf"'s append-merge; the "apply" function drops
+        duplicates. Each class aggregator mirrors it into
+        "dotfiles._knownFeatures".
       '';
     };
     knownInterests = lib.mkOption {
@@ -129,13 +130,15 @@ in {
       default = [];
       apply = lib.unique;
       description = ''
-        Interest names advertised via the "mkInterest" function in
-        this flake or downstream consumers. An interest is a named
-        want that participates in activation exactly as a feature
-        does—a host may select or exclude it, and a contingent feature
-        may list it as a precondition—but declares no configuration.
-        Accumulated and de-duplicated. Populates
-        "dotfiles._knownInterests" in each class aggregator.
+        The names of every interest a module declares via the
+        "mkInterest" function, in this flake or a downstream consumer.
+        An interest is a named want that participates in activation
+        exactly as a feature does—a host may select or exclude it, and
+        a contingent feature may list it as a precondition—but
+        declares no configuration. Definitions accumulate through
+        "listOf"'s append-merge; the "apply" function drops
+        duplicates. Each class aggregator mirrors it into
+        "dotfiles._knownInterests".
       '';
     };
     supportedPlatforms = lib.mkOption {
@@ -149,12 +152,12 @@ in {
         lists the Nixpkgs system identifiers on which that name may
         activate; a host qualifies when its platform is one of them.
         Names absent from this registry may activate on every
-        platform. Populated by the "mkFeature" function from its
+        platform. The "mkFeature" function fills it from its
         "supportedPlatforms" argument. The value is a set of names:
         the type's merge normalizes each definition, so definitions
-        that spell the same set merge, and the merge rejects ones
-        that differ. Populates "dotfiles._supportedPlatforms" in each
-        class aggregator.
+        that spell the same set merge, and the merge rejects ones that
+        differ. Each class aggregator mirrors it into
+        "dotfiles._supportedPlatforms".
       '';
     };
     unfreePackages = lib.mkOption {
