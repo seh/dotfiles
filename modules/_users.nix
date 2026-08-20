@@ -1,9 +1,9 @@
 # Declaration of the per-user registry.
 #
 # This module declares the "dotfiles.users" option and its per-user
-# submodule schema, and assigns nothing. It lives in shared scope so
-# that the registry exists in every module class, defaulting to the
-# empty attrset. Each entry is a complete, self-contained per-user
+# submodule schema, and assigns nothing. Every module class imports
+# it, so the registry exists in each one, defaulting to the empty
+# attrset. Each entry is a complete, self-contained per-user
 # record: identity fields plus the user's selected profiles and
 # features and their exclusions. There is no inheritance between
 # users; sharing is the caller's business, expressed with ordinary
