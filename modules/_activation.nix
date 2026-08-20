@@ -289,8 +289,8 @@ in {
             type = types.functionTo types.bool;
             readOnly = true;
             description = ''
-              Predicate answering whether a name is in effect in this
-              host's scope: true for an active feature and for an
+              Predicate answering whether a name is in effect for this
+              evaluator: true for an active feature and for an
               expressed interest alike. Feature bodies consult this to
               decide whether their configuration applies.
             '';
@@ -381,8 +381,8 @@ in {
           activeProfiles = activeSet.profiles;
           # Every name the union includes: active features and
           # expressed interests together, since a precondition may
-          # cite either kind. The two are published apart, so keep the
-          # union to this scope.
+          # cite either kind. The two are published apart, so the
+          # union itself stays unpublished.
           namesInEffect = activeSet.features;
           machineFeatures = machineActivation.features;
           isInterest = name: builtins.elem name config.dotfiles._knownInterests;
