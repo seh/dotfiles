@@ -33,16 +33,16 @@
 # flake-parts boundary to cross.
 #
 # For the system constructors ("mkDarwin" and "mkNixOS"), each user
-# assigned under "dotfiles.users" is mirrored into
-# "home-manager.users.<name>.dotfiles": the user's identity fields
-# under "dotfiles.identity", the machine's "dotfiles.host" record with
-# its selections and exclusions layered with that user's own, and the
-# user's own exclusion lists under "_ownExcludeFeatures" and
-# "_ownExcludeInterests", kept apart so a diagnostic can tell a user's
-# own exclusion from the machine's. The mirroring assigns nothing into
-# "dotfiles.host.{features,interests}" at the system level: those stay
-# the machine's own selections, which alone decide the machine's own
-# configuration.
+# assigned under the "dotfiles.users" registry is mirrored into the
+# "home-manager.users.<name>.dotfiles" option path: the user's
+# identity fields under the "dotfiles.identity" record, the machine's
+# "dotfiles.host" record with its selections and exclusions layered
+# with that user's own, and that user's own four lists kept apart from
+# the layered ones, so that a diagnostic can tell what the user wrote
+# from what the machine passed down. The mirroring assigns nothing
+# into the "dotfiles.host.{features,interests}" lists at the system
+# level: those stay the machine's own selections, which alone decide
+# the machine's own configuration.
 {
   lib,
   inputs,
@@ -238,29 +238,33 @@
     Resolving ${describeHost hostName}: the user "${userName}" ${entailment} "${name}", which "dotfiles.host.${option}" forbids machine-wide, so this user does not receive it.${describeCollateral alsoWithheld} Forbidding prunes every activation walk, the machine's own and every user's, and no user may undo it; drop the entry from "dotfiles.host.${option}" to let the name activate here.
   '';
 
-  # System-level module that, for each user assigned under
-  # "config.dotfiles.users", gives the user's operating-system account
-  # its home directory, spawns the user's nested home-manager
-  # evaluator, and mirrors the user's identity, a layered host record,
-  # and the user's own exclusion lists into that evaluator. It serves
-  # both system classes, so it assigns only what nix-darwin and NixOS
+  # System-level module that, for each user assigned under the
+  # "config.dotfiles.users" registry, gives the user's
+  # operating-system account its home directory, spawns the user's
+  # nested home-manager evaluator, and mirrors the user's identity, a
+  # layered host record, that user's own four lists, and the option
+  # path holding those four lists into that evaluator. It serves both
+  # system classes, so it assigns only what nix-darwin and NixOS
   # share; what NixOS alone insists upon lives in the
   # "modules/_nixos-user-accounts.nix" file, which the NixOS class
-  # aggregator imports by itself. It assigns nothing into
-  # "dotfiles.host.{features,interests}" at the system level: those
-  # stay the machine's own selections, which alone decide the
+  # aggregator imports by itself. It assigns nothing into the
+  # "dotfiles.host.{features,interests}" lists at the system level:
+  # those stay the machine's own selections, which alone decide the
   # machine's own configuration.
   #
   # The nested home-manager evaluator sees:
   #   dotfiles.identity = <user>.identity
+  #   dotfiles._ownFeatures = <user>.features
+  #   dotfiles._ownInterests = <user>.interests
   #   dotfiles._ownExcludeFeatures = <user>.excludeFeatures
   #   dotfiles._ownExcludeInterests = <user>.excludeInterests
+  #   dotfiles._ownListPrefix = the option path holding those four
   #   dotfiles.host = the machine's record, its selections and
   #                   exclusions layered with that user's own
-  # so the "dotfiles._host" record in "modules/_activation.nix"
-  # resolves one coherent activation for that user from the machine's
-  # selections and the user's together: the machine provisions every
-  # user it manages, and each user adds to that.
+  # so the "dotfiles._host" record in the "modules/_activation.nix"
+  # file resolves one coherent activation for that user from the
+  # machine's selections and the user's together: the machine
+  # provisions every user it manages, and each user adds to that.
   #
   # Layering lets an exclusion hold in three ways, applied alike to
   # the machine's features and interests:
@@ -341,13 +345,20 @@
           # record, so the walk reads both and these two hold.
           _machineForbidFeatures = host.forbidFeatures;
           _machineForbidInterests = host.forbidInterests;
-          # The lists this user excludes on their own account,
-          # recorded beside the merged ones below so that a diagnostic
-          # can tell a user's own exclusion from the machine's. A user
-          # countermands the machine's by selecting the name; their
-          # own always holds.
+          # This user's own four lists, recorded beside the layered
+          # ones below so that a diagnostic in the
+          # "modules/_activation.nix" file can tell what this user
+          # wrote from what the machine passed down. A user
+          # countermands the machine's exclusion by selecting the
+          # name; their own exclusion always holds. The path lets a
+          # message cite the line its reader would edit, and comes
+          # from here because a user may set an identity name
+          # differing from the attribute key their lists live under.
+          _ownFeatures = userCfg.features;
+          _ownInterests = userCfg.interests;
           _ownExcludeFeatures = userCfg.excludeFeatures;
           _ownExcludeInterests = userCfg.excludeInterests;
+          _ownListPrefix = ''dotfiles.users."${userName}"'';
           host =
             host
             // {

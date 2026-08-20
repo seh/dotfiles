@@ -36,7 +36,7 @@
   inherit (lib) mkOption types;
   inherit (config.dotfiles) host;
   inherit (import ./lib/_option-types.nix {inherit lib;}) setOfNames preconditionSet preconditionEntry;
-  inherit (import ./lib/_diagnostics.nix) describeHost;
+  inherit (import ./lib/_diagnostics.nix) describeContradiction describeHost describeForbiddenSelection;
 
   # Detect the host's platform from the evaluating package set. Every
   # real evaluator (Home Manager, nix-darwin, NixOS) provides one, so
@@ -85,17 +85,32 @@
   exclusionsInForce =
     ofKind config.dotfiles._knownFeatures host.excludeFeatures
     ++ ofKind config.dotfiles._knownInterests host.excludeInterests;
-  # The exclusions this evaluator writes on its own account. Every
+  # The four lists this evaluator writes on its own account. Every
   # evaluator but a managed user's nested one writes the "host" lists
-  # directly, so its own lists are those.
-  ownExcludeFeatures =
-    if config.dotfiles._ownExcludeFeatures != null
-    then config.dotfiles._ownExcludeFeatures
-    else host.excludeFeatures;
-  ownExcludeInterests =
-    if config.dotfiles._ownExcludeInterests != null
-    then config.dotfiles._ownExcludeInterests
-    else host.excludeInterests;
+  # directly, so its own lists are those; for a managed user the
+  # propagation module in the "modules/lib/_constructors.nix" file
+  # records that user's own four before layering them with the
+  # machine's, since the layered result cannot tell a user declining
+  # what the machine provides from a user contradicting itself.
+  ownOr = recorded: fallback:
+    if recorded != null
+    then recorded
+    else fallback;
+  ownFeatures = ownOr config.dotfiles._ownFeatures host.features;
+  ownInterests = ownOr config.dotfiles._ownInterests host.interests;
+  ownExcludeFeatures = ownOr config.dotfiles._ownExcludeFeatures host.excludeFeatures;
+  ownExcludeInterests = ownOr config.dotfiles._ownExcludeInterests host.excludeInterests;
+  # Where this evaluator's own lists live, for a diagnostic to cite
+  # the line its reader would edit. The propagation module supplies a
+  # managed user's path, since a user may rename their identity and so
+  # the identity is no attribute key.
+  ownListPrefix = ownOr config.dotfiles._ownListPrefix "dotfiles.host";
+  # A managed user's evaluator, where only the machine forbids names,
+  # never this user. Selecting a name the machine forbids earns a
+  # warning from the propagation module, so the report below on a name
+  # selected and forbidden together stays with the machine that
+  # authored both lines.
+  managedUser = config.dotfiles._ownFeatures != null;
 
   # Fold what "host.forbidFeatures" and "host.forbidInterests" forbid
   # into this evaluator's own exclusions: both prune every walk before
@@ -700,6 +715,52 @@ in {
       '';
     };
 
+    _ownFeatures = mkOption {
+      type = types.nullOr (types.listOf types.str);
+      default = null;
+      internal = true;
+      description = ''
+        The features this evaluator selects on its own account, as
+        against the ones a machine passes down to it. Null in an
+        evaluator that writes its own "host.features" list directly,
+        which is every one but a managed user's nested evaluator; the
+        propagation module in the "modules/lib/_constructors.nix" file
+        sets it there to that user's own list. A diagnostic reporting
+        a name its author both selects and excludes needs the author's
+        own two lists, since the layered ones cannot tell a user
+        declining what the machine provides from a user contradicting
+        itself.
+      '';
+    };
+
+    _ownInterests = mkOption {
+      type = types.nullOr (types.listOf types.str);
+      default = null;
+      internal = true;
+      description = ''
+        The interests this evaluator expresses on its own account, the
+        companion to the "_ownFeatures" option and null in the same
+        places.
+      '';
+    };
+
+    _ownListPrefix = mkOption {
+      type = types.nullOr types.str;
+      default = null;
+      internal = true;
+      description = ''
+        The option path holding this evaluator's own four lists,
+        without a trailing dot, for a diagnostic to cite the line its
+        reader would edit. Null in an evaluator that writes the "host"
+        lists directly, which then reads as the "dotfiles.host"
+        record; the propagation module in the
+        "modules/lib/_constructors.nix" file sets it for a managed
+        user. That module supplies the path rather than a diagnostic
+        deriving one, because a user may set an identity name
+        differing from the attribute key their lists live under.
+      '';
+    };
+
     _ownExcludeFeatures = mkOption {
       type = types.nullOr (types.listOf types.str);
       default = null;
@@ -742,18 +803,26 @@ in {
     };
   };
 
-  # Diagnose exclusions that list a known item this evaluator's own
-  # selections do not activate: the exclusion has no effect here and
-  # may be removed. For each candidate name "n" in "excludeFeatures"
-  # (or "excludeInterests"), recompute this evaluator's own activation
-  # with "n" temporarily removed from its exclusion list (but with all
-  # other exclusions still pruning the graph). If "n" is absent from
-  # the resulting activation, it would not have been active anyway, so
-  # listing it as excluded changes nothing. The judgment stays within
-  # one evaluator: the machine's own selections in a system evaluator,
-  # and the machine's layered with the user's in a managed user's
-  # evaluator, so each evaluator reports only the exclusions idle
-  # there.
+  # Three diagnostics, each addressed to whoever wrote the lines it
+  # cites — the machine in a system evaluator, that user in a managed
+  # user's.
+  #
+  # First, a name written into both a selection list and the matching
+  # exclusion list. The exclusion holds and the selection has no
+  # effect, so one of the two lines is not what its author meant.
+  #
+  # Second, a name a machine both selects and forbids. Forbidding
+  # admits no exception, so that selection can never take effect.
+  #
+  # Third, an exclusion that changes nothing. For each candidate name
+  # "n" among the exclusions its author wrote, recompute the
+  # activation with every exclusion of "n" in force here dropped,
+  # every other exclusion still pruning and the machine's forbid lists
+  # still folded in. If "n" is absent from the result it would not
+  # have been active anyway, so the line may be removed. A name
+  # already reported under the first diagnostic is left out of this
+  # one, since that message already asks its author to drop one of two
+  # lines.
   config = let
     hostLabel = describeHost host.name;
     # The unpruned walk also forces the dangling-edge check inside
@@ -804,32 +873,100 @@ in {
     # walk, which holds each list to its own kind. A name written
     # under the wrong list is a kind mismatch, which the assertions in
     # "modules/_assertions.nix" reject outright and the walk ignores.
-    redundantFeatures = redundantOf config.dotfiles._knownFeatures host.excludeFeatures;
-    redundantInterests = redundantOf config.dotfiles._knownInterests host.excludeInterests;
-    # The machine-wide forbid option each kind answers to, cited in
-    # the warning below as the absolute alternative to an exclusion.
-    forbidOptions = {
+    #
+    # An entry its author also selects is reported as a contradiction
+    # below, and that message already asks its author to drop one of
+    # the two lines. Reporting the same entry a second time as idle
+    # would answer a question nobody has yet: whether the exclusion
+    # earns its place is moot while a selection beside it disagrees.
+    redundantFeatures =
+      lib.subtractLists contradictoryFeatures
+      (redundantOf config.dotfiles._knownFeatures ownExcludeFeatures);
+    redundantInterests =
+      lib.subtractLists contradictoryInterests
+      (redundantOf config.dotfiles._knownInterests ownExcludeInterests);
+    # What the machine forbids, keyed by kind.
+    forbidOf = {
+      feature = host.forbidFeatures;
+      interest = host.forbidInterests;
+    };
+    forbidOptionOf = {
       feature = "forbidFeatures";
       interest = "forbidInterests";
     };
-    # The kind with an indefinite article that fits it, since
-    # "interest" takes "an" where "feature" takes "a".
-    describeKind = role:
-      if role == "interest"
-      then "an interest"
-      else "a ${role}";
-    mkWarning = role: option: name: let
-      forbidOption = forbidOptions.${role};
-    in ''
-      Resolving ${hostLabel}: ${option} entry "${name}" identifies a known ${role} that the selections in force here do not activate; the exclusion has no effect on this configuration and may be removed. A machine-wide forbid list that keeps ${describeKind role} inactive for every walk, the machine's own and every user's, is spelled "dotfiles.host.${forbidOption}".
-    '';
+    # An idle exclusion reads one of two ways. Where the machine
+    # already forbids the name, the exclusion adds nothing and the
+    # forbid entry is the reason; elsewhere nothing here calls for the
+    # name at all, and forbidding is worth mentioning as the way to
+    # hold it down for every user rather than here alone.
+    #
+    # Both cite the exclusion list by its full path, since the judged
+    # list is the one this machine or this user wrote, and a bare
+    # option name would read as the machine's where a user cannot edit
+    # it.
+    mkWarning = role: option: name:
+      if builtins.elem name forbidOf.${role}
+      then ''
+        Resolving ${hostLabel}: "${ownListPrefix}.${option}" lists "${name}", but "dotfiles.host.${forbidOptionOf.${role}}" already forbids that ${role} machine-wide, so the entry changes nothing and you can remove it. Forbidding keeps the name inactive in every activation walk, the machine's own and every user's.
+      ''
+      else ''
+        Resolving ${hostLabel}: "${ownListPrefix}.${option}" lists "${name}", but nothing in this configuration turns that ${role} on, so the entry changes nothing and you can remove it. A machine-wide "dotfiles.host.${forbidOptionOf.${role}}" entry would keep the ${role} inactive in every activation walk, the machine's own and every user's.
+      '';
+
+    # Names written into both a selection list and the matching
+    # exclusion list of the same author. Every machine and every user
+    # answers for its own four lists, so this runs the same way for
+    # both.
+    bothIn = these: those: lib.unique (builtins.filter (name: builtins.elem name those) these);
+    contradictoryFeatures = bothIn ownFeatures ownExcludeFeatures;
+    contradictoryInterests = bothIn ownInterests ownExcludeInterests;
+    mkContradiction = role: selectionOption: exclusionOption: name:
+      describeContradiction {
+        inherit hostLabel name;
+        selectionOption = "${ownListPrefix}.${selectionOption}";
+        exclusionOption = "${ownListPrefix}.${exclusionOption}";
+        # A managed user hears about what the machine forbids from the
+        # propagation module, which knows whose entry it is, so this
+        # message stays on the two lines that user wrote and leaves
+        # forbidding out.
+        forbidOption =
+          if !managedUser && builtins.elem name forbidOf.${role}
+          then "dotfiles.host.${forbidOptionOf.${role}}"
+          else null;
+      };
+
+    # Names a machine both selects and forbids. Forbidding is the
+    # machine's alone, so only a machine answers for such a pair; a
+    # managed user selecting a name the machine forbids hears instead
+    # from the propagation module in the
+    # "modules/lib/_constructors.nix" file, which knows whose entry it
+    # is.
+    #
+    # A name the machine also excludes is left out here, because the
+    # message above already states all three lines. Reporting it twice
+    # would say "the two lines" twice about two different pairs.
+    selectedAndForbidden = these: contradicted: role:
+      lib.optionals (!managedUser)
+      (lib.subtractLists contradicted (bothIn these forbidOf.${role}));
+    selectedAndForbiddenFeatures = selectedAndForbidden ownFeatures contradictoryFeatures "feature";
+    selectedAndForbiddenInterests = selectedAndForbidden ownInterests contradictoryInterests "interest";
+    mkForbiddenSelection = role: selectionOption: name:
+      describeForbiddenSelection {
+        inherit hostLabel name;
+        selectionOption = "${ownListPrefix}.${selectionOption}";
+        forbidOption = "dotfiles.host.${forbidOptionOf.${role}}";
+      };
   in {
     dotfiles._knownNames = lib.unique (
       config.dotfiles._knownFeatures ++ config.dotfiles._knownInterests
     );
 
     warnings = lib.seq _unprunedSideEffect (
-      map (mkWarning "feature" "excludeFeatures") redundantFeatures
+      map (mkContradiction "feature" "features" "excludeFeatures") contradictoryFeatures
+      ++ map (mkContradiction "interest" "interests" "excludeInterests") contradictoryInterests
+      ++ map (mkForbiddenSelection "feature" "features") selectedAndForbiddenFeatures
+      ++ map (mkForbiddenSelection "interest" "interests") selectedAndForbiddenInterests
+      ++ map (mkWarning "feature" "excludeFeatures") redundantFeatures
       ++ map (mkWarning "interest" "excludeInterests") redundantInterests
     );
   };
