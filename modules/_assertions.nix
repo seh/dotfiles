@@ -369,7 +369,7 @@
   # activate; a host qualifies when its platform is one of them. The
   # "all" entry already omits unsupported profiles (see the
   # "implicationsFor" function in "modules/lib/_implications.nix");
-  # this assertion rejects a host whose resolved activation reaches
+  # this assertion rejects a host whose resolved activation includes
   # one anyway, such as by selecting it directly in
   # "dotfiles.host.profiles". A host whose platform could not be
   # detected (no package set) is not checked, since its operating

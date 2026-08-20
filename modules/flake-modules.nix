@@ -8,8 +8,8 @@
 #
 # There is deliberately no "flake.modules.flake.default": the
 # constructors ("lib.mkHome", "lib.mkDarwin", "lib.mkNixOS") are
-# reached as plain library functions through
-# "inputs.dotfiles.lib.*", closing over this flake's own "self"
+# called as plain library functions through "inputs.dotfiles.lib.*",
+# closing over this flake's own "self"
 # without installing anything into the consumer evaluator. All
 # option schemas and overlays relevant to a consumer flow in
 # through the modules passed to those constructors, inside the
