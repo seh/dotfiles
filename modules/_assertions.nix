@@ -388,9 +388,12 @@
   # activating any one member of a group satisfies it.
   selectedContingent =
     builtins.filter (n: builtins.elem n contingentNames) (host.features ++ host.interests);
-  # This evaluator's own resolved activation. Each precondition below
-  # answers to this set.
-  activeNames = config.dotfiles._resolved.activeFeatures;
+  # Every name this evaluator's walk brought into effect, active
+  # features and expressed interests alike, since a precondition may
+  # cite either kind. Each precondition below answers to this set.
+  activeNames =
+    config.dotfiles._resolved.activeFeatures
+    ++ config.dotfiles._resolved.expressedInterests;
   # A precondition entry this evaluator's own activation does not
   # satisfy: a bare name whose feature or interest is inactive, or a
   # group none of whose members is active.
