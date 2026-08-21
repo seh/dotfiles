@@ -94,6 +94,9 @@
                                   :new-connection (lsp-stdio-connection "tinymist")
                                   :activation-fn (lsp-activate-on "typ")
                                   :server-id 'typst))
+            ;; YAML
+            (add-to-list 'lsp--formatting-indent-alist
+                         '(yaml-ts-mode . yaml-basic-offset))            
             ;; Omissions
             (add-to-list 'lsp-disabled-clients 'trunk-lsp))
   :hook (((bash-ts-mode
