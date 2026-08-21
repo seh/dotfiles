@@ -396,6 +396,13 @@
 
 
 ;:*=======================
+;:* yaml-ts-mode
+(use-package yaml-ts-mode
+  :hook (yaml-ts-mode . (lambda ()
+                          (setq-local indent-line-function #'yaml-indent-line))))
+
+
+;:*=======================
 ;:* yasnippet
 (use-package yasnippet
   :hook ((go-mode
