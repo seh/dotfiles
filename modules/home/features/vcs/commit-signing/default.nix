@@ -125,15 +125,15 @@ flakeLib.mkFeature "vcs/commit-signing" {
         {
           assertion =
             !(hasGPGSigningKey && hasSSHSigningKey) || config.dotfiles.vcs.commit-signing.backend != null;
-          message = "dotfiles.vcs.commit-signing.backend must be set to \"gpg\" or \"ssh\" when both gpgKey and sshSigning.key are configured";
+          message = ''This user has both "gpgKey" and "sshSigning.key"; set "dotfiles.vcs.commit-signing.backend" to "gpg" or "ssh".'';
         }
         {
           assertion = userConfig.commitSigningBackend == "gpg" -> hasGPGSigningKey;
-          message = ''dotfiles.identity.commitSigningBackend is "gpg" but no gpgKey is configured'';
+          message = ''"dotfiles.identity.commitSigningBackend" is "gpg", but this user has no "gpgKey".'';
         }
         {
           assertion = userConfig.commitSigningBackend == "ssh" -> hasSSHSigningKey;
-          message = ''dotfiles.identity.commitSigningBackend is "ssh" but no sshSigning.key is configured'';
+          message = ''"dotfiles.identity.commitSigningBackend" is "ssh", but this user has no "sshSigning.key".'';
         }
       ];
     };
