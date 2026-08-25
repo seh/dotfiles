@@ -1,6 +1,6 @@
 {flakeLib, ...}:
 flakeLib.mkFeature "vcs/jjui" {
-  # The jjui terminal interface drives Jujutsu, so it brings along the
+  # The jjui terminal interface drives Jujutsu, so it implies the
   # "vcs/jujutsu" feature.
   implies = ["vcs/jujutsu"];
 
