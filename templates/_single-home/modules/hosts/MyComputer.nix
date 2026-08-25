@@ -41,7 +41,7 @@ in {
               # Activate feature modules by listing the features that
               # apply to this user, from a bundle that only brings
               # others along to the finest single concern. The "all"
-              # feature brings along every body-less bundle this flake
+              # feature implies every body-less bundle this flake
               # advertises. To opt out of specific members of the
               # "all" feature (such as the Firefox customization in
               # the "web" feature), list them under the

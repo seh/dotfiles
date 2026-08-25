@@ -5,7 +5,7 @@
   # source's own file; the "impliedEdges" argument holds those
   # declarations, keyed by source name, and this function turns them
   # into the graph that the "expandClosure" function consumes: a map
-  # from each source name to the names it brings along.
+  # from each source name to the names it implies.
   #
   # Features and interests share this one graph. A feature declares
   # configuration and an interest is a payload-free want, yet both
@@ -47,9 +47,8 @@
   # may target only features—so the computation upholds on its own the
   # two rules that the assertions in the "modules/_assertions.nix"
   # file police for declared edges, which never see these. Hosts
-  # decline what the "all" feature brings along by listing it under
-  # the "excludeFeatures" list: declining is an exclusion, not an
-  # absence.
+  # decline what the "all" feature implies by listing it under the
+  # "excludeFeatures" list: declining is an exclusion, not an absence.
   #
   # The graph MUST form a DAG. This function rejects a name that
   # implies itself, and the "expandClosure" function rejects every
@@ -124,15 +123,15 @@
       && builtins.elem name knownFeatures
       && !(featureClasses ? ${name})
       && !(preconditions ? ${name});
-    # Every name another bundle brings along, read from the raw
+    # Every name another bundle implies, read from the raw
     # declarations before platform filtering. Only bundle sources
     # count. A feature with a body of its own never arrives through
     # the aggregate, so counting it as a source would leave its target
     # with no way to arrive at all: the aggregate would drop the
     # target, and nothing would stand in its place. Reading the raw
     # declarations keeps membership the same on every platform, since
-    # a target that only a record-form edge for another platform names
-    # still counts, so a host's platform decides which of the
+    # a target that only a record-form edge for another platform
+    # implies still counts, so a host's platform decides which of the
     # aggregate's targets survive, never which names it holds.
     impliedByBundle = lib.unique (
       lib.concatMap (source: map edgeName impliedEdges.${source}) (
@@ -140,16 +139,15 @@
       )
     );
     # The aggregate's computed targets, in the registration order of
-    # the "knownFeatures" list: the bundles no other bundle brings
-    # along, which are the roots of the graph induced on the bundles.
-    # Every other bundle arrives through one of those roots, since
-    # following the chain of sources upward ends at one in an acyclic
-    # graph, so every bundle can arrive. A contingent feature stays
-    # out because nobody may select one; it activates from its
-    # preconditions instead. Any "implies" list the aggregate itself
-    # declares is discarded by the override below, since this
-    # computation is the sole authority on what the "all" feature
-    # brings along.
+    # the "knownFeatures" list: the bundles no other bundle implies,
+    # which are the roots of the graph induced on the bundles. Every
+    # other bundle arrives through one of those roots, since following
+    # the chain of sources upward ends at one in an acyclic graph, so
+    # every bundle can arrive. A contingent feature stays out because
+    # nobody may select one; it activates from its preconditions
+    # instead. Any "implies" list the aggregate itself declares is
+    # discarded by the override below, since this computation is the
+    # sole authority on what the "all" feature implies.
     aggregateTargets =
       builtins.filter (
         name: isBundle name && !(builtins.elem name impliedByBundle)
@@ -253,8 +251,8 @@
     else "${lib.concatStringsSep ", " (lib.init quoted)}, and ${lib.last quoted}";
 
   # Expand the selected names to their full activation: everything the
-  # implication graph brings along, plus every contingent feature
-  # whose preconditions the result meets.
+  # implication graph implies, plus every contingent feature whose
+  # preconditions the result meets.
   #
   # The "preconditions" argument maps each contingent feature's name
   # to its list of precondition entries, all of which must be

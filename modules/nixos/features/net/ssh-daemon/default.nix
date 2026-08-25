@@ -5,7 +5,7 @@
 #
 # The machine alone nominates this feature. The "essential" feature
 # implies it, and only the machine's own selections decide a nixOS
-# body, so a user who selects "essential" does not bring it along. The
+# body, so a user who selects "essential" does not activate it. The
 # "ssh" feature configures a user's own SSH client—the outbound
 # half—and stays independent of this one.
 {flakeLib, ...}:

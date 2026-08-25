@@ -170,18 +170,18 @@
     )
     forbidOptions;
 
-  # Report one overruled selection to the user who wrote it. The
-  # forbid entry is absolute and the machine's owner is entitled to
-  # it, so the configuration stands and this is a warning rather than
-  # an error.
   # The clause naming what a forbidden name takes with it, empty when
-  # it takes nothing. Both messages carry it, since both report the
-  # same loss.
+  # it takes nothing. Both messages use it, since both report the same
+  # loss.
   describeCollateral = alsoWithheld:
     if alsoWithheld == []
     then ""
-    else " Withholding it withholds ${enumerateNames alsoWithheld} as well, which this user's selections bring along only by way of a forbidden name, and each of those arrives once nothing forbidden lies on the way to it.";
+    else " Withholding it withholds ${enumerateNames alsoWithheld} as well, which this user's selections activate only through a forbidden name, and each of those arrives once nothing forbidden lies on the way to it.";
 
+  # Report one overruled selection to the user who wrote it.
+  # Forbidding is absolute and the machine's owner is entitled to it,
+  # so the configuration stands and this is a warning rather than an
+  # error.
   describeOverruledSelection = hostName: userName: {
     alsoWithheld,
     name,
@@ -279,7 +279,7 @@
   #   2. The machine's "excludeFeatures" and "excludeInterests" lists
   #      withhold a name from what it provisions, yet a user who asks
   #      for that same name—selecting it directly, or selecting a
-  #      bundle that brings it along—drops it from the exclusions in
+  #      bundle that implies it—drops it from the exclusions in
   #      force for that user, opting back in.
   #   3. A user's own exclusions always hold, for that user alone.
   multiUserPropagationModule = userDir: {config, ...}: let
@@ -321,7 +321,7 @@
     # expanded along the implication graph, after that user's own
     # exclusions and everything the machine forbids prune it. The
     # machine's exclusions yield to a user who asks for a name, and
-    # selecting a bundle asks for everything it brings along, so the
+    # selecting a bundle asks for everything it implies, so the
     # layering below subtracts this closure rather than the bare lists
     # the user wrote: a bundle then opts back in exactly as selecting
     # each of its members directly would.

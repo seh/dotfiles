@@ -2,7 +2,7 @@
 #   https://github.com/midchildan/dotfiles/blob/1c190d0ac1d87c159b8b7d777f02261ae58a3fc5/nix/home/profiles/development.nix
 {flakeLib, ...}:
 flakeLib.mkFeature "development" {
-  # The development bundle brings along the features a working
+  # The development bundle implies the features a working
   # engineer's machine wants.
   implies = [
     "cloud/aws"

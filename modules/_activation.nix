@@ -199,21 +199,20 @@ in {
               The features its author deletes from its own implication
               graph before the activation walk. The walk drops each
               excluded vertex with its out-edges (the features it
-              would bring along) and its in-edges (the edges that
-              target it). A feature still reachable through a
-              non-excluded path stays active; one reachable only
-              through excluded vertices drops out. The machine's own
-              entries withhold a feature from what the machine
-              provisions its users, yet yield to a user who selects
-              that same name; a user's own entries apply to that user
-              alone. The one list no user may undo is
-              "forbidFeatures". A user may exclude a contingent
-              feature, and that exclusion holds like any other. A
-              machine that provisions users may not: no user may
-              select a contingent feature, so no user could opt back
-              in. The "contingentExclusionAssertion" assertion in the
-              "modules/_assertions.nix" file rejects such an entry and
-              points instead to "forbidFeatures", the list that
+              implies) and its in-edges (the edges that target it). A
+              feature still reachable through a non-excluded path
+              stays active; one reachable only through excluded
+              vertices drops out. The machine's own entries withhold a
+              feature from what the machine provisions its users, yet
+              yield to a user who selects that same name; a user's own
+              entries apply to that user alone. The one list no user
+              may undo is "forbidFeatures". A user may exclude a
+              contingent feature, and that exclusion holds like any
+              other. A machine that provisions users may not: no user
+              may select a contingent feature, so no user could opt
+              back in. The "contingentExclusionAssertion" assertion in
+              the "modules/_assertions.nix" file rejects such an entry
+              and points instead to "forbidFeatures", the list that
               withholds a name from every selector outright.
             '';
           };
