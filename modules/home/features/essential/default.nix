@@ -1,6 +1,6 @@
 {flakeLib, ...}:
 flakeLib.mkFeature "essential" {
-  # The essential bundle brings along the minimal bundle and the
+  # The essential bundle implies the minimal bundle and the
   # baseline features every managed home wants, plus the machine-side
   # features a managed machine wants: its login shell's integration
   # and its SSH daemon. The implication graph is class-agnostic, so a
