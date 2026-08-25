@@ -134,10 +134,10 @@
     );
   isPreconditionList = value: builtins.isList value && lib.all isPreconditionEntry value;
 
-  # An "implies" list holds the features a source brings along. Each
-  # entry is either a bare target name or a record "{ name =
-  # "<target>"; supportedPlatforms = [<systems>]; }" for an edge
-  # present only when the host's platform is one of the listed
+  # An "implies" list names the features that activate whenever the
+  # source does. Each entry is either a bare target name or a record
+  # "{ name = "<target>"; supportedPlatforms = [<systems>]; }" for an
+  # edge present only when the host's platform is one of the listed
   # systems.
   isImpliesEntry = entry:
     builtins.isString entry
@@ -258,7 +258,8 @@ in {
   #   error. A single-member "anyOf" group is accepted and behaves as
   #   the bare name.
   #
-  #   implies: a list of the features this feature brings along—the
+  #   implies: a list of the features that activate whenever this one
+  #   does—the
   #   implied edges whose source is this feature. Each entry is either
   #   a bare target name (an unconditional edge) or a record "{ name =
   #   "<target>"; supportedPlatforms = [<systems>]; }" (an edge
@@ -407,8 +408,8 @@ in {
   # machinery folds in beside the feature names; a non-null
   # description enters the "interestDescriptions" registry.
   #
-  # The optional "implies" key lists other interests this interest
-  # brings along — a bundle. Selecting the bundle activates its
+  # The optional "implies" key lists other interests expressed
+  # whenever this one is — a bundle. Selecting the bundle activates its
   # members through the implication closure, the way a feature bundle
   # fans out to the finer ones; the edges join the "impliedEdges"
   # registry beside those a feature declares. Each entry is a bare
@@ -416,8 +417,8 @@ in {
   # accepts for a platform-conditional edge has no place here. An
   # interest may imply only interests, never a feature, which an
   # assertion in the "modules/_assertions.nix" file enforces at
-  # resolve time. A null or omitted value, or an empty list, brings
-  # nothing along.
+  # resolve time. A null or omitted value, or an empty list, implies
+  # nothing.
   mkInterest = {
     name,
     description ? null,
@@ -425,7 +426,7 @@ in {
   }: let
     checks = lib.seq (checkName "mkInterest" name) (
       if implies != null && !(isListOfStrings implies)
-      then throw ''mkInterest: the interest "${name}" passes an "implies" value that is not a list of interest names. Pass the names of the interests this interest brings along, or null for none.''
+      then throw ''mkInterest: the interest "${name}" passes an "implies" value that is not a list of interest names. Pass the names of the interests this one implies, or null for none.''
       else null
     );
   in
