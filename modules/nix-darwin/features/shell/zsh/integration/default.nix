@@ -17,8 +17,8 @@
 # unwritten, and writing it down here is exactly what the split of
 # this feature from the "shell/zsh" feature corrects.
 #
-# This name registers a nixOS body as well, in
-# "modules/nixos/features/shell/zsh/integration/default.nix". The
+# This name registers a nixOS body as well, in the
+# "modules/nixos/features/shell/zsh/integration/default.nix" file. The
 # concern is the same on either system class, so one name selected
 # once serves whichever class the machine runs.
 #

@@ -8,8 +8,8 @@ flakeLib.mkFeature "dev/language-servers/formats" {
     home.packages = with pkgs; [
       graphql-language-service-cli
       jq-lsp
-      nixd # Compare with "nil"
-      postgres-language-server # Compare with "sqls"
+      nixd # Compare with the "nil" package
+      postgres-language-server # Compare with the "sqls" package
       taplo # For TOML files
       tinymist # For typst files
       vscode-json-languageserver
