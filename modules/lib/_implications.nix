@@ -33,21 +33,22 @@
   # along a target on some platforms and not others.
   #
   # This function computes the "all" feature's targets rather than
-  # reading a declared edge: "all" targets every feature that has no
-  # class body, is not contingent, and no other feature implies. A
-  # body-less bundle therefore folds into "all" the moment it is
-  # registered, while a feature some bundle already implies stays out,
-  # arriving through that bundle instead. A feature that configures
-  # something of its own stays out as well, so that "all" covers the
-  # body-less bundles alone and a feature with a body is one a host
-  # asks for deliberately; the "featureClasses" argument reports which
-  # names have a body. A contingent feature stays out because its
-  # preconditions are its only way in, and an interest stays out
-  # because a feature's edges may target only features—so the
-  # computation upholds on its own the two rules that the assertions
-  # in "modules/_assertions.nix" police for declared edges, which
-  # never see these. Hosts decline what "all" brings along by listing
-  # it under "excludeFeatures": declining is an exclusion, not an
+  # reading a declared edge: the "all" feature targets every feature
+  # that has no class body, is not contingent, and no other feature
+  # implies. A body-less bundle therefore folds into the "all" feature
+  # the moment it is registered, while a feature some bundle already
+  # implies stays out, arriving through that bundle instead. A feature
+  # that configures something of its own stays out as well, so that
+  # the "all" feature covers the body-less bundles alone and a feature
+  # with a body is one a host asks for deliberately; the
+  # "featureClasses" argument reports which names have a body. A
+  # contingent feature stays out because its preconditions are its
+  # only way in, and an interest stays out because a feature's edges
+  # may target only features—so the computation upholds on its own the
+  # two rules that the assertions in the "modules/_assertions.nix"
+  # file police for declared edges, which never see these. Hosts
+  # decline what the "all" feature brings along by listing it under
+  # the "excludeFeatures" list: declining is an exclusion, not an
   # absence.
   #
   # The graph MUST form a DAG. This function rejects a name that
@@ -255,19 +256,19 @@
   # implication graph brings along, plus every contingent feature
   # whose preconditions the result meets.
   #
-  # "preconditions" maps each contingent feature's name to its list of
-  # precondition entries, all of which must be satisfied for it to
-  # activate. A bare-name entry is satisfied when that name is active;
-  # a group entry "{ anyOf = [...]; }" is satisfied when at least one
-  # member is active. Preconditions have no pulling power: a listed
-  # name never becomes active by appearing in a precondition.
-  # Exclusion trumps activation twice over: a contingent feature
-  # listed in "excludeFeatures" never activates even when its
-  # preconditions hold (its entry is dropped from the table here), and
-  # one whose precondition is excluded never activates because the
-  # pruned walk can never bring that precondition into effect (the
-  # caller prunes the implication graph and filters "selected" as
-  # usual).
+  # The "preconditions" argument maps each contingent feature's name
+  # to its list of precondition entries, all of which must be
+  # satisfied for it to activate. A bare-name entry is satisfied when
+  # that name is active; a group entry "{ anyOf = [...]; }" is
+  # satisfied when at least one member is active. Preconditions have
+  # no pulling power: a listed name never becomes active by appearing
+  # in a precondition. Exclusion trumps activation twice over: a
+  # contingent feature listed in the "excludeFeatures" list never
+  # activates even when its preconditions are satisfied (its entry is
+  # dropped from the table here), and one whose precondition is
+  # excluded never activates because the pruned walk can never bring
+  # that precondition into effect (the caller prunes the implication
+  # graph and filters the "selected" argument as usual).
   #
   # The walk is a fixpoint: each pass runs the "expandClosure"
   # function over the implication graph, then activates every
@@ -308,10 +309,10 @@
   }: let
     contingentNames = builtins.attrNames preconditions;
     # Only bare-name entries contribute cycle edges: a group's members
-    # are non-contingent by rule (an assertion in
-    # "modules/_assertions.nix" enforces it), so a group can never
-    # close a precondition cycle. Skip the group entries, then keep
-    # the bare names that refer to other contingent features.
+    # are non-contingent by rule (an assertion in the
+    # "modules/_assertions.nix" file enforces it), so a group can
+    # never close a precondition cycle. Skip the group entries, then
+    # keep the bare names that refer to other contingent features.
     preconditionEdgesFrom = name:
       builtins.filter (r: preconditions ? ${r}) (
         builtins.filter builtins.isString preconditions.${name}
@@ -328,7 +329,7 @@
       (lib.sort lib.lessThan contingentNames);
     # Group the members by cycle: two members belong to the same cycle
     # exactly when each can reach the other. Each group keeps the
-    # sorted order of "cyclicNames".
+    # sorted order of the "cyclicNames" list.
     cycleGroups =
       lib.foldl' (
         groups: name:

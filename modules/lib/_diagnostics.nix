@@ -2,9 +2,9 @@
 # flake emit, so that one phrasing decision holds across every module
 # class.
 #
-# The leading underscore in the filename excludes this file from
-# "import-tree" in "../../flake.nix"; each module that wants these
-# helpers imports it explicitly.
+# The leading underscore in the filename excludes this file from the
+# "import-tree" call in the "../../flake.nix" file; each module that
+# wants these helpers imports it explicitly.
 {
   # The phrase that opens a diagnostic addressed to one host, ready to
   # follow the word "Resolving": the quoted name when the host has
@@ -37,10 +37,10 @@
   }:
     if forbidOption == null
     then ''
-      Resolving ${hostLabel}: "${name}" appears in both "${selectionOption}" and "${exclusionOption}". The exclusion prunes the name before the walk begins, so it holds and the selection has no effect. Remove whichever of the two lines does not say what you mean.
+      Resolving ${hostLabel}: "${name}" appears in both the "${selectionOption}" and "${exclusionOption}" lists. The exclusion prunes the name before the walk begins, so it applies and the selection has no effect. Remove whichever of the two lines does not say what you mean.
     ''
     else ''
-      Resolving ${hostLabel}: "${name}" appears in "${selectionOption}", in "${exclusionOption}", and in "${forbidOption}". The exclusion and the forbid entry each keep the name inactive on their own, and forbidding binds every user besides, so removing either one alone leaves the selection just as ineffective. Remove both to act on the selection, or remove the selection.
+      Resolving ${hostLabel}: "${name}" appears in the "${selectionOption}", "${exclusionOption}", and "${forbidOption}" lists. The exclusion and the "${forbidOption}" entry each keep the name inactive on their own, and forbidding binds every user besides, so removing either one alone leaves the selection just as ineffective. Remove both to act on the selection, or remove the selection.
     '';
 
   # The sentence reporting one name a machine both selects and
@@ -54,6 +54,6 @@
     forbidOption,
     name,
   }: ''
-    Resolving ${hostLabel}: "${name}" appears in both "${selectionOption}" and "${forbidOption}". Forbidding prunes the name from every activation walk, the machine's own and every user's, and no user may undo it, so this selection can never take effect. Remove whichever of the two lines does not say what you mean.
+    Resolving ${hostLabel}: "${name}" appears in both the "${selectionOption}" and "${forbidOption}" lists. Forbidding prunes the name from every activation walk, the machine's own and every user's, and no user may undo it, so this selection can never take effect. Remove whichever of the two lines does not say what you mean.
   '';
 }

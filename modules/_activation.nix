@@ -15,14 +15,14 @@
 # that record holds the machine's own selections, so a system-class
 # body follows those alone and no user may configure the machine. In a
 # managed user's evaluator it holds the machine's selections layered
-# with that user's own (see the propagation module in
-# "modules/lib/_constructors.nix"), so the machine provisions every
-# user it manages and each user adds to that.
+# with that user's own (see the propagation module in the
+# "modules/lib/_constructors.nix" file), so the machine provisions
+# every user it manages and each user adds to that.
 #
 # It imports the "_users.nix" declaration module so that the
 # "dotfiles.users" registry is visible wherever this module evaluates,
-# including in the home-manager class, where the aggregator in
-# "modules/home/default.nix" demands that it stay empty.
+# including in the home-manager class, where the aggregator in the
+# "modules/home/default.nix" file demands that it stay empty.
 {
   lib,
   config,
@@ -182,14 +182,14 @@ in {
               Interest names this machine or user selects: the wants
               that guard contingent features, such as a programming
               language in use here. Expansion starts from these
-              selected names together with "features". An interest
-              declares no configuration of its own, so selecting one
-              activates only the contingent features whose
-              preconditions it completes. A feature name belongs in
-              "features" instead; the two kinds are not
-              interchangeable, and an assertion in
-              "modules/_assertions.nix" rejects a name written under
-              the wrong one.
+              selected names together with the "features" list. An
+              interest declares no configuration of its own, so
+              selecting one activates only the contingent features
+              whose preconditions it completes. A feature name belongs
+              in the "features" list instead; the two kinds are not
+              interchangeable, and an assertion in the
+              "modules/_assertions.nix" file rejects a name written
+              under the wrong one.
             '';
           };
           excludeFeatures = mkOption {
@@ -306,25 +306,25 @@ in {
             readOnly = true;
             description = ''
               Features in effect for this evaluator: the coherent
-              activation resolved from "dotfiles.host". The walk
-              deletes this evaluator's exclusions from the implication
-              graph, walks the remaining edges from the selected
-              features and interests, and activates every contingent
-              feature whose preconditions the result meets. A feature
-              reachable only through an excluded bundle is
+              activation resolved from the "dotfiles.host" record. The
+              walk deletes this evaluator's exclusions from the
+              implication graph, walks the remaining edges from the
+              selected features and interests, and activates every
+              contingent feature whose preconditions the result meets.
+              A feature reachable only through an excluded bundle is
               automatically absent. These active features decide
               whether each feature's configuration for this
-              evaluator's class applies, tested via "inEffect". A
-              system-class body therefore follows the machine's own
-              selections alone, and a user's home-class body follows
-              the machine's selections layered with that user's own.
-              An inactive feature contributes nothing, as though it
-              were never defined.
+              evaluator's class applies, tested via the "inEffect"
+              predicate. A system-class body therefore follows the
+              machine's own selections alone, and a user's home-class
+              body follows the machine's selections layered with that
+              user's own. An inactive feature contributes nothing, as
+              though it were never defined.
 
               The walk includes interests as well as features, since a
               precondition may cite either kind. This list holds the
-              features alone; see "expressedInterests" for the
-              interests.
+              features alone; see the "expressedInterests" field for
+              the interests.
             '';
           };
           expressedInterests = mkOption {
@@ -358,10 +358,11 @@ in {
               whatever keeps them out: nothing here selected them, an
               exclusion pruned them, or the machine's platform does
               not support them. The imported modules advertise these
-              names through "dotfiles._knownFeatures". This list
-              serves diagnosis: each entry is a name a selector could
-              select, so it leaves out the contingent features, which
-              no selector may select; see "latentFeatures" for those.
+              names through the "dotfiles._knownFeatures" option. This
+              list serves diagnosis: each entry is a name a selector
+              could select, so it leaves out the contingent features,
+              which no selector may select; see the "latentFeatures"
+              field for those.
             '';
           };
           unexpressedInterests = mkOption {
@@ -371,10 +372,11 @@ in {
               The known interests this evaluator does not express,
               whether nothing expressed them, an exclusion pruned
               them, or the machine's platform does not support them.
-              The imported modules advertise these names through
-              "dotfiles._knownInterests". This list serves diagnosis:
-              each entry is an interest a selector could express,
-              leaving the contingent features citing it latent.
+              The imported modules advertise these names through the
+              "dotfiles._knownInterests" option. This list serves
+              diagnosis: each entry is an interest a selector could
+              express, leaving the contingent features citing it
+              latent.
             '';
           };
           latentFeatures = mkOption {
@@ -555,11 +557,12 @@ in {
       };
       default = {};
       description = ''
-        The activation record this module computes from
-        "dotfiles.host", the implication graph, and the detected
-        platform. Feature bodies consult it through "inEffect"; the
-        assertions and the latent-feature report read the rest. This
-        module alone defines its fields; nothing else may set them.
+        The activation record this module computes from the
+        "dotfiles.host" record, the implication graph, and the
+        detected platform. Feature bodies consult it through the
+        "inEffect" predicate; the assertions and the latent-feature
+        report read the rest. This module alone defines its fields;
+        nothing else may set them.
       '';
     };
 
@@ -625,12 +628,13 @@ in {
       default = [];
       description = ''
         The names of every feature an imported module advertises.
-        Definitions accumulate through "listOf"'s append-merge. The
-        unknown-name assertions read it to catch typos in a host's
-        selected "features" list. The role-mismatch assertions read it
-        to catch a name filed under the wrong kind.
-        "flake.lib.implicationsFor" reads it as the full set of names
-        from which it computes the "all" feature's targets.
+        Definitions accumulate through the "listOf" type's
+        append-merge. The unknown-name assertions read it to catch
+        typos in a host's selected "features" list. The role-mismatch
+        assertions read it to catch a name filed under the wrong kind.
+        The "flake.lib.implicationsFor" function reads it as the full
+        set of names from which it computes the "all" feature's
+        targets.
       '';
     };
 
@@ -644,8 +648,8 @@ in {
         Activation, exclusion, and preconditions accept these names
         beside the known feature names, while the separate registry
         lets kind-aware checks (such as the namespace-disjointness
-        assertion in "modules/_assertions.nix") tell interests from
-        features.
+        assertion in the "modules/_assertions.nix" file) tell
+        interests from features.
       '';
     };
 
@@ -656,12 +660,12 @@ in {
       description = ''
         The names a selection, an exclusion, or a precondition may
         cite: the known feature names and the known interest names,
-        one list without duplicates. This module computes it from
-        "dotfiles._knownFeatures" and "dotfiles._knownInterests",
-        which stay apart so that kind-aware checks can tell interests
-        from features. The two kinds stand together here because a
-        host selects or excludes an interest, and a precondition may
-        list it, exactly as with a feature.
+        one list without duplicates. This module computes it from the
+        "dotfiles._knownFeatures" and "dotfiles._knownInterests"
+        options, which stay apart so that kind-aware checks can tell
+        interests from features. The two kinds stand together here
+        because a host selects or excludes an interest, and a
+        precondition may list it, exactly as with a feature.
       '';
     };
 
@@ -693,11 +697,11 @@ in {
         active) or a group "{ anyOf = [ "<name>" ... ]; }" (satisfied
         when any one member is active). Each class aggregator mirrors
         it from the flake-level "dotfiles.featurePreconditions"
-        registry. The activation fixpoint in
-        "flake.lib.expandActivation" reads it, the assertions in
-        "modules/_assertions.nix" read it, and
-        "flake.lib.implicationsFor" reads the keys alone to keep the
-        computed "all" feature off every contingent feature.
+        registry. The activation fixpoint in the
+        "flake.lib.expandActivation" function reads it, the assertions
+        in the "modules/_assertions.nix" file read it, and the
+        "flake.lib.implicationsFor" function reads the keys alone to
+        keep the computed "all" feature off every contingent feature.
       '';
     };
 
@@ -708,9 +712,9 @@ in {
         Per-source implied edges, keyed by source feature or interest
         name. Each value is that source's "implies" list. Each class
         aggregator mirrors it from the flake-level
-        "dotfiles.impliedEdges" registry, and
-        "flake.lib.implicationsFor" assembles the implication graph
-        from these co-located declarations.
+        "dotfiles.impliedEdges" registry, and the
+        "flake.lib.implicationsFor" function assembles the implication
+        graph from these co-located declarations.
       '';
     };
 
@@ -808,8 +812,8 @@ in {
       internal = true;
       description = ''
         This flake's "flake.lib" record, which the activation
-        computation here ("activeFeatures") reads. Each class
-        aggregator fills it. It stays nullable so that a direct
+        computation here (the "activeFeatures" field) reads. Each
+        class aggregator fills it. It stays nullable so that a direct
         instantiation of this module (e.g. for tests) remains possible
         without a flake-parts context.
       '';
@@ -848,11 +852,11 @@ in {
   # of two lines.
   config = let
     hostLabel = describeHost host.name;
-    # The unpruned walk also forces the dangling-edge check inside
-    # "expandClosure" and the precondition-cycle check inside
-    # "expandActivation" to run against the full tables. Pruning could
-    # otherwise hide a typo in an excluded feature's adjacency list,
-    # or a cycle behind an excluded member.
+    # The unpruned walk also forces the dangling-edge check inside the
+    # "expandClosure" function and the precondition-cycle check inside
+    # the "expandActivation" function to run against the full tables.
+    # Pruning could otherwise hide a typo in an excluded feature's
+    # adjacency list, or a cycle behind an excluded member.
     _unprunedSideEffect =
       if hasImplicationsLib
       then

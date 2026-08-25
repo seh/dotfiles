@@ -42,9 +42,9 @@
   # Every message below opens with this phrase, so that a host lacking
   # a name reads as prose.
   hostLabel = describeHost host.name;
-  # The platform is detection-only: "modules/_activation.nix" computes
-  # it from the evaluating package set and exposes it here. Host
-  # records have no platform attribute.
+  # The platform is detection-only: the "modules/_activation.nix" file
+  # computes it from the evaluating package set and exposes it here.
+  # Host records have no platform attribute.
   platform = config.dotfiles._host.platform;
 
   knownFeatures = config.dotfiles._knownFeatures;
@@ -90,12 +90,12 @@
     '';
   };
 
-  # Every authoring list below sits directly under "dotfiles.host" at
-  # the machine level; each one but "forbidFeatures" and
-  # "forbidInterests" also has a per-user counterpart under
-  # "dotfiles.users.<name>". The messages below build both paths from
-  # a list's bare name, since a name arriving at a managed user's
-  # nested evaluator may have been written at either surface.
+  # Every authoring list below sits directly under the "dotfiles.host"
+  # record at the machine level; each one but "forbidFeatures" and
+  # "forbidInterests" also has a per-user counterpart under the
+  # "dotfiles.users.<name>" record. The messages below build both
+  # paths from a list's bare name, since a name arriving at a managed
+  # user's nested evaluator may have been written at either surface.
   hostOption = attr: "dotfiles.host.${attr}";
   userOption = attr: "dotfiles.users.<name>.${attr}";
 
@@ -106,7 +106,7 @@
   # the registry of names it advertises, so that each kind's own
   # registry judges its own lists. These are the authoring roles, one
   # per kind; the activation walk keeps one list and folds both kinds
-  # into it (see "modules/_activation.nix").
+  # into it (see the "modules/_activation.nix" file).
   roles = [
     {
       name = "features";
@@ -164,12 +164,12 @@
     }
   ];
 
-  # Role-mismatch assertion: names written into one of "here"'s lists
-  # that are actually known as "there.name". The kinds are not
-  # interchangeable—a feature declares configuration and may be
-  # implied, while an interest declares none and is only selected or
-  # entailed—so a misfiled name is an error that cites the list it
-  # belongs in.
+  # Role-mismatch assertion: names written into one of the "here"
+  # role's lists that are actually known under the "there.name" role.
+  # The kinds are not interchangeable—a feature declares configuration
+  # and may be implied, while an interest declares none and is only
+  # selected or entailed—so a misfiled name is an error that cites the
+  # list it belongs in.
   #
   # A contingent feature misfiled into an exclusion list draws advice
   # of its own. A machine-level entry in the "excludeFeatures" list is
@@ -195,15 +195,15 @@
       attr = family.nameOf there;
     in
       if family.perUser
-      then ''"${hostOption attr}" or, on a multi-user host, "${userOption attr}"''
-      else ''"${hostOption attr}"'';
+      then ''the "${hostOption attr}" list or, on a multi-user host, the "${userOption attr}" list''
+      else ''the "${hostOption attr}" list'';
     advice =
       lib.optional (ordinary != []) (
         if contingent == []
         then "Move them to ${destination}."
         else "Move ${lib.concatStringsSep ", " ordinary} to ${destination}."
       )
-      ++ lib.optional (contingent != []) ''A contingent feature does not belong in a machine's "${hostOption there.excludeName}". A machine-level exclusion yields to a user who selects the same name, and no user may select a contingent feature, so the entry could never yield. Move ${lib.concatStringsSep ", " contingent} to the excluding user's own list ("${hostOption there.excludeName}" where home-manager alone manages the host, "${userOption there.excludeName}" on a multi-user host) or, to keep each name inactive everywhere, to "${hostOption there.forbidName}".'';
+      ++ lib.optional (contingent != []) ''A contingent feature does not belong in a machine's "${hostOption there.excludeName}" list. A machine-level exclusion yields to a user who selects the same name, and no user may select a contingent feature, so the entry could never yield. Move ${lib.concatStringsSep ", " contingent} to the excluding user's own list (the "${hostOption there.excludeName}" list where home-manager alone manages the host, the "${userOption there.excludeName}" list on a multi-user host) or, to keep each name inactive everywhere, to the "${hostOption there.forbidName}" list.'';
   in {
     assertion = misplaced == [];
     message = ''
@@ -237,7 +237,7 @@
       ${role.humanPlural} that no imported ${role.humanSingular}
       module advertises: ${lib.concatStringsSep ", " unknown}. Add the
       corresponding ${role.humanSingular} module, or remove the
-      name(s) from "${hostOption role.name}" (on a multi-user host,
+      name(s) from the "${hostOption role.name}" list (on a multi-user host,
       from the matching "dotfiles.users.<name>" list).
     '';
   };
@@ -260,7 +260,7 @@
       ${role.humanPlural} that no imported ${role.humanSingular}
       module advertises: ${lib.concatStringsSep ", " unknown}. Each
       such entry suppresses nothing. Correct the spelling or remove
-      the name(s) from "${hostOption role.excludeName}" (on a
+      the name(s) from the "${hostOption role.excludeName}" list (on a
       multi-user host, from the matching "dotfiles.users.<name>"
       list).
     '';
@@ -287,7 +287,7 @@
       that no imported ${role.humanSingular} module advertises:
       ${lib.concatStringsSep ", " unknown}. Each such entry forbids
       nothing. Correct the spelling or remove the name(s) from
-      "${hostOption role.forbidName}".
+      the "${hostOption role.forbidName}" list.
     '';
   };
 
@@ -534,14 +534,15 @@
   contingentExclusionAssertion = {
     assertion = excludedContingent == [];
     message = ''
-      Resolving ${hostLabel}: "${hostOption "excludeFeatures"}" lists
-      the contingent feature(s) ${quoteNames excludedContingent}. This
-      machine provisions users, and a machine-level exclusion yields
-      only to a user who asks for the name. Nobody can ask for a
-      contingent feature: no user may select one, and no implied edge
-      may target one, so this entry could never yield. Remove each
-      name; to keep the feature inactive everywhere, list it in
-      "${hostOption "forbidFeatures"}" instead.
+      Resolving ${hostLabel}: the "${hostOption "excludeFeatures"}"
+      list contains the contingent feature(s)
+      ${quoteNames excludedContingent}. This machine provisions users,
+      and a machine-level exclusion yields only to a user who asks for
+      the name. Nobody can ask for a contingent feature: no user may
+      select one, and no implied edge may target one, so this entry
+      could never yield. Remove each name; to keep the feature
+      inactive everywhere, list it in the
+      "${hostOption "forbidFeatures"}" list instead.
     '';
   };
 
@@ -724,7 +725,7 @@
     user,
     name,
     classes,
-  }: ''the user "${user}" selects the feature "${name}", which declares configuration ${describeSystemOnlyClasses classes} and so does nothing for a user; select it in "${hostOption "features"}" so the machine applies it.'';
+  }: ''the user "${user}" selects the feature "${name}", which declares configuration ${describeSystemOnlyClasses classes} and so does nothing for a user; select it in the "${hostOption "features"}" list so the machine applies it.'';
   userSystemOnlyFeatureAssertion = {
     assertion = userSystemOnlyFeatures == [];
     message = ''
@@ -804,7 +805,7 @@
       ${lib.concatMapStringsSep "; " describeUnsupported unsupportedActiveNames}
       may not activate on this host's platform,
       "${toString platform}". Remove the name(s) from
-      "${hostOption "features"}" or, on a multi-user host, from the
+      the "${hostOption "features"}" list or, on a multi-user host, from the
       matching "dotfiles.users.<name>" list.
     '';
   };

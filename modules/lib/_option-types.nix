@@ -31,10 +31,10 @@ in {
   # meaningful value (say, "no forbidding" for the "forbidFeatures"
   # option, which defaults empty) needs no ceremony, and the empty
   # list then serves as both the authored value and the default. A
-  # strict option passes "allowEmpty = false" to reject the empty list
-  # per definition, expressing "no constraint" by omitting the
-  # attribute entirely so that an accidental "[]" cannot pass silently
-  # while meaning something else.
+  # strict option passes the "allowEmpty = false" argument to reject
+  # the empty list per definition, expressing "no constraint" by
+  # omitting the attribute entirely so that an accidental "[]" cannot
+  # pass silently while meaning something else.
   #
   # The "merge" parameter selects how multiple definitions of one
   # option combine. The name deliberately echoes the module system's
@@ -90,29 +90,29 @@ in {
   # The option type for a single precondition entry. Reusable for list
   # types that permit emptiness (e.g. the unmet-subset "missing" field
   # of the "latentFeatures" diagnostic, an "attrsOf preconditionEntry"
-  # list that may be empty), where "preconditionSet"'s non-empty-list
-  # constraint would be wrong. Declares no merge of its own; a
-  # consumer wraps it in "listOf" (or similar) and inherits that
-  # combinator's merge.
+  # list that may be empty), where the "preconditionSet" type's
+  # non-empty-list constraint would be wrong. Declares no merge of its
+  # own; a consumer wraps it in the "listOf" type (or similar) and
+  # inherits that combinator's merge.
   preconditionEntry = lib.mkOptionType {
     name = "preconditionEntry";
     description = ''precondition entry: a name or an "{anyOf=[...];}" group'';
     check = isPreconditionEntry;
   };
 
-  # Build the option type for a feature's "preconditions": a set of
-  # precondition entries that several modules may define on one
-  # option. Each entry satisfies "preconditionEntry": a bare name (a
-  # string) or an "anyOf" group "{ anyOf = [ "<name>" ... ]; }" whose
-  # sole key holds a non-empty list of names. Like "setOfNames", each
-  # definition is normalized to a canonical form before combining, so
-  # order and duplication have no meaning—within one definition and
-  # across definitions—and the merge demands agreement: definitions
-  # denoting the same set merge, and ones denoting different sets are
-  # a conflicting-definitions error. Takes no policy arguments; the
-  # agreement merge and the non-empty list are fixed, since the
-  # "featurePreconditions" registry and the "_activation.nix" mirror
-  # are its only consumers.
+  # Build the option type for a feature's "preconditions" list: a set
+  # of precondition entries that several modules may define on one
+  # option. Each entry satisfies the "preconditionEntry" type: a bare
+  # name (a string) or an "anyOf" group "{ anyOf = [ "<name>" ... ];
+  # }" whose sole key contains a non-empty list of names. Like the
+  # "setOfNames" constructor, each definition is normalized to a
+  # canonical form before combining, so order and duplication have no
+  # meaning—within one definition and across definitions—and the merge
+  # demands agreement: definitions denoting the same set merge, and
+  # ones denoting different sets are a conflicting-definitions error.
+  # Takes no policy arguments; the agreement merge and the non-empty
+  # list are fixed, since the "featurePreconditions" registry and the
+  # "_activation.nix" mirror are its only consumers.
   preconditionSet = {}: let
     isGroup = entry: builtins.isAttrs entry;
     # Canonical form of one group: its members sorted and
