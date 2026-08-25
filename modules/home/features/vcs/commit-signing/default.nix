@@ -14,7 +14,8 @@ flakeLib.mkFeature "vcs/commit-signing" {
       hasSigningKey = hasGPGSigningKey || hasSSHSigningKey;
 
       # Email addresses to include for the user's own key. Falls back
-      # to the user's own "email" field if "emailAddresses" is empty.
+      # to the user's own "email" field if the "emailAddresses" field
+      # is empty.
       ownEmailAddresses =
         if userConfig.sshSigning.emailAddresses != []
         then userConfig.sshSigning.emailAddresses

@@ -21,9 +21,9 @@ flakeLib.mkFeature "essential/tools" {
           # files depending on which kinds of machines should include
           # them (e.g. personal v. work.
           _1password-cli
-          # NB: The "_1password-gui" does not work on macOS for now;
-          # it refuses to run if it's not in the "/Applications"
-          # directory.
+          # NB: The "_1password-gui" package does not work on macOS
+          # for now; it refuses to run if it's not in the
+          # "/Applications" directory.
           age
           # NB: We also configure this as the flake-level tool to use
           # with the "nix check" command, but that configuraton does

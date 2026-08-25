@@ -40,7 +40,7 @@ in {
         tell which features configure something, which is how the
         "implicationsFor" function keeps the computed "all" feature on
         the body-less bundles. Each class aggregator mirrors it into
-        "dotfiles._featureClasses".
+        the "dotfiles._featureClasses" option.
       '';
     };
     featureModules = lib.mkOption {
@@ -79,8 +79,8 @@ in {
         argument. The value is a set of preconditions: the type's
         merge normalizes each definition, so definitions that spell
         the same set merge, and the merge rejects ones that differ.
-        Each class aggregator mirrors it into
-        "dotfiles._featurePreconditions".
+        Each class aggregator mirrors it into the
+        "dotfiles._featurePreconditions" option.
       '';
     };
     impliedEdges = lib.mkOption {
@@ -97,9 +97,9 @@ in {
         "mkFeature" and "mkInterest" functions fill it from their
         "implies" argument. Definitions accumulate, so several modules
         may extend one source's edges. The "implicationsFor" function
-        in "modules/lib/_implications.nix" assembles these into the
-        implication graph. Each class aggregator mirrors it into
-        "dotfiles._impliedEdges".
+        in the "modules/lib/_implications.nix" file assembles these
+        into the implication graph. Each class aggregator mirrors it
+        into the "dotfiles._impliedEdges" option.
       '';
     };
     interestDescriptions = lib.mkOption {
@@ -120,9 +120,9 @@ in {
       description = ''
         The names of every feature a feature module advertises, in
         this flake or a downstream consumer. Definitions accumulate
-        through "listOf"'s append-merge; the "apply" function drops
-        duplicates. Each class aggregator mirrors it into
-        "dotfiles._knownFeatures".
+        through the "listOf" type's append-merge; the "apply" function
+        drops duplicates. Each class aggregator mirrors it into the
+        "dotfiles._knownFeatures" option.
       '';
     };
     knownInterests = lib.mkOption {
@@ -135,10 +135,10 @@ in {
         An interest is a named want that participates in activation
         exactly as a feature does—a host may select or exclude it, and
         a contingent feature may list it as a precondition—but
-        declares no configuration. Definitions accumulate through
-        "listOf"'s append-merge; the "apply" function drops
-        duplicates. Each class aggregator mirrors it into
-        "dotfiles._knownInterests".
+        declares no configuration. Definitions accumulate through the
+        "listOf" type's append-merge; the "apply" function drops
+        duplicates. Each class aggregator mirrors it into the
+        "dotfiles._knownInterests" option.
       '';
     };
     supportedPlatforms = lib.mkOption {
@@ -156,8 +156,8 @@ in {
         "supportedPlatforms" argument. The value is a set of names:
         the type's merge normalizes each definition, so definitions
         that spell the same set merge, and the merge rejects ones that
-        differ. Each class aggregator mirrors it into
-        "dotfiles._supportedPlatforms".
+        differ. Each class aggregator mirrors it into the
+        "dotfiles._supportedPlatforms" option.
       '';
     };
     unfreePackages = lib.mkOption {
