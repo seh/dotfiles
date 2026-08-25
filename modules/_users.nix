@@ -49,10 +49,10 @@
           description = ''
             The signing backend to use for commits: "gpg" or "ssh".
 
-            When you configure only one of "gpgKey" and
-            "sshSigning.key", you may leave this unset and this flake
-            infers the backend. When you configure both, set this
-            option explicitly.
+            When you configure only one of the "gpgKey" and
+            "sshSigning.key" fields, you may leave this unset and this
+            flake infers the backend. When you configure both, set
+            this option explicitly.
           '';
         };
 
@@ -62,11 +62,12 @@
           description = ''
             This user's name. When you leave it unset, the module
             system supplies the attribute name this record sits under
-            in "dotfiles.users". The propagation module in the
-            "modules/lib/_constructors.nix" file mirrors it into this
-            user's home-manager evaluator as "dotfiles.identity.name".
-            This option does not decide the account name; that module
-            keys "users.users" and "home-manager.users" by the
+            in the "dotfiles.users" registry. The propagation module
+            in the "modules/lib/_constructors.nix" file mirrors it
+            into this user's home-manager evaluator as the
+            "dotfiles.identity.name" option. This option does not
+            decide the account name; that module keys the
+            "users.users" and "home-manager.users" options by the
             attribute name instead.
           '';
         };
@@ -92,8 +93,8 @@
             description = ''
               Email addresses to associate with the SSH signing key in
               the allowed signers file. When you list none, the
-              "vcs/commit-signing" feature uses "identity.email"
-              alone.
+              "vcs/commit-signing" feature uses the "identity.email"
+              field alone.
             '';
             default = [];
           };
@@ -120,10 +121,10 @@
           );
           description = ''
             Additional SSH signers to trust for commit signature
-            verification. When you set "sshSigning.key", this flake
-            adds your own identity (from
+            verification. When you set the "sshSigning.key" field,
+            this flake adds your own identity (from the
             "identity.sshSigning.emailAddresses" and
-            "identity.sshSigning.key") on its own.
+            "identity.sshSigning.key" fields) on its own.
           '';
           default = [];
         };
@@ -139,8 +140,8 @@
           description = ''
             Identity fields for this user. The propagation module in
             the "modules/lib/_constructors.nix" file copies them into
-            this user's nested home-manager evaluator as
-            "config.dotfiles.identity".
+            this user's nested home-manager evaluator as the
+            "config.dotfiles.identity" record.
           '';
         };
 
@@ -205,10 +206,10 @@
           description = ''
             Additional home-manager configuration for this user. The
             propagation module in the "modules/lib/_constructors.nix"
-            file imports it into "home-manager.users.<name>" inside
-            the nix-darwin or NixOS evaluator. This option accepts a
-            module attrset (option assignments and/or "imports"), a
-            module function, or a list of modules.
+            file imports it into the "home-manager.users.<name>"
+            option inside the nix-darwin or NixOS evaluator. This
+            option accepts a module attrset (option assignments and/or
+            "imports"), a module function, or a list of modules.
 
             Use this to keep a user's complete configuration
             (identity, selected features and interests, and
