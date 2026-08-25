@@ -34,9 +34,9 @@
 #      form 1 and gets the same activation gate. Either key may be
 #      omitted.
 #
-# Conditional sub-contributions inside a config body should use
-# "lib.mkMerge" / "lib.mkIf" at the value level, not at the module
-# level.
+# Conditional sub-contributions inside a config body should use the
+# "lib.mkMerge" / "lib.mkIf" functions at the value level, not at the
+# module level.
 #
 # An empty bodies attrset ("{}") is allowed and produces a name-only
 # registration (under the "knownFeatures" registry) with no module
@@ -50,10 +50,10 @@
   #
   # The wrapper's outer function destructures every module argument
   # that bodies might rely on, so the module system's argument
-  # injection mechanism (driven by "builtins.functionArgs") can fill
-  # them in from "_module.args". A body that destructures an argument
-  # missing from this list will fail with "called without required
-  # argument".
+  # injection mechanism (driven by the "builtins.functionArgs"
+  # function) can fill them in from the "_module.args" option. A body
+  # that destructures an argument missing from this list will fail
+  # with "called without required argument".
   #
   # Currently covers what the home-manager, nix-darwin, and NixOS
   # class evaluators provide for the features in this repository. If a
@@ -73,14 +73,14 @@
 
   # Build the per-class deferred module for one body, dispatching on
   # its form. A function body is the plain form (config-only, gated).
-  # An attrset with at least one of "options"/"config" is the
+  # An attrset with at least one of the "options"/"config" keys is the
   # structured form (options pass through, config gated); its parts
   # combine through a single "imports"-bearing module. The module
   # system expands a merge-valued definition into multiple definition
   # values before the option type's merge runs, so the
   # single-imports-module form keeps one registration counting as one
-  # definition under the "uniq"-wrapped registry options in
-  # "modules/module-schema.nix".
+  # definition under the "uniq"-wrapped registry options in the
+  # "modules/module-schema.nix" file.
   buildClassModule = name: body:
     if lib.isFunction body
     then wrap name body
@@ -151,13 +151,13 @@
   isImpliesList = value: builtins.isList value && lib.all isImpliesEntry value;
 
   # An "unfreePackages" entry specifies one unfree package by the name
-  # that "lib.getName" yields for it, spelled out literally. A name
-  # computed from a package—"lib.getName pkgs.orbstack", say—would
-  # demand a package set at registration time, where none is
-  # available; such an attempt leaves its mark as string context, so
-  # an entry holding any is rejected along with the empty name, which
-  # matches no package. Callers apply this only once the value is
-  # known to be a list of strings.
+  # that the "lib.getName" function yields for it, spelled out
+  # literally. A name computed from a package—"lib.getName
+  # pkgs.orbstack", say—would demand a package set at registration
+  # time, where none is available; such an attempt leaves its mark as
+  # string context, so an entry containing any is rejected along with
+  # the empty name, which matches no package. Callers apply this only
+  # once the value is known to be a list of strings.
   isLiteralPackageName = entry: entry != "" && !(builtins.hasContext entry);
   nonLiteralPackageNames = value: builtins.filter (entry: !(isLiteralPackageName entry)) value;
 
@@ -173,10 +173,10 @@
 
   # Collect, deduplicated, the platform identifiers listed across a
   # valid "implies" list's record-form entries that nixpkgs does not
-  # recognize. Callers apply this only after "isImpliesList" accepts
-  # the value, so every record entry holds a string list under
-  # "supportedPlatforms"; a bare-name entry lists no platform and
-  # contributes nothing.
+  # recognize. Callers apply this only after the "isImpliesList"
+  # predicate accepts the value, so every record entry contains a
+  # string list under the "supportedPlatforms" key; a bare-name entry
+  # lists no platform and contributes nothing.
   impliesUnknownPlatforms = value:
     lib.unique (
       unknownPlatforms (
@@ -240,15 +240,15 @@ in {
   #   so the list reads as a conjunction of disjunctions. Every
   #   "anyOf" member must be a non-contingent name — an ordinary
   #   feature or an interest, never a contingent feature — which keeps
-  #   groups out of every precondition cycle; an assertion in
-  #   "modules/_assertions.nix" enforces this. A bare entry may still
-  #   list a contingent feature. A feature declaring this key is a
-  #   "contingent feature": it activates automatically exactly when
+  #   groups out of every precondition cycle; an assertion in the
+  #   "modules/_assertions.nix" file enforces this. A bare entry may
+  #   still list a contingent feature. A feature declaring this key is
+  #   a "contingent feature": it activates automatically exactly when
   #   all of its preconditions are met, and that is its only
   #   activation path—no host and no implied edge may list it directly
-  #   (an assertion in "modules/_assertions.nix" enforces this). The
-  #   registry option's type treats the list as a set — its merge
-  #   normalizes each definition — so order and duplication are
+  #   (an assertion in the "modules/_assertions.nix" file enforces
+  #   this). The registry option's type treats the list as a set — its
+  #   merge normalizes each definition — so order and duplication are
   #   immaterial, equal declarations merge, and unequal ones are
   #   rejected. A null value is identical to omitting the key — an
   #   explicit "no preconditions" — so callers building the value
@@ -266,10 +266,10 @@ in {
   #   systems); every platform a record lists must be one that nixpkgs
   #   recognizes (a member of the "lib.systems.doubles.all" list), so
   #   a misspelling fails here at registration. The "implicationsFor"
-  #   function in "modules/lib/_implications.nix" assembles these into
-  #   the implication graph; a feature's edges may target only other
-  #   features, never an interest. A null value is identical to
-  #   omitting the key.
+  #   function in the "modules/lib/_implications.nix" file assembles
+  #   these into the implication graph; a feature's edges may target
+  #   only other features, never an interest. A null value is
+  #   identical to omitting the key.
   #
   #   supportedPlatforms: a list of Nixpkgs system identifiers (e.g.
   #   ["aarch64-darwin" "aarch64-linux"]) on which this feature may
@@ -284,22 +284,22 @@ in {
   #   silently constraining the feature away on every host.
   #
   #   unfreePackages: the unfree packages this feature installs, each
-  #   spelled as the string that "lib.getName" yields for the package
-  #   ("1password-cli" for "pkgs._1password-cli", "zoom" for
-  #   "pkgs.zoom-us"). Every entry must be that name written out
+  #   spelled as the string that the "lib.getName" function yields for
+  #   the package ("1password-cli" for "pkgs._1password-cli", "zoom"
+  #   for "pkgs.zoom-us"). Every entry must be that name written out
   #   literally: computing one from a package would demand a package
   #   set at registration time, where none is available. The names
   #   accumulate across every feature into the "unfreePackages"
-  #   registry, which "modules/nixpkgs-config.nix" publishes as
-  #   "flake.allowUnfreePackages" and both nixpkgs instantiation sites
-  #   hand to nixpkgs' own "allowUnfreePackages" option. List a
-  #   package here whenever this feature can install it, even on one
-  #   platform alone and even under a condition the host may not meet:
-  #   the toleration list is one flat set that every instantiation
-  #   receives, and tolerating a package that nothing installs costs
-  #   nothing while installing one without toleration halts
-  #   evaluation. An empty list, like an omitted key, specifies
-  #   nothing.
+  #   registry, which the "modules/nixpkgs-config.nix" file publishes
+  #   as the "flake.allowUnfreePackages" output and both nixpkgs
+  #   instantiation sites hand to nixpkgs' own "allowUnfreePackages"
+  #   option. List a package here whenever this feature can install
+  #   it, even on one platform alone and even under a condition the
+  #   host may not meet: the toleration list is one flat set that
+  #   every instantiation receives, and tolerating a package that
+  #   nothing installs costs nothing while installing one without
+  #   toleration halts evaluation. An empty list, like an omitted key,
+  #   specifies nothing.
   mkFeature = name: args: let
     bodies = builtins.removeAttrs args reservedKeys;
     declaredBadPlatforms =

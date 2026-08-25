@@ -1,10 +1,11 @@
 # Constructors that build Home Manager, nix-darwin, and NixOS
-# configurations from this flake's class aggregators. Published as
-# "flake.lib.{mkHome,mkDarwin,mkNixOS,importHome,importDarwin,importNixOS,pkgsFor}".
+# configurations from this flake's class aggregators. Published as the
+# "flake.lib.{mkHome,mkDarwin,mkNixOS,importHome,importDarwin,importNixOS,pkgsFor}"
+# functions.
 #
-# The functions close over this flake's own "self" (captured as
-# "inputs.self" at this file's evaluation time), so consumers call
-# them as plain library functions:
+# The functions close over this flake's own "self" record (captured
+# from the "inputs.self" attribute at this file's evaluation time), so
+# consumers call them as plain library functions:
 #
 #   inputs.dotfiles.lib.mkDarwin {
 #     hostPlatform = "aarch64-darwin";
@@ -63,7 +64,7 @@
   # is a fresh instantiation, independent of whatever the consumer's
   # flake-parts "perSystem" option may have produced.
   #
-  # Pass "applyOverlays = false" to omit that overlay.
+  # Pass the "applyOverlays = false" argument to omit that overlay.
   #
   # Road not taken: accept flake-parts' "getSystem" as a function
   # argument and read "(getSystem system).allModuleArgs.pkgs" instead.
@@ -517,17 +518,19 @@
       if finalPkgs.stdenv.hostPlatform.isDarwin
       then "/Users"
       else "/home";
-    # Default "home.username" and "home.homeDirectory" from the target
-    # evaluator's merged "config.dotfiles.identity.name". The consumer
-    # can override either by assigning "home.username" /
-    # "home.homeDirectory" directly, or by assigning
-    # "dotfiles.identity.name" inside a module it passes in.
+    # Default the "home.username" and "home.homeDirectory" options
+    # from the target evaluator's merged
+    # "config.dotfiles.identity.name" option. The consumer can
+    # override either by assigning the "home.username" /
+    # "home.homeDirectory" options directly, or by assigning the
+    # "dotfiles.identity.name" option inside a module it passes in.
     #
-    # Default "programs.home-manager.enable" to true so that the
-    # "home-manager" CLI is available in the activated user profile.
-    # Consumers managing user profiles centrally (for example, an
-    # administrator who deploys home-manager configurations on behalf
-    # of users) can override this to false in a module they pass in.
+    # Default the "programs.home-manager.enable" option to true so
+    # that the "home-manager" CLI is available in the activated user
+    # profile. Consumers managing user profiles centrally (for
+    # example, an administrator who deploys home-manager
+    # configurations on behalf of users) can override this to false in
+    # a module they pass in.
     homeDefaultsModule = {
       lib,
       config,
