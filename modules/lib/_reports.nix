@@ -265,6 +265,7 @@
     inherit class kind selectionPath user;
     host = evaluated.dotfiles.host.name;
     platform = evaluated.dotfiles._host.platform;
+    withheld = evaluated.dotfiles._host.withheldFeatures;
     findings = findingsFor {
       inherit class;
       contingentFeatures = evaluated.dotfiles._featurePreconditions;
@@ -390,6 +391,9 @@
   # beside it.
   configurationWidth = 11;
   evaluatorWidth = 13;
+  # The widest label under a withheld feature, "arrives only through",
+  # plus its colon.
+  withheldWidth = 21;
   findingWidth = 15;
 
   # One field: its label, the padding that sets its value at the
@@ -542,12 +546,43 @@
   # own, or the named user's. An evaluator with no finding states its
   # selection path and class alone, since an empty "features" block
   # would say nothing a reader could act on.
+  # The withheld features one loss lies beyond, as a reader could scan
+  # them: quoted and comma-separated, in the order the record holds.
+  enumerate = names: lib.concatMapStringsSep ", " (n: ''"${n}"'') names;
+
   evaluatorLines = evaluator: let
     heading =
       if evaluator.kind == "machine"
       then "machine"
       else "user ${evaluator.user}";
     ordered = orderFindings evaluator.findings;
+    # The features a withholding removed, the ones nobody wrote down
+    # first: those are the losses a reader has no other way to learn
+    # about, while a feature its author withheld on purpose only
+    # confirms what that author already knows.
+    withheldNames = builtins.attrNames evaluator.withheld;
+    consequences =
+      builtins.filter (n: evaluator.withheld.${n}.beyond != []) withheldNames;
+    onPurpose =
+      builtins.filter (n: evaluator.withheld.${n}.beyond == []) withheldNames;
+    withheldLines = name: let
+      entry = evaluator.withheld.${name};
+      cause =
+        if entry.beyond != []
+        then field withheldWidth "arrives only through" (enumerate entry.beyond)
+        else if entry.forbidden
+        # Forbidding is the machine's alone, whichever evaluator reads
+        # this, so the path cites the machine. A user has no option of
+        # their own to cite.
+        then field withheldWidth "forbidden by" "dotfiles.host.forbidFeatures"
+        else
+          field withheldWidth "excluded by" (
+            if entry.excludedBy == "own"
+            then "${evaluator.selectionPath}.excludeFeatures"
+            else "dotfiles.host.excludeFeatures"
+          );
+    in
+      ["${name}:"] ++ indent [cause];
   in
     ["${heading}:"]
     ++ indent (
@@ -558,6 +593,10 @@
       ++ lib.optionals (ordered != []) (
         ["features:"]
         ++ indent (lib.concatMap (findingLines evaluator.selectionPath) ordered)
+      )
+      ++ lib.optionals (withheldNames != []) (
+        ["withheld:"]
+        ++ indent (lib.concatMap withheldLines (consequences ++ onPurpose))
       )
     );
 

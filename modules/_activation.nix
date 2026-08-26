@@ -149,6 +149,27 @@
         excluded = withForbidden exclusionsInForce;
       }
     else selected;
+  # The activation these same selections would have brought with
+  # nothing withheld. Subtracting the real activation from this gives
+  # every feature the selections asked for that an exclusion or
+  # forbidding removed, which the latent-feature report presents
+  # beside the contingent features waiting on a precondition.
+  unwithheldActivation =
+    if hasImplicationsLib
+    then
+      flakeLib.resolveActivation {
+        inherit implications known platform selected preconditions;
+        supportedPlatforms = config.dotfiles._supportedPlatforms;
+      }
+    else selected;
+  # Everything the implication graph places beyond one name, that name
+  # included. Consulted for a withheld name to say which withholding
+  # stands in front of another, so the report can attribute a loss
+  # nobody wrote down to the entry that caused it.
+  beyondName = name:
+    if hasImplicationsLib
+    then flakeLib.expandClosure implications known [name]
+    else [name];
 in {
   imports = [./_users.nix];
 
@@ -498,6 +519,63 @@ in {
               someone asks.
             '';
           };
+          withheldFeatures = mkOption {
+            type = types.attrsOf (
+              types.submodule {
+                options = {
+                  excludedBy = mkOption {
+                    type = types.nullOr (
+                      types.enum [
+                        "machine"
+                        "own"
+                      ]
+                    );
+                    description = ''
+                      Whose exclusion holds this feature, or null where
+                      none does. The two values mean what they mean for
+                      the "latentFeatures" field's own "excludedBy"
+                      field.
+                    '';
+                  };
+                  forbidden = mkOption {
+                    type = types.bool;
+                    description = ''
+                      True when "host.forbidFeatures" forbids this
+                      feature itself.
+                    '';
+                  };
+                  beyond = mkOption {
+                    type = types.listOf types.str;
+                    description = ''
+                      The withheld features this one lies beyond, empty
+                      where the author withheld this feature itself.
+                      A feature with entries here is one nobody wrote
+                      down: the walk arrives at it only through a
+                      feature some list holds, so removing that entry
+                      is what brings this one back.
+                    '';
+                  };
+                };
+              }
+            );
+            readOnly = true;
+            description = ''
+              Features this evaluator's selections asked for that the
+              walk removed, keyed by name. A feature is here when the
+              walk with nothing withheld activates it and the walk as
+              it stands does not, so the entries are exactly what an
+              exclusion or forbidding cost. A contingent feature never
+              appears: the "latentFeatures" field beside this one
+              accounts for those.
+
+              The distinction the "beyond" field records is the one
+              worth reading. A feature whose "beyond" list is empty is
+              one its author withheld on purpose. A feature with
+              entries there is a consequence its author did not write
+              down, which is the case that would otherwise pass in
+              silence.
+            '';
+          };
         };
 
         config = let
@@ -552,6 +630,49 @@ in {
             })
             (lib.filterAttrs (name: _: !(builtins.elem name namesInEffect))
               config.dotfiles._featurePreconditions);
+          withheldFeatures = let
+            # Features the selections asked for that the walk removed.
+            # Contingent features stay out: they arrive from their
+            # preconditions rather than from a selection, and the
+            # "latentFeatures" field accounts for them.
+            names =
+              builtins.filter (
+                n: !(isInterest n) && !(builtins.elem n contingentNames)
+              )
+              (lib.subtractLists namesInEffect unwithheldActivation);
+            heldBy = name:
+              if builtins.elem name ownExcludeFeatures
+              then "own"
+              else if builtins.elem name host.excludeFeatures
+              then "machine"
+              else null;
+            isForbidden = name:
+              builtins.elem name host.forbidFeatures
+              || builtins.elem name config.dotfiles._machineForbidFeatures;
+            # The withheld features an author's own lists hold. Each of
+            # the rest arrives only through one of these, so citing
+            # them says which entry to edit.
+            written =
+              builtins.filter (n: heldBy n != null || isForbidden n) names;
+          in
+            lib.listToAttrs (
+              map (name: {
+                inherit name;
+                value = {
+                  excludedBy = heldBy name;
+                  forbidden = isForbidden name;
+                  beyond =
+                    if heldBy name != null || isForbidden name
+                    then []
+                    else
+                      builtins.filter (
+                        w: w != name && builtins.elem name (beyondName w)
+                      )
+                      written;
+                };
+              })
+              names
+            );
         };
       };
       default = {};
