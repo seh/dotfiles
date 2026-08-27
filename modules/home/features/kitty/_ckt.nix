@@ -25,25 +25,37 @@
     name = "render-theme";
     text = builtins.readFile ./render-theme;
   };
+
+  # Puts the marker into the picker's query or takes it out again,
+  # which is what one keystroke in the program below asks for.
+  toggleQueryMarker = pkgs.writeShellApplication {
+    name = "toggle-query-marker";
+    text = builtins.readFile ./toggle-query-marker;
+  };
 in
   pkgs.writeShellApplication {
     name = "ckt";
     runtimeInputs = [
-      # Supplies the "basename" tool.
+      # Supplies the "basename", "mkdir", "mktemp", and "mv" tools.
       pkgs.coreutils
       pkgs.fzf
       # Supplies the "kitten" tool, with which the program controls the
       # running kitty instance.
       kittyPackage
     ];
-    # Substituting the two paths here leaves the program file free of
-    # Nix syntax, so that the "shellcheck" and "shfmt" tools read it as
-    # an ordinary bash program. Each substitution preserves its store
-    # reference, making both the "kitty-themes" package and the list of
-    # theme names dependencies of this program.
+    # Substituting these paths here leaves the program file free of Nix
+    # syntax, so that the "shellcheck" and "shfmt" tools read it as an
+    # ordinary bash program. Each substitution preserves its store
+    # reference, making the "kitty-themes" package, the list of theme
+    # names, and the two programs above dependencies of this one.
     text =
       builtins.replaceStrings
-      ["@themesDir@" "@themeNamesFile@" "@renderTheme@"]
-      [themesDir "${themeNames}" "${renderTheme}/bin/render-theme"]
+      ["@themesDir@" "@themeNamesFile@" "@renderTheme@" "@toggleQueryMarker@"]
+      [
+        themesDir
+        "${themeNames}"
+        "${renderTheme}/bin/render-theme"
+        "${toggleQueryMarker}/bin/toggle-query-marker"
+      ]
       (builtins.readFile ./ckt);
   }
