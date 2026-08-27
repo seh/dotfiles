@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# Write one theme name per line, taken from the ".conf" files in a
+# directory of kitty color themes.
+
+set -o errexit -o nounset -o pipefail
+
+# shellcheck disable=SC2154 # Set by Nix when invoking this program.
+readonly themes_dir="${themesDir}"
+# shellcheck disable=SC2154 # Set by Nix when invoking this program.
+readonly output_file="${out}"
+
+shopt -s nullglob
+theme_files=("${themes_dir}"/*.conf)
+if [ "${#theme_files[@]}" -eq 0 ]; then
+  echo >&2 "No \".conf\" files in the \"${themes_dir}\" directory."
+  exit 1
+fi
+basename --multiple --suffix=.conf "${theme_files[@]}" >"${output_file}"
