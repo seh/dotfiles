@@ -1,10 +1,19 @@
 {flakeLib, ...}:
 flakeLib.mkFeature "kitty" {
   homeManager = {
+    config,
     lib,
     pkgs,
     ...
-  }: {
+  }: let
+    # "ckt", for "choose kitty theme".
+    chooseThemeProgram = import ./_ckt.nix {
+      inherit pkgs;
+      kittyPackage = config.programs.kitty.package;
+    };
+  in {
+    home.packages = [chooseThemeProgram];
+
     # NB: This configuration has to live within a dedicated file with
     # a prescribed name.
     xdg.configFile."kitty/open-actions.conf" = {
