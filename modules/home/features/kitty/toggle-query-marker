@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# Print a picker query with the marker added, or with it taken away if
+# it was already there. The "fzf" tool runs this program with the
+# marker and the current query, and adopts what it prints as the new
+# query, so pressing the key that runs it narrows the list to the
+# recently chosen themes and pressing it again widens the list out.
+
+set -o errexit -o nounset -o pipefail
+
+readonly marker="${1}"
+readonly query="${2-}"
+
+# The marker may sit in the query with a space after it, with several,
+# or with none, since the query is yours to edit. Everything after it
+# is the part to keep.
+#
+# Both results go through "printf" rather than "echo", since a query
+# the caller has been editing can begin with a dash, which "echo"
+# would read as its own flag and swallow.
+if [[ "${query}" =~ ^"${marker}"[[:space:]]*(.*)$ ]]; then
+  printf '%s\n' "${BASH_REMATCH[1]}"
+else
+  printf '%s\n' "${marker} ${query}"
+fi

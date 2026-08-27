@@ -7,19 +7,31 @@ set -o errexit -o nounset -o pipefail
 # preview pane beside the list, and apply the theme you select to this
 # kitty window. An argument, when given, seeds the search box.
 #
-# The theme you select belongs to this kitty window alone and lasts as
-# long as the window does: other windows and tabs keep their own
-# themes, and every window opened later starts with the theme that the
-# "programs.kitty.themeFile" setting in this flake specifies.
+# The themes chosen recently come first, each one marked, and ctrl-f
+# narrows the list to them. The theme you select belongs to this kitty
+# window alone and lasts as long as the window does: other windows and
+# tabs keep their own themes, and every window opened later starts
+# with the theme that the "programs.kitty.themeFile" setting in this
+# flake specifies.
 
-# Nix substitutes three store paths here: the directory of theme
-# files, a file with one theme name per line, collected from that
-# directory when this program was built, and the program that fills
-# the preview pane.
+# Nix substitutes four store paths here: the directory of theme files,
+# a file with one theme name per line, collected from that directory
+# when this program was built, the program that fills the preview
+# pane, and the program that puts the marker into the picker's query
+# or takes it out again.
 readonly themes_dir='@themesDir@'
 readonly theme_names_file='@themeNamesFile@'
 readonly render_theme='@renderTheme@'
+readonly toggle_query_marker='@toggleQueryMarker@'
 readonly suffix='.conf'
+
+# The mark against a theme chosen recently, and how many such themes
+# to retain.
+readonly marker='⭐'
+readonly retained_entry_limit=20
+
+readonly state_directory="${XDG_STATE_HOME:-${HOME}/.local/state}/ckt"
+readonly recent_file="${state_directory}/recent-themes"
 
 function usage() {
   echo >&2 "usage: $(basename "${0}") [-h] [initial_query]"
@@ -54,6 +66,76 @@ if [ -z "${KITTY_WINDOW_ID-}" ]; then
 fi
 readonly window="id:${KITTY_WINDOW_ID}"
 
+# The themes chosen recently, newest first, one name per line. There
+# is no such file until the first theme is chosen.
+recent=()
+if [ -r "${recent_file}" ]; then
+  mapfile -t recent <"${recent_file}"
+fi
+readonly recent
+
+mapfile -t all_themes <"${theme_names_file}"
+
+declare -Ai is_recent
+for name in "${recent[@]}"; do
+  is_recent["${name}"]=1
+done
+
+# One pass over the themes the package offers: set aside the ones that
+# are not recent, and note which recent ones turned up, since a theme
+# the package has since dropped will not.
+declare -Ai still_offered
+rest=()
+for name in "${all_themes[@]}"; do
+  if ((${is_recent[${name}]:-0})); then
+    still_offered["${name}"]=1
+  else
+    rest+=("${name}")
+  fi
+done
+
+# Every line holds two fields separated by a tab: the marker, shown
+# for a recent theme and blank otherwise, and the theme's name. The
+# picker matches against the whole line, so a query holding the marker
+# narrows the list to the recent themes.
+function offer_themes() {
+  local name
+  for name in "${recent[@]}"; do
+    if ((${still_offered[${name}]:-0})); then
+      printf '%s\t%s\n' "${marker}" "${name}"
+    fi
+  done
+  if ((${#rest[@]} > 0)); then
+    printf ' \t%s\n' "${rest[@]}"
+  fi
+}
+
+# Put the chosen theme at the head of the recent list, drop any
+# earlier mention of it, and keep the list to "retained_entry_limit"
+# names. Writing a new file beside the old one and moving it into
+# place leaves the old one whole should anything fail partway.
+function remember_theme() {
+  local chosen="${1}"
+  local name
+  local retained_entry_count=1
+  local scratch
+  mkdir --parents "${state_directory}"
+  scratch="$(mktemp "${recent_file}.XXXXXX")"
+  {
+    echo "${chosen}"
+    for name in "${recent[@]}"; do
+      if ((retained_entry_count >= retained_entry_limit)); then
+        break
+      fi
+      if [ "${name}" != "${chosen}" ]; then
+        echo "${name}"
+        ((++retained_entry_count))
+      fi
+    done
+  } >"${scratch}"
+  mv "${scratch}" "${recent_file}"
+}
+
 # Nothing here changes this window's colors, so the preview pane is
 # where a theme shows itself: the "render-theme" program draws a page
 # of sample text in the highlighted theme's own colors.
@@ -63,11 +145,13 @@ readonly window="id:${KITTY_WINDOW_ID}"
 # "set -o errexit", so capture the status rather than letting either
 # outcome end the program in silence.
 fzf_status=0
-theme_name="$(
-  fzf --query="${initial_query}" --select-1 \
-    --preview="${render_theme} ${themes_dir}/{}${suffix}" \
-    --preview-window='right:60%' \
-    <"${theme_names_file}"
+selection="$(
+  offer_themes | fzf --query="${initial_query}" --select-1 \
+    --delimiter=$'\t' \
+    --tiebreak=index \
+    --bind="ctrl-f:transform-query(${toggle_query_marker} ${marker} {q})" \
+    --preview="${render_theme} ${themes_dir}/{2}${suffix}" \
+    --preview-window='right:60%'
 )" || fzf_status="$?"
 case "${fzf_status}" in
 0) ;;
@@ -86,6 +170,10 @@ case "${fzf_status}" in
   exit "${fzf_status}"
   ;;
 esac
+
+# The picker returns the whole line, marker and all; the name is what
+# follows the tab.
+readonly theme_name="${selection##*$'\t'}"
 if [ -z "${theme_name}" ]; then
   # A search that ends in a way this program does not recognize, such
   # as a signal that reaches the "fzf" tool alone, can report success
@@ -98,4 +186,5 @@ fi
 # The picker has closed and given the terminal back, so this command
 # has it to itself whichever way it reaches kitty.
 kitten @ set-colors --match "${window}" "${themes_dir}/${theme_name}${suffix}"
+remember_theme "${theme_name}"
 echo >&2 "Activated the kitty theme \"${theme_name}\"."
