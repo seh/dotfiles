@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+set -o errexit -o nounset -o pipefail
+
+# "ckt", for "choose kitty theme": offer the color themes from the
+# "kitty-themes" package through the "fzf" tool, showing each one in a
+# preview pane beside the list, and apply the theme you select to this
+# kitty window. An argument, when given, seeds the search box.
+#
+# The theme you select belongs to this kitty window alone and lasts as
+# long as the window does: other windows and tabs keep their own
+# themes, and every window opened later starts with the theme that the
+# "programs.kitty.themeFile" setting in this flake specifies.
+
+# Nix substitutes three store paths here: the directory of theme
+# files, a file with one theme name per line, collected from that
+# directory when this program was built, and the program that fills
+# the preview pane.
+readonly themes_dir='@themesDir@'
+readonly theme_names_file='@themeNamesFile@'
+readonly render_theme='@renderTheme@'
+readonly suffix='.conf'
+
+function usage() {
+  echo >&2 "usage: $(basename "${0}") [-h] [initial_query]"
+  exit 2
+}
+
+function parse_args() {
+  while getopts h name; do
+    case "${name}" in
+    h) usage ;;
+    ?) usage ;;
+    esac
+  done
+}
+
+parse_args "$@"
+shift $((OPTIND - 1))
+
+if [ $# -gt 1 ]; then
+  usage
+fi
+readonly initial_query="${1-}"
+
+# Each window that kitty starts a program in has its own value for the
+# "KITTY_WINDOW_ID" variable. The command at the end addresses that
+# window by its identifier rather than leaving the choice to kitty,
+# which would otherwise act on whichever window has focus at the
+# moment the command arrives.
+if [ -z "${KITTY_WINDOW_ID-}" ]; then
+  echo >&2 'Run this program in a kitty window.'
+  exit 1
+fi
+readonly window="id:${KITTY_WINDOW_ID}"
+
+# Nothing here changes this window's colors, so the preview pane is
+# where a theme shows itself: the "render-theme" program draws a page
+# of sample text in the highlighted theme's own colors.
+#
+# The "fzf" tool exits with status 130 when we abandon the search and
+# with status 1 when nothing matches, and this program runs under
+# "set -o errexit", so capture the status rather than letting either
+# outcome end the program in silence.
+fzf_status=0
+theme_name="$(
+  fzf --query="${initial_query}" --select-1 \
+    --preview="${render_theme} ${themes_dir}/{}${suffix}" \
+    --preview-window='right:60%' \
+    <"${theme_names_file}"
+)" || fzf_status="$?"
+case "${fzf_status}" in
+0) ;;
+1)
+  echo >&2 "No theme matches \"${initial_query}\"."
+  exit 1
+  ;;
+# A shell reports a program that a signal ended as 128 plus that
+# signal's number, so ctrl-c, which sends SIGINT, yields 130. The
+# "fzf" tool returns that same status for the Escape key, treating
+# both as a cancelled search, and this program returns it in turn, so
+# that a caller can tell a cancelled search from the failures above.
+130) exit 130 ;;
+*)
+  echo >&2 "The \"fzf\" tool exited with status ${fzf_status}."
+  exit "${fzf_status}"
+  ;;
+esac
+if [ -z "${theme_name}" ]; then
+  # A search that ends in a way this program does not recognize, such
+  # as a signal that reaches the "fzf" tool alone, can report success
+  # and yield nothing. Stop rather than reading a file whose name is
+  # only the ".conf" suffix.
+  echo >&2 'The "fzf" tool returned no theme.'
+  exit 1
+fi
+
+# The picker has closed and given the terminal back, so this command
+# has it to itself whichever way it reaches kitty.
+kitten @ set-colors --match "${window}" "${themes_dir}/${theme_name}${suffix}"
+echo >&2 "Activated the kitty theme \"${theme_name}\"."
