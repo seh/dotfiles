@@ -7,133 +7,356 @@ set -o errexit -o nounset -o pipefail
 # preview pane beside the list, and apply the theme you select to this
 # kitty window. An argument, when given, seeds the search box.
 #
-# The themes chosen recently come first, each one marked, and ctrl-f
-# narrows the list to them. The theme you select belongs to this kitty
-# window alone and lasts as long as the window does: other windows and
-# tabs keep their own themes, and every window opened later starts
-# with the theme that the "programs.kitty.themeFile" setting in this
-# flake specifies.
+# The themes you reach for most come first, each one marked, and
+# ctrl-f narrows the list to them. Which themes those are is settled
+# by a score that weighs how often against how recently: a choice
+# counts one when it is made and half as much every half-life
+# afterwards, and a theme's score is the sum over its choices.
+#
+# The theme you select belongs to this kitty window alone and lasts as
+# long as the window does: other windows and tabs keep their own
+# themes, and every window opened later starts with the theme that the
+# "programs.kitty.themeFile" setting in this flake specifies.
 
-# Nix substitutes four store paths here: the directory of theme files,
+# Nix substitutes five store paths here: the directory of theme files,
 # a file with one theme name per line, collected from that directory
 # when this program was built, the program that fills the preview
-# pane, and the program that puts the marker into the picker's query
-# or takes it out again.
+# pane, the program that puts the marker into the picker's query or
+# takes it out again, and the statements that lay out the database.
 readonly themes_dir='@themesDir@'
 readonly theme_names_file='@themeNamesFile@'
 readonly render_theme='@renderTheme@'
 readonly toggle_query_marker='@toggleQueryMarker@'
+readonly schema_file='@schemaFile@'
 readonly suffix='.conf'
 
-# The mark against a theme chosen recently, and how many such themes
-# to retain.
+# The version this program sets on a database it lays out, and the
+# only version it will read. Raise it whenever the layout of the
+# tables in the schema file changes.
+readonly expected_schema_version=1
+
+# The mark against a theme the score promotes, how many to promote,
+# how long a choice takes to count for half of what it did, how old a
+# choice must be for the "-c" flag to fold it away, and how many
+# package versions to keep whatever else that flag decides.
 readonly marker='⭐'
-readonly retained_entry_limit=20
+readonly promoted_limit=20
+readonly half_life_milliseconds=2592000000        # thirty days
+readonly fold_older_than_milliseconds=31536000000 # a year
+readonly retained_catalog_count=2
 
 readonly state_directory="${XDG_STATE_HOME:-${HOME}/.local/state}/ckt"
-readonly recent_file="${state_directory}/recent-themes"
+readonly database="${state_directory}/themes.db"
 
-function usage() {
-  echo >&2 "usage: $(basename "${0}") [-h] [initial_query]"
-  exit 2
+function print_usage() {
+  echo "usage: $(basename "${0}") [-c] [-f] [-h] [initial_query]"
 }
 
+# Applying a theme and recording the choice normally stand or fall
+# together. The "-f" flag says to apply the theme even when the choice
+# cannot be recorded. The "-c" flag compacts the database and does
+# nothing else.
+keep_unrecorded='no'
+compact_only='no'
+
 function parse_args() {
-  while getopts h name; do
+  while getopts cfh name; do
     case "${name}" in
-    h) usage ;;
-    ?) usage ;;
+    c) compact_only='yes' ;;
+    f) keep_unrecorded='yes' ;;
+    h)
+      print_usage
+      exit 0
+      ;;
+    ?)
+      print_usage >&2
+      exit 2
+      ;;
     esac
   done
 }
 
 parse_args "$@"
 shift $((OPTIND - 1))
+readonly keep_unrecorded
+readonly compact_only
 
 if [ $# -gt 1 ]; then
-  usage
+  print_usage >&2
+  exit 2
 fi
 readonly initial_query="${1-}"
 
 # Each window that kitty starts a program in has its own value for the
-# "KITTY_WINDOW_ID" variable. The command at the end addresses that
+# "KITTY_WINDOW_ID" variable. The commands at the end address that
 # window by its identifier rather than leaving the choice to kitty,
 # which would otherwise act on whichever window has focus at the
-# moment the command arrives.
-if [ -z "${KITTY_WINDOW_ID-}" ]; then
+# moment a command arrives.
+if [ -z "${KITTY_WINDOW_ID-}" ] && [ "${compact_only}" = 'no' ]; then
   echo >&2 'Run this program in a kitty window.'
   exit 1
 fi
-readonly window="id:${KITTY_WINDOW_ID}"
+readonly window="id:${KITTY_WINDOW_ID-0}"
 
-# The themes chosen recently, newest first, one name per line. There
-# is no such file until the first theme is chosen.
-recent=()
-if [ -r "${recent_file}" ]; then
-  mapfile -t recent <"${recent_file}"
-fi
-readonly recent
-
-mapfile -t all_themes <"${theme_names_file}"
-
-declare -Ai is_recent
-for name in "${recent[@]}"; do
-  is_recent["${name}"]=1
-done
-
-# One pass over the themes the package offers: set aside the ones that
-# are not recent, and note which recent ones turned up, since a theme
-# the package has since dropped will not.
-declare -Ai still_offered
-rest=()
-for name in "${all_themes[@]}"; do
-  if ((${is_recent[${name}]:-0})); then
-    still_offered["${name}"]=1
-  else
-    rest+=("${name}")
-  fi
-done
-
-# Every line holds two fields separated by a tab: the marker, shown
-# for a recent theme and blank otherwise, and the theme's name. The
-# picker matches against the whole line, so a query holding the marker
-# narrows the list to the recent themes.
-function offer_themes() {
-  local name
-  for name in "${recent[@]}"; do
-    if ((${still_offered[${name}]:-0})); then
-      printf '%s\t%s\n' "${marker}" "${name}"
-    fi
-  done
-  if ((${#rest[@]} > 0)); then
-    printf ' \t%s\n' "${rest[@]}"
-  fi
+# Quote a value for SQL, doubling any apostrophe within it, so that a
+# theme name can never be read as anything but a string.
+function as_sql_string() {
+  printf "'%s'" "${1//\'/\'\'}"
 }
 
-# Put the chosen theme at the head of the recent list, drop any
-# earlier mention of it, and keep the list to "retained_entry_limit"
-# names. Writing a new file beside the old one and moving it into
-# place leaves the old one whole should anything fail partway.
-function remember_theme() {
-  local chosen="${1}"
-  local name
-  local retained_entry_count=1
-  local scratch
-  mkdir --parents "${state_directory}"
-  scratch="$(mktemp "${recent_file}.XXXXXX")"
-  {
-    echo "${chosen}"
-    for name in "${recent[@]}"; do
-      if ((retained_entry_count >= retained_entry_limit)); then
-        break
-      fi
-      if [ "${name}" != "${chosen}" ]; then
-        echo "${name}"
-        ((++retained_entry_count))
-      fi
-    done
-  } >"${scratch}"
-  mv "${scratch}" "${recent_file}"
+catalog_literal="$(as_sql_string "${theme_names_file}")"
+readonly catalog_literal
+
+# One connection, held open for the run, written to and read from
+# through a pipe.
+#
+# The "-cmd" flags take effect before the tool starts reading, where a
+# bare argument would run *instead* of reading and the process would
+# exit at once. Records come back separated by the
+# ASCII record separator rather than by newlines, so a value holding a
+# newline cannot be mistaken for the end of an answer, and ".bail on"
+# makes the tool exit on the first error it meets, which the reads
+# below see as an end of input.
+mkdir --parents "${state_directory}"
+coproc DATABASE {
+  sqlite3 -batch -init /dev/null -cmd '.mode ascii' -cmd '.bail on' \
+    -cmd '.timeout 3000' "${database}"
+}
+# Hold the two descriptors in plain variables: an array element cannot
+# be closed by the "{name}>&-" form below, which takes a variable
+# holding a descriptor's number.
+readonly database_out="${DATABASE[0]}"
+readonly database_in="${DATABASE[1]}"
+
+# The connection may already have ended--".bail on" sees to that on
+# any error--and bash forgets the coprocess's name when it does, so
+# neither the descriptor nor the process identifier can be counted on
+# here.
+function close_the_database() {
+  exec {database_in}>&- 2>/dev/null || true
+  if [ -n "${DATABASE_PID-}" ]; then
+    wait "${DATABASE_PID}" 2>/dev/null || true
+  fi
+}
+trap close_the_database EXIT
+
+# Submit statements that answer nothing, and wait for the one record
+# saying they succeeded. Without that record the program could
+# not tell a statement that succeeded from one that ended the
+# connection, since the tool writes its complaints elsewhere.
+function execute_db_statement() {
+  printf '%s\nSELECT 1;\n' "${1}" >&"${database_in}"
+  # The acknowledgement itself says nothing; that it arrives is the
+  # whole of the news, so let it go to "REPLY" unnamed.
+  IFS= read -r -d $'\x1e' <&"${database_out}"
+}
+
+# Submit one query and print the single value it answers with. Every
+# query sent this way must return exactly one row--which an aggregate
+# guarantees--since records left behind would be read as the answers
+# to later questions.
+function query_db_value() {
+  local value
+  printf '%s\n' "${1}" >&"${database_in}"
+  IFS= read -r -d $'\x1e' value <&"${database_out}"
+  printf '%s' "${value}"
+}
+
+# The statements that record a catalog and everything it offers.
+#
+# Reading the file needs the separators the file actually uses, since
+# ".import" parses by whatever the current mode says--and the mode
+# here is the one that frames answers, whose record separator would
+# swallow the whole file as a single name. Restoring that mode
+# afterwards restores its separators with it.
+function import_statements() {
+  cat <<SQL
+BEGIN IMMEDIATE;
+INSERT INTO catalog(path, first_seen) VALUES (${catalog_literal}, unixepoch())
+  ON CONFLICT (path) DO NOTHING;
+CREATE TEMPORARY TABLE incoming(name TEXT);
+.separator "\t" "\n"
+.import ${theme_names_file} incoming
+.mode ascii
+INSERT INTO theme(name)
+  SELECT name
+  FROM incoming
+  WHERE true
+  ON CONFLICT (name) DO NOTHING;
+INSERT INTO offering(catalog_path, theme_name)
+  SELECT ${catalog_literal}, name
+  FROM incoming
+  WHERE true
+  ON CONFLICT (catalog_path, theme_name) DO NOTHING;
+DROP TABLE incoming;
+COMMIT;
+SQL
+}
+
+# Foreign keys are asked for once, on the connection, rather than
+# beside the insert that needs them, because the pragma does nothing
+# while a transaction is open.
+execute_db_statement 'PRAGMA foreign_keys = ON;'
+
+# A database that has never been laid out holds no catalog either, so
+# there is nothing to ask on a first run. Setting the journal mode
+# answers with the mode it settled on, which is why it goes through
+# the question rather than the statement: readers and writers exclude
+# one another under the default journal, and the picker reads its list
+# while another window may be recording a choice.
+#
+# A database bearing any other version was laid out by a program whose
+# tables this one does not know, so stop and say so. Reading on would
+# fail somewhere further in, against whichever column happened to
+# differ, and report that column rather than the reason for it.
+schema_version="$(query_db_value 'SELECT user_version FROM pragma_user_version;')"
+readonly schema_version
+if [ "${schema_version}" -eq 0 ]; then
+  query_db_value 'PRAGMA journal_mode = WAL;' >/dev/null
+  execute_db_statement ".read ${schema_file}"
+  execute_db_statement "PRAGMA user_version = ${expected_schema_version};"
+  execute_db_statement "$(import_statements)"
+elif [ "${schema_version}" -ne "${expected_schema_version}" ]; then
+  echo >&2 "The database at \"${database}\" was laid out for version ${schema_version} of this program's schema, and this program reads version ${expected_schema_version}."
+  exit 1
+elif [ "$(query_db_value "SELECT count(*) FROM catalog WHERE path = ${catalog_literal};")" -eq 0 ]; then
+  execute_db_statement "$(import_statements)"
+fi
+
+# Fold every row older than the cutoff into one row for each theme.
+# The fold stands at the cutoff and the deletion takes only what is
+# older, so it survives its own cleanup; the conflict clause adds
+# rather than replaces, so folding onto an earlier fold keeps both.
+#
+# A folded row is committed to the half-life it was folded under: the
+# weight it holds cannot be recomputed for a different one, because
+# the choices behind it are gone.
+function fold_old_choices() {
+  local cutoff
+  cutoff="$(query_db_value "SELECT unixepoch('now', 'subsec') * 1000 - ${fold_older_than_milliseconds};")"
+  execute_db_statement "$(
+    cat <<SQL
+BEGIN IMMEDIATE;
+INSERT INTO selection(theme_name, occurred_at, weight, event_count)
+  SELECT theme_name, ${cutoff},
+         sum(weight * pow(0.5, (${cutoff} - occurred_at) / ${half_life_milliseconds}.0)),
+         sum(event_count)
+  FROM selection
+  WHERE occurred_at < ${cutoff}
+  GROUP BY theme_name
+ON CONFLICT (theme_name, occurred_at) DO UPDATE
+  SET weight = weight + excluded.weight,
+      event_count = event_count + excluded.event_count;
+DELETE FROM selection WHERE occurred_at < ${cutoff};
+COMMIT;
+SQL
+  )"
+}
+
+# Keep only the most recently seen package versions, and only those
+# theme names that a surviving version still offers or that a choice
+# still points at. The offerings of a discarded version go with it,
+# through the "ON DELETE CASCADE" on their reference to it.
+#
+# The version this program was built against is spared outright. The
+# count would usually spare it anyway, since it was seen most
+# recently, but not on a computer that has gone back to an earlier
+# generation, where discarding it would empty the picker until the
+# next run imported it again.
+#
+# The rest answer to the count alone, because no choice points at
+# one: a theme of a given name is the same theme in every version. So
+# these two tables hold a fixed amount however long the history grows.
+# A theme dropped from the package after this computer chose it stays
+# here as one row, which is what the choice still standing for it
+# needs to point at.
+#
+# The versions go first. A name is only free of its offerings once the
+# version listing it is gone.
+function forget_unused_catalogs_and_themes() {
+  execute_db_statement "
+BEGIN IMMEDIATE;
+DELETE FROM catalog
+WHERE path <> ${catalog_literal}
+  AND path NOT IN (SELECT path
+                   FROM catalog
+                   ORDER BY first_seen DESC
+                   LIMIT ${retained_catalog_count});
+DELETE FROM theme
+WHERE name NOT IN (SELECT theme_name
+                   FROM offering)
+  AND name NOT IN (SELECT theme_name
+                   FROM selection);
+COMMIT;"
+}
+
+# Measure the tables, so that SQLite plans against what they hold
+# rather than against a guess. Lacking these figures it may drive a
+# join from the larger side, reading every offering to probe a handful
+# of scores instead of the reverse.
+#
+# What this records is row counts and how many rows share each leading
+# run of index columns. None of it refers to pages or to the size of
+# the file, so the rebuild below neither disturbs these figures nor
+# contributes to them. Measuring afterwards is still the better
+# order, because then the figures describe the file as it finally
+# stands rather than one that no longer exists.
+function measure_the_tables() {
+  execute_db_statement 'ANALYZE;'
+}
+
+# Rebuild the file around what is left of it. Folding and pruning
+# release pages within the file but never shorten it, so a database
+# left alone after them keeps whatever size its history once reached.
+# It follows the fold and the prune so that it reclaims what those two
+# released.
+function reclaim_released_pages() {
+  execute_db_statement 'VACUUM;'
+}
+
+if [ "${compact_only}" = 'yes' ]; then
+  fold_old_choices
+  forget_unused_catalogs_and_themes
+  reclaim_released_pages
+  measure_the_tables
+  echo >&2 "Compacted: $(query_db_value 'SELECT count(*) FROM selection;') rows of history across $(query_db_value 'SELECT count(*) FROM catalog;') package versions, in $(query_db_value 'SELECT (SELECT * FROM pragma_page_count) * (SELECT * FROM pragma_page_size) / 1024;') KiB."
+  exit 0
+fi
+
+# The picker's list comes from its own invocation rather than from the
+# connection above. It has to reach the "fzf" tool through a pipeline,
+# and bash closes a coprocess's descriptors in the subshell that a
+# pipeline stage runs in; holding four hundred lines in a variable to
+# work around that would keep them in memory twice over.
+#
+# Every line holds two fields separated by a tab: the marker, shown
+# for a promoted theme and blank otherwise, and the theme's name. The
+# picker matches against the whole line, so a query holding the marker
+# narrows the list to the promoted themes.
+# The ranking runs over the themes this version offers, not over the
+# whole history, so that a theme the package has since dropped cannot
+# take one of the promotion slots and leave a current theme unmarked.
+function offer_themes() {
+  sqlite3 -batch -init /dev/null -list -noheader -separator $'\t' \
+    -cmd '.timeout 3000' "${database}" <<SQL
+WITH scored AS (
+  SELECT theme_name,
+         sum(weight * pow(0.5, (unixepoch('now', 'subsec') * 1000 - occurred_at)
+                               / ${half_life_milliseconds}.0)) AS score
+  FROM selection
+  WHERE theme_name IN (SELECT theme_name
+                       FROM offering
+                       WHERE catalog_path = ${catalog_literal})
+  GROUP BY theme_name
+  ORDER BY score DESC
+  LIMIT ${promoted_limit}
+)
+SELECT CASE WHEN s.theme_name IS NULL THEN ' ' ELSE '${marker}' END, o.theme_name
+FROM offering o
+LEFT JOIN scored s ON s.theme_name = o.theme_name
+WHERE o.catalog_path = ${catalog_literal}
+ORDER BY (s.score IS NULL), s.score DESC, o.theme_name;
+SQL
 }
 
 # Nothing here changes this window's colors, so the preview pane is
@@ -144,15 +367,54 @@ function remember_theme() {
 # with status 1 when nothing matches, and this program runs under
 # "set -o errexit", so capture the status rather than letting either
 # outcome end the program in silence.
+#
+# The list reaches the picker on a descriptor rather than through a
+# pipe into it. Under "set -o pipefail" a pipeline reports the
+# rightmost non-zero status among its members, so a database that
+# could not be read would arrive below as though the picker had
+# reported it, and this program would announce that nothing matched
+# the search. Standing the query up in a process substitution leaves
+# the picker as the only command in the substitution, so its status
+# stands alone and the query is asked about separately afterwards.
+#
+# The "{list_fd}<" form opens that substitution on a descriptor bash
+# chooses and states in the variable, rather than on a number this
+# program would have to keep clear of the database connection above.
 fzf_status=0
+list_status=0
+exec {list_fd}< <(offer_themes)
+readonly list_pid="$!"
 selection="$(
-  offer_themes | fzf --query="${initial_query}" --select-1 \
+  fzf --query="${initial_query}" --select-1 \
     --delimiter=$'\t' \
     --tiebreak=index \
     --bind="ctrl-f:transform-query(${toggle_query_marker} ${marker} {q})" \
     --preview="${render_theme} ${themes_dir}/{2}${suffix}" \
-    --preview-window='right:60%'
+    --preview-window='right:60%' <&"${list_fd}"
 )" || fzf_status="$?"
+
+# The picker held a duplicate of the descriptor, so closing this
+# shell's copy is what lets the query finish or die. Left open, a
+# query with more to write than the pipe holds would block on a full
+# buffer and the wait below would never return.
+#
+# The status has to be captured with "||" rather than tested with
+# "if ! wait", where the value read back would be the negation's own
+# status and always zero.
+exec {list_fd}<&-
+wait "${list_pid}" || list_status="$?"
+
+# A query the picker stopped reading is killed by the closed pipe and
+# shows up as 141. That reports the picker's doing, which the
+# statements below already account for, so only anything else stands
+# for a query that failed. This check comes first so that a database
+# this program cannot read is stated plainly even when the search was
+# then abandoned.
+if [ "${list_status}" -ne 0 ] && [ "${list_status}" -ne 141 ]; then
+  echo >&2 "SQLite exited with status ${list_status} while producing the list of themes."
+  exit 1
+fi
+
 case "${fzf_status}" in
 0) ;;
 1)
@@ -190,11 +452,39 @@ readonly theme_file="${themes_dir}/${theme_name}${suffix}"
 #
 # A few themes state no foreground, no background, or neither, and
 # kitty changes only what it is told about, so applying one of those
-# leaves the window's text and page colors as the previous theme set
-# them. Stating the configured values alongside looked like the fix
-# and was not: kitty carried the background beyond the window it was
-# given, and other tabs in the same operating-system window changed
-# with it. The preview says which settings a theme omits instead.
-kitten @ set-colors --match "${window}" "${theme_file}"
-remember_theme "${theme_name}"
+# leaves the window's text and page colors as they are. Stating the
+# configured values alongside looked like the fix and was not: kitty
+# carried the background beyond the window it was given, and other
+# tabs in the same operating-system window changed with it. The
+# preview shows what such a theme really does instead.
+function apply_theme() {
+  kitten @ set-colors --match "${window}" "${theme_file}"
+}
+
+# Record the choice inside a transaction and apply the theme while it
+# stands open, so that a failure on either side leaves neither. The
+# picker has closed and given the terminal back, so these commands
+# have it to themselves however they arrive at kitty.
+name_literal="$(as_sql_string "${theme_name}")"
+readonly name_literal
+if execute_db_statement 'BEGIN IMMEDIATE;' && execute_db_statement "
+INSERT INTO selection(theme_name, occurred_at)
+VALUES (${name_literal}, unixepoch('now', 'subsec') * 1000)
+ON CONFLICT (theme_name, occurred_at) DO UPDATE
+  SET weight = weight + excluded.weight,
+      event_count = event_count + excluded.event_count;"; then
+  if apply_theme; then
+    execute_db_statement 'COMMIT;'
+  else
+    execute_db_statement 'ROLLBACK;'
+    echo >&2 'Could not apply the theme, so the choice was not recorded.'
+    exit 1
+  fi
+elif [ "${keep_unrecorded}" = 'yes' ]; then
+  apply_theme
+  echo >&2 'Could not record the choice. Applying the theme, as the "-f" flag asks.'
+else
+  echo >&2 'Could not record the choice, so the theme was left alone. Pass "-f" to apply it anyway.'
+  exit 1
+fi
 echo >&2 "Activated the kitty theme \"${theme_name}\"."

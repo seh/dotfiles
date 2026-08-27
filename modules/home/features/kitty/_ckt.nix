@@ -19,6 +19,7 @@
   themeNames = pkgs.runCommand "kitty-theme-names" {
     inherit themesDir;
   } (builtins.readFile ./collect-theme-names);
+
   # Fills the picker's preview pane with a page of text in one theme's
   # colors, and needs nothing beyond bash itself to do it.
   renderTheme = pkgs.writeShellApplication {
@@ -36,9 +37,11 @@ in
   pkgs.writeShellApplication {
     name = "ckt";
     runtimeInputs = [
-      # Supplies the "basename", "mkdir", "mktemp", and "mv" tools.
+      # Supplies the "basename" and "mkdir" tools.
       pkgs.coreutils
       pkgs.fzf
+      # Keeps the record of which themes were chosen when.
+      pkgs.sqlite
       # Supplies the "kitten" tool, with which the program controls the
       # running kitty instance.
       kittyPackage
@@ -46,16 +49,24 @@ in
     # Substituting these paths here leaves the program file free of Nix
     # syntax, so that the "shellcheck" and "shfmt" tools read it as an
     # ordinary bash program. Each substitution preserves its store
-    # reference, making the "kitty-themes" package, the list of theme
-    # names, and the two programs above dependencies of this one.
+    # reference, so the "kitty-themes" package, the list of theme
+    # names, the two programs above and the schema all become
+    # dependencies of this one.
     text =
       builtins.replaceStrings
-      ["@themesDir@" "@themeNamesFile@" "@renderTheme@" "@toggleQueryMarker@"]
+      [
+        "@themesDir@"
+        "@themeNamesFile@"
+        "@renderTheme@"
+        "@toggleQueryMarker@"
+        "@schemaFile@"
+      ]
       [
         themesDir
         "${themeNames}"
         "${renderTheme}/bin/render-theme"
         "${toggleQueryMarker}/bin/toggle-query-marker"
+        "${./ckt-ddl.sql}"
       ]
       (builtins.readFile ./ckt);
   }
