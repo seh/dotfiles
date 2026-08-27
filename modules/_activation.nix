@@ -120,7 +120,7 @@
   # Fold what "host.forbidFeatures" and "host.forbidInterests" forbid
   # into this evaluator's own exclusions: both prune every walk before
   # the "resolveActivation" function, so a forbidden name activates
-  # nowhere—the one exclusion no user may undo. The host record
+  # nowhere. No selection a user writes undoes it. The host record
   # conveys what they forbid and keeps it intact when the propagation
   # module in the "modules/lib/_constructors.nix" file layers the
   # machine's record with a user's, so each user's own home
@@ -251,8 +251,8 @@ in {
               preconditions. The machine's own entries withhold an
               interest from what the machine provisions its users, yet
               yield to a user who selects that same name; a user's own
-              entries apply to that user alone. The list no user may
-              undo is "forbidInterests".
+              entries apply to that user alone. A user's selection
+              does not undo the "forbidInterests" list.
             '';
           };
           forbidFeatures = mkOption {
@@ -675,6 +675,7 @@ in {
             );
         };
       };
+      readOnly = true;
       default = {};
       description = ''
         The activation record this module computes from the
@@ -949,7 +950,8 @@ in {
   # effect, so one of the two lines is not what its author meant.
   #
   # Second, a name a machine both selects and forbids. Forbidding
-  # admits no exception, so that selection can never take effect.
+  # prunes the name from every walk, so that selection does not take
+  # effect.
   #
   # Third, an exclusion that changes nothing. A machine that
   # provisions users answers here only for an exclusion beside a name
