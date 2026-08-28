@@ -50,20 +50,24 @@ readonly state_directory="${XDG_STATE_HOME:-${HOME}/.local/state}/ckt"
 readonly database="${state_directory}/themes.db"
 
 function print_usage() {
-  echo "usage: $(basename "${0}") [-c] [-f] [-h] [initial_query]"
+  echo "usage: $(basename "${0}") [-c] [-d] [-f] [-h] [initial_query]"
 }
 
 # Applying a theme and recording the choice normally stand or fall
 # together. The "-f" flag says to apply the theme even when the choice
 # cannot be recorded. The "-c" flag compacts the database and does
-# nothing else.
+# nothing else. The "-d" flag discards a theme's history and does
+# nothing else, so that a theme chosen once and regretted stops
+# standing among the promoted ones.
 keep_unrecorded='no'
 compact_only='no'
+forget_only='no'
 
 function parse_args() {
-  while getopts cfh name; do
+  while getopts cdfh name; do
     case "${name}" in
     c) compact_only='yes' ;;
+    d) forget_only='yes' ;;
     f) keep_unrecorded='yes' ;;
     h)
       print_usage
@@ -81,6 +85,14 @@ parse_args "$@"
 shift $((OPTIND - 1))
 readonly keep_unrecorded
 readonly compact_only
+readonly forget_only
+
+# Each of these does its own job and then stops, so asking for both
+# states no order between them.
+if [ "${compact_only}" = 'yes' ] && [ "${forget_only}" = 'yes' ]; then
+  echo >&2 'The "-c" and "-d" flags each do one job. Ask for one of them.'
+  exit 2
+fi
 
 if [ $# -gt 1 ]; then
   print_usage >&2
@@ -360,6 +372,72 @@ ORDER BY (s.score IS NULL), s.score DESC, o.theme_name;
 SQL
 }
 
+# The themes this computer has chosen, which are the only ones with
+# anything to discard. The marker keeps the meaning it has above — a
+# theme the score is promoting right now — so this list also shows
+# which of them are standing among the favorites and which have merely
+# been chosen at some point.
+#
+# A theme the current package no longer offers still appears, since its
+# history is still recorded and is otherwise unreachable.
+function offer_chosen_themes() {
+  sqlite3 -batch -init /dev/null -list -noheader -separator $'\t' \
+    -cmd '.timeout 3000' "${database}" <<SQL
+WITH scored AS (
+  SELECT theme_name,
+         sum(weight * pow(0.5, (unixepoch('now', 'subsec') * 1000 - occurred_at)
+                               / ${half_life_milliseconds}.0)) AS score
+  FROM selection
+  WHERE theme_name IN (SELECT theme_name
+                       FROM offering
+                       WHERE catalog_path = ${catalog_literal})
+  GROUP BY theme_name
+  ORDER BY score DESC
+  LIMIT ${promoted_limit}
+)
+SELECT CASE WHEN s.theme_name IS NULL THEN ' ' ELSE '${marker}' END, c.theme_name
+FROM (SELECT DISTINCT theme_name
+      FROM selection) c
+LEFT JOIN scored s ON s.theme_name = c.theme_name
+ORDER BY (s.score IS NULL), s.score DESC, c.theme_name;
+SQL
+}
+
+# Discard everything recorded about one theme, so that the score no
+# longer stands for it and the picker stops promoting it. Choosing it
+# again starts its history afresh, which is the only way back.
+function forget_theme() {
+  local name_literal chosen
+  name_literal="$(as_sql_string "${1}")"
+  chosen="$(query_db_value "SELECT coalesce(sum(event_count), 0)
+                            FROM selection
+                            WHERE theme_name = ${name_literal};")"
+  execute_db_statement "DELETE FROM selection WHERE theme_name = ${name_literal};"
+  if [ "${chosen}" -eq 1 ]; then
+    echo >&2 "Forgot the one choice of the \"${1}\" theme."
+  else
+    echo >&2 "Forgot the ${chosen} choices of the \"${1}\" theme."
+  fi
+}
+
+# An argument that states a whole theme name needs no picker. Anything
+# else becomes the search the picker opens with, since a name that only
+# partly matches — or that matches one theme while being the beginning
+# of another's name — is a question rather than an instruction.
+if [ "${forget_only}" = 'yes' ]; then
+  if [ "$(query_db_value 'SELECT count(*) FROM selection;')" -eq 0 ]; then
+    echo >&2 'No theme has been chosen on this computer yet.'
+    exit 1
+  fi
+  if [ -n "${initial_query}" ] &&
+    [ "$(query_db_value "SELECT count(*)
+                         FROM selection
+                         WHERE theme_name = $(as_sql_string "${initial_query}");")" -gt 0 ]; then
+    forget_theme "${initial_query}"
+    exit 0
+  fi
+fi
+
 # Nothing here changes this window's colors, so the preview pane is
 # where a theme shows itself: the "render-theme" program draws a page
 # of sample text in the highlighted theme's own colors.
@@ -381,12 +459,25 @@ SQL
 # The "{list_fd}<" form opens that substitution on a descriptor bash
 # chooses and states in the variable, rather than on a number this
 # program would have to keep clear of the database connection above.
+# Under the "-d" flag the picker offers the themes with a history and
+# takes no shortcut: the exact-name case was settled above, and inside
+# the picker a fuzzy match that happens to be unique should not discard
+# a history without showing it first.
+if [ "${forget_only}" = 'yes' ]; then
+  readonly list_command='offer_chosen_themes'
+  shortcut=()
+else
+  readonly list_command='offer_themes'
+  shortcut=(--select-1)
+fi
+readonly shortcut
+
 fzf_status=0
 list_status=0
-exec {list_fd}< <(offer_themes)
+exec {list_fd}< <("${list_command}")
 readonly list_pid="$!"
 selection="$(
-  fzf --query="${initial_query}" --select-1 \
+  fzf --query="${initial_query}" "${shortcut[@]}" \
     --delimiter=$'\t' \
     --tiebreak=index \
     --bind="ctrl-f:transform-query(${toggle_query_marker} ${marker} {q})" \
@@ -444,6 +535,11 @@ if [ -z "${theme_name}" ]; then
   # only the ".conf" suffix.
   echo >&2 'The "fzf" tool returned no theme.'
   exit 1
+fi
+
+if [ "${forget_only}" = 'yes' ]; then
+  forget_theme "${theme_name}"
+  exit 0
 fi
 
 function apply_theme() {

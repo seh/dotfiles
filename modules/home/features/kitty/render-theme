@@ -16,6 +16,17 @@ readonly page_file="${1}"
 readonly width="${FZF_PREVIEW_COLUMNS:-60}"
 readonly height="${FZF_PREVIEW_LINES:-24}"
 
+# The list that the "-d" flag offers holds every theme this computer
+# has chosen, including one the current package no longer ships. No
+# page was composed for such a theme, so say what the pane would
+# otherwise show as an error from this program.
+if [ ! -f "${page_file}" ]; then
+  echo 'This theme is not in the version of the "kitty-themes" package'
+  echo 'that this program was built against, so there is no page of its'
+  echo 'colors to show. Its history can still be forgotten.'
+  exit 0
+fi
+
 # The first two lines state the page background and then its
 # foreground. The background fills the columns to the right of a line's
 # own text; the two together open a line that has no text of its own.
