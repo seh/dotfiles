@@ -1,0 +1,145 @@
+#!/usr/bin/env bash
+
+# Write one file for each kitty theme, holding that theme's preview
+# page with its colors already resolved into escape sequences. The
+# "render-theme" program prints one of these; it reads no theme file
+# and does no color work of its own.
+#
+# A file begins with the page background and foreground, each as
+# "red;green;blue" and separated by a tab. Every line after that is one
+# line of the page: the width a reader sees, a tab, and the text with
+# its escape sequences. Stating the width here spares the printing
+# program from measuring text it would have to strip escape sequences
+# out of first.
+#
+# Nix supplies the directory of theme files and the output directory.
+
+set -o errexit -o nounset -o pipefail
+shopt -s extglob nullglob
+
+# shellcheck disable=SC2154 # Set by Nix when invoking this program.
+readonly themes_dir="${themesDir}"
+# shellcheck disable=SC2154 # Set by Nix when invoking this program.
+readonly output_dir="${out}"
+
+theme_files=("${themes_dir}"/*.conf)
+if [ "${#theme_files[@]}" -eq 0 ]; then
+  echo >&2 "No \".conf\" files in the \"${themes_dir}\" directory."
+  exit 1
+fi
+mkdir --parents "${output_dir}"
+
+for theme_file in "${theme_files[@]}"; do
+  theme_name="$(basename "${theme_file}" .conf)"
+
+  # Some theme files end without a newline, so the loop runs once more
+  # whenever the final read filled the variables while reporting the
+  # end of the file. Without that, those files lose whatever their
+  # last line states, which is often a "color15".
+  #
+  # Only a six-digit hexadecimal shade can be turned into numbers
+  # here. Kitty accepts several further forms — a color name, three
+  # digits, "rgb:rr/gg/bb" — so a value passed over is one kitty can
+  # read and this program cannot. The page says so rather than
+  # presenting a color the theme never stated.
+  declare -A shade=()
+  unreadable=()
+  while read -r key value _ || [ -n "${key}" ]; do
+    case "${key}" in
+    color[0-9] | color1[0-5] | foreground | background)
+      case "${value}" in
+      '#'[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])
+        hex="${value#\#}"
+        shade["${key}"]="$((16#${hex:0:2}));$((16#${hex:2:2}));$((16#${hex:4:2}))"
+        ;;
+      *)
+        unreadable+=("${key}=${value}")
+        ;;
+      esac
+      ;;
+    esac
+  done <"${theme_file}"
+
+  # A theme that states no foreground or background would leave the
+  # page unreadable, so stand in for whatever it omits.
+  : "${shade[foreground]:=192;192;192}"
+  : "${shade[background]:=0;0;0}"
+  for index in {0..15}; do
+    : "${shade[color${index}]:=${shade[foreground]}}"
+  done
+
+  # Every escape sequence the page needs, built once. Nothing below
+  # runs a command substitution, so composing 409 pages costs no
+  # processes beyond this one.
+  declare -A ink=() paper=()
+  for index in {0..15}; do
+    ink[${index}]=$'\033[38;2;'"${shade[color${index}]}"'m'
+    paper[${index}]=$'\033[48;2;'"${shade[color${index}]}"'m'
+  done
+  page_background=$'\033[48;2;'"${shade[background]}"'m'
+  page_foreground=$'\033[38;2;'"${shade[foreground]}"'m'
+
+  swatches=''
+  for index in {0..7}; do
+    swatches+="${paper[${index}]}  "
+  done
+  swatches+="${page_background}  "
+  for index in {8..15}; do
+    swatches+="${paper[${index}]}  "
+  done
+
+  named=''
+  for index in 1 2 3 4 5 6; do
+    named+="${ink[${index}]}text "
+  done
+
+  bright=''
+  for index in 9 10 11 12 13 14; do
+    bright+="${ink[${index}]}text "
+  done
+
+  notice=()
+  if [ "${#unreadable[@]}" -gt 0 ]; then
+    stated="${unreadable[*]}"
+    notice=(
+      "${ink[3]}This program cannot read these settings:"
+      "${ink[3]}  ${stated}"
+      "${ink[3]}The foreground stands in for them below. Kitty"
+      "${ink[3]}reads them itself, so choosing this theme still"
+      "${ink[3]}applies what the theme states."
+      ''
+    )
+  fi
+
+  page=(
+    "${notice[@]}"
+    "${swatches}"
+    ''
+    "${named}"
+    "${bright}"
+    ''
+    "${ink[4]}function ${ink[3]}reticulate${ink[15]}(count int) {"
+    "${ink[8]}  // Splines are reticulated in place."
+    "${ink[15]}  log.${ink[3]}Printf${ink[15]}(${ink[2]}\"spline %d\"${ink[15]}, i)"
+    "${ink[15]}}"
+    ''
+    "${ink[6]}@@ -14,7 +14,7 @@"
+    "${ink[1]}-  the line that was there before"
+    "${ink[2]}+  the line that stands in its place"
+    ''
+    "${ink[2]}INFO${ink[15]}  listening on port ${ink[5]}8080"
+    "${ink[3]}WARN${ink[15]}  retrying in ${ink[5]}2s"
+    "${ink[1]}ERROR${ink[15]} connection refused"
+  )
+
+  {
+    printf '%s\t%s\n' "${shade[background]}" "${shade[foreground]}"
+    for content in "${page[@]}"; do
+      visible="${content//$'\033['*([0-9;])m/}"
+      # The leading space belongs to the line, so it counts toward the
+      # width a reader sees.
+      printf '%d\t%s%s %s\n' \
+        "$((${#visible} + 1))" "${page_background}" "${page_foreground}" "${content}"
+    done
+  } >"${output_dir}/${theme_name}"
+done

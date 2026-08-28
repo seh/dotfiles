@@ -1,162 +1,50 @@
 #!/usr/bin/env bash
 
-# Print a page of sample text in the colors of one kitty theme, given
-# the path to that theme's ".conf" file.
+# Print one theme's preview page, given the path to the file that the
+# build composed for it. The colors are already resolved into escape
+# sequences there, so this program handles no color syntax at all: it
+# pads each line to the pane's width and puts blank lines above the
+# page so that it ends at the foot of the pane.
 #
-# The colors are written as explicit shades rather than as palette
-# indices, so the page shows the theme it was given no matter which
-# theme the surrounding window is using. The "fzf" tool runs this
-# program to fill its preview pane, and states that pane's width and
-# height through the "FZF_PREVIEW_COLUMNS" and "FZF_PREVIEW_LINES"
-# variables.
+# The "fzf" tool runs this program to fill its preview pane, and
+# states that pane's width and height through the
+# "FZF_PREVIEW_COLUMNS" and "FZF_PREVIEW_LINES" variables.
 
 set -o errexit -o nounset -o pipefail
-shopt -s extglob
 
-readonly theme_file="${1}"
+readonly page_file="${1}"
 readonly width="${FZF_PREVIEW_COLUMNS:-60}"
 readonly height="${FZF_PREVIEW_LINES:-24}"
 
-# Some theme files end without a newline, so the loop runs once more
-# whenever the final read filled the variables while reporting the end
-# of the file. Without that, those files lose whatever their last line
-# states, which is often a "color15".
-#
-# Only a six-digit hexadecimal shade is taken. A value written any
-# other way would reach the arithmetic below as a malformed number and
-# stop the preview outright. Kitty accepts several further forms — a
-# color name, three digits, "rgb:rr/gg/bb" — so a value passed over
-# here is one this program cannot draw and kitty can. It gets a
-# stand-in below, and the page says so rather than presenting a color
-# the theme never stated.
-declare -A shade
-unreadable=()
-while read -r key value _ || [ -n "${key}" ]; do
-  case "${key}" in
-  color[0-9] | color1[0-5] | foreground | background)
-    case "${value}" in
-    '#'[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])
-      shade["${key}"]="${value}"
-      ;;
-    *)
-      unreadable+=("${key}=${value}")
-      ;;
-    esac
-    ;;
-  esac
-done <"${theme_file}"
+# The first line states the page background and foreground. The
+# background fills the width a line's own text does not reach; the two
+# together open a line that has no text of its own. Every line after
+# the first is the width a reader sees, a tab, and the text.
+mapfile -t entries <"${page_file}"
+readonly filler=$'\033[48;2;'"${entries[0]%%$'\t'*}"'m'
+readonly empty_line="${filler}"$'\033[38;2;'"${entries[0]#*$'\t'}"'m'' '
+readonly reset=$'\033[0m'
 
-# A theme that states no foreground or background would leave the page
-# unreadable, so stand in for whatever it omits.
-: "${shade[foreground]:=#c0c0c0}"
-: "${shade[background]:=#000000}"
-for index in {0..15}; do
-  : "${shade[color${index}]:=${shade[foreground]}}"
-done
-
-# Turn "#rrggbb" into the "r;g;b" that an escape sequence expects.
-function parts() {
-  local hex="${1#\#}"
-  printf '%d;%d;%d' "0x${hex:0:2}" "0x${hex:2:2}" "0x${hex:4:2}"
-}
-
-page_background="$(parts "${shade[background]}")"
-readonly page_background
-page_foreground="$(parts "${shade[foreground]}")"
-readonly page_foreground
-
-function foreground_of() {
-  printf '\033[38;2;%sm' "$(parts "${shade[color${1}]}")"
-}
-
-function background_of() {
-  printf '\033[48;2;%sm' "$(parts "${shade[color${1}]}")"
-}
-
-# Print one line of the page: the theme's own background and
-# foreground, the content, and enough spaces to reach the right edge
-# of the pane. Measuring the content means counting what a reader
-# sees, so strip the escape sequences before measuring.
+# Kitty does not erase to the end of a line in the current background
+# color, so each line says how far it reaches and this program fills
+# the rest.
 function print_line() {
-  local content="${1-}"
-  local visible="${content//$'\033['*([0-9;])m/}"
-  local padding=$((width - ${#visible} - 1))
-  printf '\033[48;2;%sm\033[38;2;%sm %s' \
-    "${page_background}" "${page_foreground}" "${content}"
+  local content="${1}" visible="${2}" padding
+  padding=$((width - visible))
   if [ "${padding}" -gt 0 ]; then
-    printf '\033[48;2;%sm%*s' "${page_background}" "${padding}" ''
+    printf '%s%s%*s%s\n' "${content}" "${filler}" "${padding}" '' "${reset}"
+  else
+    printf '%s%s\n' "${content}" "${reset}"
   fi
-  printf '\033[0m\n'
 }
-
-swatches=''
-for index in {0..7}; do
-  swatches+="$(background_of "${index}")  "
-done
-swatches+="$(printf '\033[48;2;%sm' "${page_background}")  "
-for index in {8..15}; do
-  swatches+="$(background_of "${index}")  "
-done
-readonly swatches
-
-named=''
-for index in 1 2 3 4 5 6; do
-  named+="$(foreground_of "${index}")text "
-done
-readonly named
-
-bright=''
-for index in 9 10 11 12 13 14; do
-  bright+="$(foreground_of "${index}")text "
-done
-readonly bright
-
-# A theme this program cannot read in full is worth saying so about.
-# The preview exists to show what choosing a theme would look like, so
-# a substituted color that went unmentioned would misrepresent it.
-notice=()
-if [ "${#unreadable[@]}" -gt 0 ]; then
-  stated="${unreadable[*]}"
-  notice=(
-    "$(foreground_of 3)This program cannot read these settings:"
-    "$(foreground_of 3)  ${stated:0:width-3}"
-    "$(foreground_of 3)The foreground stands in for them below. Kitty"
-    "$(foreground_of 3)reads them itself, so choosing this theme still"
-    "$(foreground_of 3)applies what the theme states."
-    ''
-  )
-fi
-readonly notice
-
-# The page, one entry per line.
-readonly page=(
-  "${notice[@]}"
-  "${swatches}"
-  ''
-  "${named}"
-  "${bright}"
-  ''
-  "$(foreground_of 4)function $(foreground_of 3)reticulate$(foreground_of 15)(count int) {"
-  "$(foreground_of 8)  // Splines are reticulated in place."
-  "$(foreground_of 15)  log.$(foreground_of 3)Printf$(foreground_of 15)($(foreground_of 2)\"spline %d\"$(foreground_of 15), i)"
-  "$(foreground_of 15)}"
-  ''
-  "$(foreground_of 6)@@ -14,7 +14,7 @@"
-  "$(foreground_of 1)-  the line that was there before"
-  "$(foreground_of 2)+  the line that stands in its place"
-  ''
-  "$(foreground_of 2)INFO$(foreground_of 15)  listening on port $(foreground_of 5)8080"
-  "$(foreground_of 3)WARN$(foreground_of 15)  retrying in $(foreground_of 5)2s"
-  "$(foreground_of 1)ERROR$(foreground_of 15) connection refused"
-)
 
 # Empty lines come first, as many as it takes for the page to end at
 # the foot of the pane, where the picker shows the names that survive
 # the search.
-for ((empty_lines = height - ${#page[@]}; empty_lines > 0; empty_lines--)); do
-  print_line
+for ((empty_lines = height - ${#entries[@]} + 1; empty_lines > 0; empty_lines--)); do
+  print_line "${empty_line}" 1
 done
 
-for content in "${page[@]}"; do
-  print_line "${content}"
+for entry in "${entries[@]:1}"; do
+  print_line "${entry#*$'\t'}" "${entry%%$'\t'*}"
 done
