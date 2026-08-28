@@ -20,8 +20,16 @@
     inherit themesDir;
   } (builtins.readFile ./collect-theme-names);
 
-  # Fills the picker's preview pane with a page of text in one theme's
-  # colors, and needs nothing beyond bash itself to do it.
+  # Compose each theme's preview page while building this derivation,
+  # with its colors already resolved into escape sequences. Doing it
+  # here rather than on each cursor movement means the printing program
+  # handles no color syntax, and so cannot misread one.
+  themePages = pkgs.runCommand "kitty-theme-pages" {
+    inherit themesDir;
+  } (builtins.readFile ./compose-theme-pages);
+
+  # Fills the picker's preview pane with one of the composed pages,
+  # padded to the pane's width and set against its foot.
   renderTheme = pkgs.writeShellApplication {
     name = "render-theme";
     text = builtins.readFile ./render-theme;
@@ -58,6 +66,7 @@ in
         "@themesDir@"
         "@themeNamesFile@"
         "@renderTheme@"
+        "@themePages@"
         "@toggleQueryMarker@"
         "@schemaFile@"
       ]
@@ -65,6 +74,7 @@ in
         themesDir
         "${themeNames}"
         "${renderTheme}/bin/render-theme"
+        "${themePages}"
         "${toggleQueryMarker}/bin/toggle-query-marker"
         "${./ckt-ddl.sql}"
       ]
