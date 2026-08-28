@@ -23,9 +23,14 @@
   # Compose each theme's preview page while building this derivation,
   # with its colors already resolved into escape sequences. Doing it
   # here rather than on each cursor movement means the printing program
-  # handles no color syntax, and so cannot misread one.
+  # handles no color syntax, and so cannot misread one; kitty itself
+  # reads the colors, so every form kitty accepts is drawn correctly.
   themePages = pkgs.runCommand "kitty-theme-pages" {
     inherit themesDir;
+    # The same kitty that will apply a chosen theme is the one asked
+    # what its colors mean, so the preview cannot disagree with it.
+    nativeBuildInputs = [kittyPackage];
+    resolveColors = ./resolve-theme-colors.py;
   } (builtins.readFile ./compose-theme-pages);
 
   # Fills the picker's preview pane with one of the composed pages,

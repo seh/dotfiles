@@ -5,14 +5,16 @@
 # "render-theme" program prints one of these; it reads no theme file
 # and does no color work of its own.
 #
-# A file begins with the page background and foreground, each as
-# "red;green;blue" and separated by a tab. Every line after that is one
-# line of the page: the width a reader sees, a tab, and the text with
-# its escape sequences. Stating the width here spares the printing
-# program from measuring text it would have to strip escape sequences
-# out of first.
+# A file begins with the page background and then its foreground, each
+# on its own line as "red;green;blue". Every line after those two is
+# one line of the page: three characters holding the width a reader
+# sees, and then the text with its escape sequences. Stating the width
+# here spares the printing program from measuring text it would have to
+# strip escape sequences out of first, and giving it a fixed size
+# spares that program from looking for a separator.
 #
-# Nix supplies the directory of theme files and the output directory.
+# Nix supplies the directory of theme files, the program that reads
+# their colors, and the output directory.
 
 set -o errexit -o nounset -o pipefail
 shopt -s extglob nullglob
@@ -20,7 +22,14 @@ shopt -s extglob nullglob
 # shellcheck disable=SC2154 # Set by Nix when invoking this program.
 readonly themes_dir="${themesDir}"
 # shellcheck disable=SC2154 # Set by Nix when invoking this program.
+readonly resolve_colors="${resolveColors}"
+# shellcheck disable=SC2154 # Set by Nix when invoking this program.
 readonly output_dir="${out}"
+
+# How wide the warning lines are allowed to run. The sentences below
+# are written to this width, and the list of settings a theme states is
+# cut to match.
+readonly warning_width=44
 
 theme_files=("${themes_dir}"/*.conf)
 if [ "${#theme_files[@]}" -eq 0 ]; then
@@ -29,36 +38,34 @@ if [ "${#theme_files[@]}" -eq 0 ]; then
 fi
 mkdir --parents "${output_dir}"
 
-for theme_file in "${theme_files[@]}"; do
-  theme_name="$(basename "${theme_file}" .conf)"
+# Ask kitty what every stated color means, for every theme at once.
+# Kitty accepts more forms than "#rrggbb" — a color name, three
+# hexadecimal digits, twelve of them, "rgb:rr/gg/bb" — and reading
+# them here would mean keeping a second copy of its table and its
+# rules. A value kitty does not accept comes back with an empty
+# reading, and the page for that theme says so.
+declare -A read_as=() stated_as=()
+while IFS=$'\t' read -r theme setting stated reading; do
+  if [ -n "${reading}" ]; then
+    read_as["${theme}"$'\t'"${setting}"]="${reading}"
+  else
+    stated_as["${theme}"]+="${setting}=${stated} "
+  fi
+done < <(kitty +launch "${resolve_colors}" "${themes_dir}")
 
-  # Some theme files end without a newline, so the loop runs once more
-  # whenever the final read filled the variables while reporting the
-  # end of the file. Without that, those files lose whatever their
-  # last line states, which is often a "color15".
-  #
-  # Only a six-digit hexadecimal shade can be turned into numbers
-  # here. Kitty accepts several further forms — a color name, three
-  # digits, "rgb:rr/gg/bb" — so a value passed over is one kitty can
-  # read and this program cannot. The page says so rather than
-  # presenting a color the theme never stated.
+widths=()
+for theme_file in "${theme_files[@]}"; do
+  theme_name="${theme_file##*/}"
+  theme_name="${theme_name%.conf}"
+
   declare -A shade=()
-  unreadable=()
-  while read -r key value _ || [ -n "${key}" ]; do
-    case "${key}" in
-    color[0-9] | color1[0-5] | foreground | background)
-      case "${value}" in
-      '#'[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])
-        hex="${value#\#}"
-        shade["${key}"]="$((16#${hex:0:2}));$((16#${hex:2:2}));$((16#${hex:4:2}))"
-        ;;
-      *)
-        unreadable+=("${key}=${value}")
-        ;;
-      esac
-      ;;
-    esac
-  done <"${theme_file}"
+  for setting in background foreground color{0..15}; do
+    reading="${read_as["${theme_name}"$'\t'"${setting}"]-}"
+    if [ -n "${reading}" ]; then
+      shade["${setting}"]="${reading}"
+    fi
+  done
+  unreadable=("${stated_as["${theme_name}"]-}")
 
   # A theme that states no foreground or background would leave the
   # page unreadable, so stand in for whatever it omits.
@@ -98,21 +105,27 @@ for theme_file in "${theme_files[@]}"; do
     bright+="${ink[${index}]}text "
   done
 
-  notice=()
-  if [ "${#unreadable[@]}" -gt 0 ]; then
-    stated="${unreadable[*]}"
-    notice=(
-      "${ink[3]}This program cannot read these settings:"
+  warning_lines=()
+  if [ -n "${unreadable[*]}" ]; then
+    stated="${unreadable[*]% }"
+    # A theme states these values, so their length is not ours to
+    # choose. Left whole, a long one would wrap and push the page off
+    # the foot of the pane.
+    if [ "${#stated}" -gt "${warning_width}" ]; then
+      stated="${stated:0:warning_width-3}..."
+    fi
+    warning_lines=(
+      "${ink[3]}Kitty cannot read these settings:"
       "${ink[3]}  ${stated}"
-      "${ink[3]}The foreground stands in for them below. Kitty"
-      "${ink[3]}reads them itself, so choosing this theme still"
-      "${ink[3]}applies what the theme states."
+      "${ink[3]}The foreground stands in for them below, and"
+      "${ink[3]}kitty will stand in for them too when this"
+      "${ink[3]}theme is applied."
       ''
     )
   fi
 
   page=(
-    "${notice[@]}"
+    "${warning_lines[@]}"
     "${swatches}"
     ''
     "${named}"
@@ -132,14 +145,32 @@ for theme_file in "${theme_files[@]}"; do
     "${ink[1]}ERROR${ink[15]} connection refused"
   )
 
-  {
-    printf '%s\t%s\n' "${shade[background]}" "${shade[foreground]}"
+  # Measuring a line means taking the escape sequences back out of it,
+  # which is the most expensive thing this program does. The text a
+  # reader sees is the same in every theme, so the widths are measured
+  # for the first page and reused for the rest. A page that opens with
+  # a warning states that theme's own settings, so it is measured on
+  # its own.
+  if [ "${#warning_lines[@]}" -gt 0 ] || [ "${#widths[@]}" -eq 0 ]; then
+    measured=()
     for content in "${page[@]}"; do
       visible="${content//$'\033['*([0-9;])m/}"
       # The leading space belongs to the line, so it counts toward the
       # width a reader sees.
-      printf '%d\t%s%s %s\n' \
-        "$((${#visible} + 1))" "${page_background}" "${page_foreground}" "${content}"
+      measured+=("$((${#visible} + 1))")
+    done
+    if [ "${#warning_lines[@]}" -eq 0 ]; then
+      widths=("${measured[@]}")
+    fi
+  else
+    measured=("${widths[@]}")
+  fi
+
+  {
+    printf '%s\n%s\n' "${shade[background]}" "${shade[foreground]}"
+    for index in "${!page[@]}"; do
+      printf '%3d%s%s %s\n' \
+        "${measured[${index}]}" "${page_background}" "${page_foreground}" "${page[${index}]}"
     done
   } >"${output_dir}/${theme_name}"
 done

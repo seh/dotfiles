@@ -16,18 +16,19 @@ readonly page_file="${1}"
 readonly width="${FZF_PREVIEW_COLUMNS:-60}"
 readonly height="${FZF_PREVIEW_LINES:-24}"
 
-# The first line states the page background and foreground. The
-# background fills the width a line's own text does not reach; the two
-# together open a line that has no text of its own. Every line after
-# the first is the width a reader sees, a tab, and the text.
+# The first two lines state the page background and then its
+# foreground. The background fills the columns to the right of a line's
+# own text; the two together open a line that has no text of its own.
+# Every line after those two holds the width a reader sees in its first
+# three characters, and the text in the rest.
 mapfile -t entries <"${page_file}"
-readonly filler=$'\033[48;2;'"${entries[0]%%$'\t'*}"'m'
-readonly empty_line="${filler}"$'\033[38;2;'"${entries[0]#*$'\t'}"'m'' '
+readonly filler=$'\033[48;2;'"${entries[0]}"'m'
+readonly empty_line="${filler}"$'\033[38;2;'"${entries[1]}"'m'' '
 readonly reset=$'\033[0m'
 
 # Kitty does not erase to the end of a line in the current background
-# color, so each line says how far it reaches and this program fills
-# the rest.
+# color, so each line states how many columns its text occupies and
+# this program fills the ones after it.
 function print_line() {
   local content="${1}" visible="${2}" padding
   padding=$((width - visible))
@@ -41,10 +42,10 @@ function print_line() {
 # Empty lines come first, as many as it takes for the page to end at
 # the foot of the pane, where the picker shows the names that survive
 # the search.
-for ((empty_lines = height - ${#entries[@]} + 1; empty_lines > 0; empty_lines--)); do
+for ((empty_lines = height - ${#entries[@]} + 2; empty_lines > 0; empty_lines--)); do
   print_line "${empty_line}" 1
 done
 
-for entry in "${entries[@]:1}"; do
-  print_line "${entry#*$'\t'}" "${entry%%$'\t'*}"
+for entry in "${entries[@]:2}"; do
+  print_line "${entry:3}" "${entry:0:3}"
 done
