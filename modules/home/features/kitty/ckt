@@ -7,7 +7,7 @@ set -o errexit -o nounset -o pipefail
 # preview pane beside the list, and apply the theme you select to this
 # kitty window. An argument, when given, seeds the search box.
 #
-# The themes you reach for most come first, each one marked, and
+# The themes you choose most often come first, each one marked, and
 # ctrl-f narrows the list to them. Which themes those are is settled
 # by a score that weighs how often against how recently: a choice
 # counts one when it is made and half as much every half-life
@@ -308,7 +308,7 @@ function measure_the_tables() {
 
 # Rebuild the file around what is left of it. Folding and pruning
 # release pages within the file but never shorten it, so a database
-# left alone after them keeps whatever size its history once reached.
+# left alone after them keeps whatever size its history once grew to.
 # It follows the fold and the prune so that it reclaims what those two
 # released.
 function reclaim_released_pages() {
@@ -325,10 +325,10 @@ if [ "${compact_only}" = 'yes' ]; then
 fi
 
 # The picker's list comes from its own invocation rather than from the
-# connection above. It has to reach the "fzf" tool through a pipeline,
-# and bash closes a coprocess's descriptors in the subshell that a
-# pipeline stage runs in; holding four hundred lines in a variable to
-# work around that would keep them in memory twice over.
+# connection above. It is produced in a subshell, and bash closes a
+# coprocess's descriptors in any subshell; holding four hundred lines
+# in a variable to work around that would keep them in memory twice
+# over, for as long as the picker stays open.
 #
 # Every line holds two fields separated by a tab: the marker, shown
 # for a promoted theme and blank otherwise, and the theme's name. The
@@ -369,7 +369,7 @@ SQL
 # "set -o errexit", so capture the status rather than letting either
 # outcome end the program in silence.
 #
-# The list reaches the picker on a descriptor rather than through a
+# The picker reads the list from a descriptor rather than from a
 # pipe into it. Under "set -o pipefail" a pipeline reports the
 # rightmost non-zero status among its members, so a database that
 # could not be read would arrive below as though the picker had
@@ -439,7 +439,7 @@ esac
 readonly theme_name="${selection##*$'\t'}"
 if [ -z "${theme_name}" ]; then
   # A search that ends in a way this program does not recognize, such
-  # as a signal that reaches the "fzf" tool alone, can report success
+  # as a signal delivered to the "fzf" tool alone, can report success
   # and yield nothing. Stop rather than reading a file whose name is
   # only the ".conf" suffix.
   echo >&2 'The "fzf" tool returned no theme.'

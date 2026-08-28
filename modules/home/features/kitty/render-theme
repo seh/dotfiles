@@ -16,14 +16,15 @@ readonly page_file="${1}"
 readonly width="${FZF_PREVIEW_COLUMNS:-60}"
 readonly height="${FZF_PREVIEW_LINES:-24}"
 
-# The first line states the page background and foreground, separated
-# by a tab. Either may be empty, for a theme that states none: the page
-# then paints neither, so the pane keeps the colors it already has,
-# which is what choosing such a theme does to the window. Every line
-# after the first is the width a reader sees, a tab, and the text.
+# The first two lines state the page background and then its
+# foreground. Either may be empty, for a theme that states none: the
+# page then paints neither, so the pane keeps the colors it already
+# has, which is what choosing such a theme does to the window. Every
+# line after those two holds the width a reader sees in its first
+# three characters, and the text in the rest.
 mapfile -t entries <"${page_file}"
-stated_background="${entries[0]%%$'\t'*}"
-stated_foreground="${entries[0]#*$'\t'}"
+stated_background="${entries[0]}"
+stated_foreground="${entries[1]}"
 filler=''
 if [ -n "${stated_background}" ]; then
   filler=$'\033[48;2;'"${stated_background}"'m'
@@ -38,8 +39,8 @@ readonly empty_line
 readonly reset=$'\033[0m'
 
 # Kitty does not erase to the end of a line in the current background
-# color, so each line says how far it reaches and this program fills
-# the rest.
+# color, so each line states how many columns its text occupies and
+# this program fills the ones after it.
 function print_line() {
   local content="${1}" visible="${2}" padding
   padding=$((width - visible))
@@ -53,10 +54,10 @@ function print_line() {
 # Empty lines come first, as many as it takes for the page to end at
 # the foot of the pane, where the picker shows the names that survive
 # the search.
-for ((empty_lines = height - ${#entries[@]} + 1; empty_lines > 0; empty_lines--)); do
+for ((empty_lines = height - ${#entries[@]} + 2; empty_lines > 0; empty_lines--)); do
   print_line "${empty_line}" 1
 done
 
-for entry in "${entries[@]:1}"; do
-  print_line "${entry#*$'\t'}" "${entry%%$'\t'*}"
+for entry in "${entries[@]:2}"; do
+  print_line "${entry:3}" "${entry:0:3}"
 done
