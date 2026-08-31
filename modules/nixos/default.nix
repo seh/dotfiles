@@ -9,6 +9,7 @@
       ++ [
         ../_activation.nix
         ../_assertions.nix
+        ../_host-option.nix
         ../_host-users.nix
         ../_nixos-user-accounts.nix
         {
