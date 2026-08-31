@@ -1,6 +1,6 @@
 # Option types shared by the registry options in the
 # "modules/module-schema.nix" file. They live in this library file so
-# that probes and future consumers can construct every variant
+# that tests and future consumers can construct every variant
 # directly, rather than settling for the instances embedded in the
 # schema's option declarations.
 {lib}: let

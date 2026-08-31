@@ -6,10 +6,10 @@
 # mirrors each user's fields into that user's nested home-manager
 # evaluator as "dotfiles.identity".
 #
-# A consumer using "lib.mkHome" in standalone mode assigns
-# "dotfiles.identity" directly inside a module passed through the
-# "modules" argument; the assignment flows through the home-manager
-# evaluator's module-system merge where these fields are read.
+# A consumer using "lib.mkHome" on its own assigns "dotfiles.identity"
+# directly inside a module supplied to the "modules" argument; the
+# assignment flows through the home-manager evaluator's module-system
+# merge where these fields are read.
 {lib, ...}: {
   options.dotfiles.identity = {
     email = lib.mkOption {

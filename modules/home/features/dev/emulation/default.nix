@@ -1,7 +1,7 @@
 {flakeLib, ...}:
 flakeLib.mkFeature "dev/emulation" {
-  # OrbStack arrives on Darwin hosts alone below, while this
-  # toleration travels to every instantiation.
+  # OrbStack is installed on Darwin hosts alone below, while this
+  # toleration applies to every instantiation.
   unfreePackages = ["orbstack"];
 
   homeManager = {
