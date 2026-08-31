@@ -1,10 +1,10 @@
 # Activation substrate shared by Home Manager, nix-darwin, and NixOS
 # configurations.
 #
-# This module declares the options that describe the host and the
-# resolved activation record of the evaluator it runs in, plus the set
-# of known feature and interest names that the imported modules
-# advertise. It is imported by each of the
+# This module declares the options that describe the resolved
+# activation record of the evaluator it runs in, plus the set of known
+# feature and interest names that the imported modules advertise. It
+# is imported by each of the
 # "flake.modules.homeManager.default", "flake.modules.darwin.default",
 # and "flake.modules.nixos.default" modules, so it evaluates once per
 # evaluator: once for the machine in a system configuration, and once
@@ -19,10 +19,23 @@
 # "modules/lib/_constructors.nix" file), so the machine provisions
 # every user it manages and each user adds to that.
 #
-# It imports the "_users.nix" declaration module so that the
-# "dotfiles.users" registry is visible wherever this module evaluates,
-# including in the home-manager class, where the aggregator in the
-# "modules/home/default.nix" file demands that it stay empty.
+# This module reads the "dotfiles.host" record and declares it
+# nowhere. Two other modules declare that option, both from the one
+# shared type in the "modules/lib/_host-submodule.nix" file. The
+# "modules/_host-option.nix" file declares the writable one, which a
+# machine's configuration writes, and so does the one person a home
+# configuration serves directly. The
+# "modules/_provisioned-host-option.nix" file declares the read-only
+# one, which a managed user's nested evaluator receives and the
+# propagation module in the "modules/lib/_constructors.nix" file
+# defines once for that user.
+#
+# The options below that mirror a flake-level registry, and the ones
+# that state a managed user's own lists, take the module system's
+# "readOnly" flag and declare no default. Whoever writes one writes it
+# exactly once, and the module system stops the build on a second
+# definition, whatever its priority. That flag counts a default among
+# an option's definitions, which is why none of them declares one.
 {
   lib,
   config,
@@ -35,7 +48,7 @@
 }: let
   inherit (lib) mkOption types;
   inherit (config.dotfiles) host;
-  inherit (import ./lib/_option-types.nix {inherit lib;}) setOfNames preconditionSet preconditionEntry;
+  inherit (import ./lib/_option-types.nix {inherit lib;}) preconditionSet preconditionEntry;
   inherit (import ./lib/_diagnostics.nix) describeContradiction describeHost describeForbiddenSelection;
 
   # Detect the host's platform from the evaluating package set. Every
@@ -112,10 +125,13 @@
   managedUser = config.dotfiles._ownFeatures != null;
   # A machine that provisions users, gated the same way as the
   # "contingentExclusionAssertion" assertion in the
-  # "modules/_assertions.nix" file: a managed user's nested evaluator
-  # and a standalone home configuration both see the "dotfiles.users"
-  # registry empty.
-  provisionsUsers = config.dotfiles.users != {};
+  # "modules/_assertions.nix" file. Only the two system class
+  # aggregators import the declaration of the "dotfiles.users"
+  # registry, through the "modules/_host-users.nix" file. In a managed
+  # user's nested evaluator, and in a home configuration serving one
+  # person alone, the option is absent and this test reads the empty
+  # attribute set.
+  provisionsUsers = (config.dotfiles.users or {}) != {};
 
   # Fold what "host.forbidFeatures" and "host.forbidInterests" forbid
   # into this evaluator's own exclusions: both prune every walk before
@@ -128,10 +144,8 @@
   # wiring.
   withForbidden = excluded:
     excluded
-    ++ ofKind config.dotfiles._knownFeatures
-    (host.forbidFeatures ++ config.dotfiles._machineForbidFeatures)
-    ++ ofKind config.dotfiles._knownInterests
-    (host.forbidInterests ++ config.dotfiles._machineForbidInterests);
+    ++ ofKind config.dotfiles._knownFeatures host.forbidFeatures
+    ++ ofKind config.dotfiles._knownInterests host.forbidInterests;
   # This evaluator's own activation, resolved coherently in one walk
   # from the selections in the "dotfiles.host" record. The walk runs
   # the full preconditions table over that one set, so a contingent
@@ -171,142 +185,7 @@
     then flakeLib.expandClosure implications known [name]
     else [name];
 in {
-  imports = [./_users.nix];
-
   options.dotfiles = {
-    host = mkOption {
-      type = types.submodule {
-        options = {
-          name = mkOption {
-            type = types.nullOr types.str;
-            default = null;
-            description = ''
-              The host's name, or null when the configuration does not
-              set one. Purely descriptive: diagnostics cite it, and
-              nothing derives configuration from it.
-            '';
-          };
-          features = mkOption {
-            type = types.listOf types.str;
-            default = [];
-            description = ''
-              The features this machine or user selects, from the
-              finest single concern to a bundle that only brings
-              others along. Expansion starts from these selected names
-              together with the "interests" list.
-            '';
-          };
-          interests = mkOption {
-            type = types.listOf types.str;
-            default = [];
-            description = ''
-              Interest names this machine or user selects: the wants
-              that guard contingent features, such as a programming
-              language in use here. Expansion starts from these
-              selected names together with the "features" list. An
-              interest declares no configuration of its own, so
-              selecting one activates only the contingent features
-              whose preconditions it completes. A feature name belongs
-              in the "features" list instead; the two kinds are not
-              interchangeable, and an assertion in the
-              "modules/_assertions.nix" file rejects a name written
-              under the wrong one.
-            '';
-          };
-          excludeFeatures = mkOption {
-            type = types.listOf types.str;
-            default = [];
-            description = ''
-              The features its author deletes from its own implication
-              graph before the activation walk. The walk drops each
-              excluded vertex with its out-edges (the features it
-              implies) and its in-edges (the edges that target it). A
-              feature still reachable through a non-excluded path
-              stays active; one reachable only through excluded
-              vertices drops out. The machine's own entries withhold a
-              feature from what the machine provisions its users, yet
-              yield to a user who selects that same name; a user's own
-              entries apply to that user alone. The one list no user
-              may undo is "forbidFeatures". A user may exclude a
-              contingent feature, and that exclusion holds like any
-              other. A machine that provisions users may not: no user
-              may select a contingent feature, so no user could opt
-              back in. The "contingentExclusionAssertion" assertion in
-              the "modules/_assertions.nix" file rejects such an entry
-              and points instead to "forbidFeatures", the list that
-              withholds a name from every selector outright.
-            '';
-          };
-          excludeInterests = mkOption {
-            type = types.listOf types.str;
-            default = [];
-            description = ''
-              Interest names its author deletes from its own
-              implication graph before the activation walk. An
-              interest still reachable through a non-excluded
-              path—another interest that implies it, say—remains
-              active; one reachable only through excluded vertices
-              drops out. Withholding an interest withholds every
-              contingent feature that has no other way to satisfy its
-              preconditions. The machine's own entries withhold an
-              interest from what the machine provisions its users, yet
-              yield to a user who selects that same name; a user's own
-              entries apply to that user alone. A user's selection
-              does not undo the "forbidInterests" list.
-            '';
-          };
-          forbidFeatures = mkOption {
-            type = setOfNames {merge = "union";};
-            default = [];
-            description = ''
-              Machine-wide forbidding: the walk prunes each feature
-              listed here from every activation, the machine's own and
-              every user's, so it activates nowhere and no user
-              receives it—not even a user who selects that same name.
-              Forbidding is the absolute counterpart to the
-              "excludeFeatures" list, which prunes only its author's
-              own walk and, at the machine level, yields to a user's
-              explicit selection.
-            '';
-          };
-          forbidInterests = mkOption {
-            type = setOfNames {merge = "union";};
-            default = [];
-            description = ''
-              Machine-wide forbidding: the walk prunes each interest
-              listed here from every activation, the machine's own and
-              every user's, so it activates nowhere and no user
-              receives it—not even a user who selects that same name.
-              Forbidding is the absolute counterpart to the
-              "excludeInterests" list, which prunes only its author's
-              own walk and, at the machine level, yields to a user's
-              explicit selection.
-            '';
-          };
-        };
-      };
-      default = {};
-      description = ''
-        The host record this evaluator acts on: the names it selects
-        under its "features" and "interests" lists, the exclusions it
-        applies to its own walk, and the machine-wide
-        "forbidFeatures"/"forbidInterests" lists. In a system
-        evaluator these fields hold the machine's own wants alone,
-        standing alongside the users in the "dotfiles.users" registry
-        and absorbing nothing from them, so no user's selection
-        configures the machine. In a managed user's nested
-        home-manager evaluator the propagation module in the
-        "modules/lib/_constructors.nix" file layers the machine's
-        record with that user's own, so the machine provisions every
-        user it manages and each user adds to that. On a host that
-        home-manager alone manages, the sole user is the machine, so
-        these are that user's selections. The "lib.mkHome",
-        "lib.mkDarwin", and "lib.mkNixOS" constructors fill it from
-        the "host = {...}" argument; consumer modules may extend its
-        lists through the module system's append-merge.
-      '';
-    };
-
     _host = mkOption {
       type = types.submodule {
         options = {
@@ -646,9 +525,7 @@ in {
               else if builtins.elem name host.excludeFeatures
               then "machine"
               else null;
-            isForbidden = name:
-              builtins.elem name host.forbidFeatures
-              || builtins.elem name config.dotfiles._machineForbidFeatures;
+            isForbidden = name: builtins.elem name host.forbidFeatures;
             # The withheld features an author's own lists hold. Each of
             # the rest arrives only through one of these, so citing
             # them says which entry to edit.
@@ -706,62 +583,24 @@ in {
     # interest name fails the unknown-name check in the
     # "modules/_assertions.nix" file), but cross-class selections are
     # accepted as intended.
-    # What the machine forbids, as the propagation module in the
-    # "modules/lib/_constructors.nix" file writes it into each managed
-    # user's evaluator. The walk prunes these beside the
-    # "dotfiles.host.forbidFeatures" and "dotfiles.host.forbidInterests"
-    # lists, so forbidding survives a module inside a user's own home
-    # configuration rewriting that record. Both stay empty where
-    # nothing propagates them—the machine's own evaluator, and a home
-    # configuration nobody else builds—since there the two "host"
-    # lists are the only source and their author is the one forbidding.
-    #
-    # These do not use the module system's "readOnly" flag, which
-    # would refuse a second definition and so refuse a user's attempt
-    # outright. That flag counts an option's default among its
-    # definitions, so an option carrying both a default and one
-    # definition already trips it, and these need both: the machine
-    # writes them for a managed user, and nothing writes them
-    # elsewhere. The "forbidOverriddenAssertion" assertion in the
-    # "modules/_assertions.nix" file reports the attempt instead.
-    _machineForbidFeatures = mkOption {
-      type = types.listOf types.str;
-      default = [];
-      internal = true;
-      description = ''
-        The features the machine forbids, as written into a managed
-        user's evaluator, which the walk prunes beside that user's own
-        copy of the "dotfiles.host.forbidFeatures" list.
-      '';
-    };
-    _machineForbidInterests = mkOption {
-      type = types.listOf types.str;
-      default = [];
-      internal = true;
-      description = ''
-        The interests the machine forbids, as written into a managed
-        user's evaluator, which the walk prunes beside that user's own
-        copy of the "dotfiles.host.forbidInterests" list.
-      '';
-    };
     _knownFeatures = mkOption {
       type = types.listOf types.str;
-      default = [];
+      readOnly = true;
       description = ''
-        The names of every feature an imported module advertises.
-        Definitions accumulate through the "listOf" type's
-        append-merge. The unknown-name assertions read it to catch
-        typos in a host's selected "features" list. The role-mismatch
-        assertions read it to catch a name filed under the wrong kind.
-        The "flake.lib.implicationsFor" function reads it as the full
-        set of names from which it computes the "all" feature's
-        targets.
+        The names of every feature an imported module advertises. Each
+        class aggregator mirrors it from the flake-level
+        "dotfiles.knownFeatures" registry. The unknown-name assertions
+        read it to catch typos in a host's selected "features" list.
+        The role-mismatch assertions read it to catch a name filed
+        under the wrong kind. The "flake.lib.implicationsFor" function
+        reads it as the full set of names from which it computes the
+        "all" feature's targets.
       '';
     };
 
     _knownInterests = mkOption {
       type = types.listOf types.str;
-      default = [];
+      readOnly = true;
       description = ''
         The interest names the imported modules declare via the
         "mkInterest" function. Each class aggregator mirrors it from
@@ -792,7 +631,7 @@ in {
 
     _featureClasses = mkOption {
       type = types.attrsOf (types.listOf types.str);
-      default = {};
+      readOnly = true;
       description = ''
         Per-feature module classes, keyed by feature name. Each value
         lists the classes ("homeManager", "nixDarwin", "nixOS") that
@@ -809,7 +648,7 @@ in {
 
     _featurePreconditions = mkOption {
       type = types.attrsOf (preconditionSet {});
-      default = {};
+      readOnly = true;
       description = ''
         Per-feature preconditions, keyed by feature name. Each value
         is a conjunction of entries that must all be satisfied before
@@ -828,7 +667,7 @@ in {
 
     _impliedEdges = mkOption {
       type = types.attrsOf (types.listOf types.raw);
-      default = {};
+      readOnly = true;
       description = ''
         Per-source implied edges, keyed by source feature or interest
         name. Each value is that source's "implies" list. Each class
@@ -841,7 +680,7 @@ in {
 
     _supportedPlatforms = mkOption {
       type = types.attrsOf (types.listOf types.str);
-      default = {};
+      readOnly = true;
       description = ''
         Per-name platform support, keyed by feature name. Each value
         lists the platforms on which that name may activate. Each
@@ -855,7 +694,7 @@ in {
 
     _ownFeatures = mkOption {
       type = types.nullOr (types.listOf types.str);
-      default = null;
+      readOnly = true;
       internal = true;
       description = ''
         The features this evaluator selects on its own account, as
@@ -873,7 +712,7 @@ in {
 
     _ownInterests = mkOption {
       type = types.nullOr (types.listOf types.str);
-      default = null;
+      readOnly = true;
       internal = true;
       description = ''
         The interests this evaluator expresses on its own account, the
@@ -884,7 +723,7 @@ in {
 
     _ownListPrefix = mkOption {
       type = types.nullOr types.str;
-      default = null;
+      readOnly = true;
       internal = true;
       description = ''
         The option path holding this evaluator's own four lists,
@@ -901,7 +740,7 @@ in {
 
     _ownExcludeFeatures = mkOption {
       type = types.nullOr (types.listOf types.str);
-      default = null;
+      readOnly = true;
       internal = true;
       description = ''
         The features this evaluator excludes on its own account, as
@@ -918,7 +757,7 @@ in {
 
     _ownExcludeInterests = mkOption {
       type = types.nullOr (types.listOf types.str);
-      default = null;
+      readOnly = true;
       internal = true;
       description = ''
         The interests this evaluator excludes on its own account, the
@@ -929,7 +768,7 @@ in {
 
     _flakeLib = mkOption {
       type = with types; nullOr (lazyAttrsOf raw);
-      default = null;
+      readOnly = true;
       internal = true;
       description = ''
         This flake's "flake.lib" record, which the activation

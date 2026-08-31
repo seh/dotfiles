@@ -471,26 +471,6 @@
     '';
   };
 
-  # A name the machine forbids that this evaluator's own copy of what
-  # it forbids no longer contains. Only a module inside a managed
-  # user's home configuration can produce this, by defining
-  # "dotfiles.host" again at a priority that displaces what the
-  # propagation module in the "modules/lib/_constructors.nix" file
-  # wrote. The name stays inactive either way, since the walk prunes
-  # the "dotfiles._machineForbidFeatures" and
-  # "dotfiles._machineForbidInterests" lists beside the "host" ones,
-  # so this assertion tells its author that the line accomplished
-  # nothing rather than leaving them to wonder.
-  forbidOverridden =
-    lib.subtractLists host.forbidFeatures config.dotfiles._machineForbidFeatures
-    ++ lib.subtractLists host.forbidInterests config.dotfiles._machineForbidInterests;
-  forbidOverriddenAssertion = {
-    assertion = forbidOverridden == [];
-    message = ''
-      Resolving ${hostLabel}: something in this user's own configuration removed ${quoteNames forbidOverridden} from the "${hostOption "forbidFeatures"}" or "${hostOption "forbidInterests"}" list. Those lists are the machine's, and the walk prunes what the machine forbids whatever this configuration says, so the name stays inactive and the line accomplishes nothing. Remove the line. To decline a name the machine merely excludes, select it instead.
-    '';
-  };
-
   # A machine that provisions users may not exclude a contingent
   # feature. An entry in the machine's "excludeFeatures" list is one
   # an affected user countermands by asking for the same
@@ -512,8 +492,9 @@
   # user alone, and nothing needs to countermand it. The check
   # therefore runs only where the "config.dotfiles.users" registry is
   # non-empty—the evaluator that provisions other people. A managed
-  # user's nested evaluator sees it empty, as does a standalone home
-  # configuration, so a user's own exclusion stands. Gating on it also
+  # user's nested evaluator never receives that registry's
+  # declaration, and neither does a home configuration serving one
+  # person alone, so a user's own exclusion stands. Gating on it also
   # surfaces one machine-level mistake once rather than once per
   # managed user, and lets the message point at the machine's own list
   # exactly.
@@ -529,7 +510,7 @@
   # only by contingent features, beside the existing one in which
   # selecting a name relaxes it.
   excludedContingent =
-    lib.optionals (config.dotfiles.users != {})
+    lib.optionals ((config.dotfiles.users or {}) != {})
     (lib.unique (builtins.filter (n: builtins.elem n contingentNames) host.excludeFeatures));
   contingentExclusionAssertion = {
     assertion = excludedContingent == [];
@@ -694,7 +675,7 @@
   # A name absent from the class record has no bodies at all: a
   # name-only registration, an interest, or a misspelling that the
   # unknown-name checks above already diagnose. None is flagged here.
-  userRecords = config.dotfiles.users;
+  userRecords = config.dotfiles.users or {};
   systemOnlyClassesOf = name: let
     classes = featureClasses.${name} or [];
   in
@@ -836,6 +817,5 @@ in {
       platformDetectedAssertion
       interestPlatformAssertion
       platformSupportAssertion
-      forbidOverriddenAssertion
     ];
 }
