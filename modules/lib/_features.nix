@@ -123,8 +123,8 @@
   # A "preconditions" list is a conjunction whose entries are each
   # either a bare feature or interest name, or a group "{ anyOf = [
   # "<name>" ... ]; }" satisfied when any one member is active. A
-  # group entry is a closed attrset: "anyOf" is its only key, holding
-  # a list of names.
+  # group entry is a closed attrset: "anyOf" is its only key, whose
+  # value is a list of names.
   isPreconditionEntry = entry:
     builtins.isString entry
     || (

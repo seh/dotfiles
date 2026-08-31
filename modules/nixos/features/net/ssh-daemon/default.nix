@@ -1,7 +1,7 @@
 # The machine's SSH daemon: a machine-only feature that accepts
-# inbound SSH connections while refusing both root logins and password
-# authentication, so every session arrives as an ordinary user holding
-# a key.
+# inbound SSH connections with root logins and password authentication
+# both turned off, so every session authenticates with a key as an
+# ordinary user.
 #
 # The machine alone nominates this feature. The "essential" feature
 # implies it, and only the machine's own selections decide a nixOS
