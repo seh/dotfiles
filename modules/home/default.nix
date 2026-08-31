@@ -2,57 +2,49 @@
   config,
   lib,
   ...
-} @ flake: let
-  inherit (import ../lib/_diagnostics.nix) describeHost;
-in {
+} @ flake: {
   # TODO(seh): Define "nix.registry"?
   # TODO(seh): Define "nix.channels"?
-  flake.modules.homeManager.default = {
-    imports =
-      (lib.attrValues (config.dotfiles.featureModules.homeManager or {}))
-      ++ [
-        ../_activation.nix
-        ../_assertions.nix
-        ../_user-identity.nix
-        # The "dotfiles.users" registry is declared in every class
-        # (see "modules/_users.nix"), but only a system configuration
-        # acts on its entries. In the home-manager class an entry
-        # would exist and do nothing. Such an idle attribute is an
-        # attractive nuisance, so demand that the registry stay empty
-        # here.
-        ({
-          config,
-          lib,
-          ...
-        }: let
-          userNames = builtins.attrNames config.dotfiles.users;
-        in {
-          assertions = [
-            {
-              assertion = userNames == [];
-              message = ''
-                Resolving ${describeHost config.dotfiles.host.name}:
-                "dotfiles.users" lists the user(s)
-                ${lib.concatMapStringsSep ", " (n: "\"${n}\"") userNames},
-                but managed users exist only on hosts that a system
-                configuration manages (nix-darwin or NixOS); a
-                standalone home-manager configuration is one user's
-                environment. Remove the entries.
-              '';
-            }
-          ];
-        })
-        {
-          dotfiles = {
-            _knownFeatures = flake.config.dotfiles.knownFeatures;
-            _knownInterests = flake.config.dotfiles.knownInterests;
-            _featureClasses = flake.config.dotfiles.featureClasses;
-            _featurePreconditions = flake.config.dotfiles.featurePreconditions;
-            _impliedEdges = flake.config.dotfiles.impliedEdges;
-            _supportedPlatforms = flake.config.dotfiles.supportedPlatforms;
-            _flakeLib = flake.config.flake.lib;
-          };
-        }
-      ];
+  flake.modules.homeManager = {
+    default = {
+      imports =
+        (lib.attrValues (config.dotfiles.featureModules.homeManager or {}))
+        ++ [
+          ../_activation.nix
+          ../_assertions.nix
+          ../_user-identity.nix
+          {
+            dotfiles = {
+              _knownFeatures = flake.config.dotfiles.knownFeatures;
+              _knownInterests = flake.config.dotfiles.knownInterests;
+              _featureClasses = flake.config.dotfiles.featureClasses;
+              _featurePreconditions = flake.config.dotfiles.featurePreconditions;
+              _impliedEdges = flake.config.dotfiles.impliedEdges;
+              _supportedPlatforms = flake.config.dotfiles.supportedPlatforms;
+              _flakeLib = flake.config.flake.lib;
+            };
+          }
+        ];
+    };
+
+    # The writable declaration of the "dotfiles.host" option, for a
+    # home configuration whose own person writes that record. The
+    # "mkHome" constructor in the "modules/lib/_constructors.nix" file
+    # appends this module beside the "default" one above.
+    #
+    # The declaration sits inside an "imports" list here, as the
+    # "modules/_activation.nix" file does inside the "default" module
+    # above, so the two sit at one depth in the import tree. That
+    # matters because the module system, where two modules declare one
+    # option, takes the deeper declaration's answer for each attribute
+    # both of them state.
+    hostOption = {imports = [../_host-option.nix];};
+
+    # The read-only declaration of the same option, for a home-manager
+    # evaluator that a system configuration builds. The "mkDarwin" and
+    # "mkNixOS" constructors give this module to every such evaluator
+    # through the "home-manager.sharedModules" option, in place of the
+    # writable declaration above.
+    provisionedHostOption = {imports = [../_provisioned-host-option.nix];};
   };
 }

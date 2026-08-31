@@ -1,16 +1,18 @@
 # Declaration of the per-user registry.
 #
 # This module declares the "dotfiles.users" option and its per-user
-# submodule schema, and assigns nothing. Every module class imports
-# it, so the registry exists in each one, defaulting to the empty
-# attrset. Each entry is a complete, self-contained per-user record:
-# identity fields plus the user's selected features and interests and
-# their exclusions. There is no inheritance between users; sharing is
-# the caller's business, expressed with ordinary Nix "let" bindings or
-# shared modules.
+# submodule schema, and assigns nothing. The "_host-users.nix" module
+# imports it, and the nix-darwin and NixOS class aggregators import
+# that one, so the registry exists in the two system classes and
+# nowhere else. Each entry is a complete, self-contained per-user
+# record: identity fields plus the user's selected features and
+# interests and their exclusions. There is no inheritance between
+# users; sharing is the caller's business, expressed with ordinary Nix
+# "let" bindings or shared modules.
 #
-# Only a system configuration acts on the entries. A standalone
-# home-manager configuration must leave the registry empty.
+# Only a system configuration acts on the entries, and only a system
+# configuration declares them. A home configuration serves one person,
+# whose own selections go in the "dotfiles.host" record.
 {lib, ...}: let
   inherit (lib) mkOption types;
 
@@ -228,8 +230,8 @@ in {
       username; each value is a complete, self-contained record of
       identity fields plus the user's selected features and interests
       and their exclusions. Meaningful only on hosts that a system
-      configuration manages (nix-darwin or NixOS); in the home-manager
-      class the registry must stay empty.
+      configuration manages (nix-darwin or NixOS); the home-manager
+      class has no such registry.
     '';
   };
 }

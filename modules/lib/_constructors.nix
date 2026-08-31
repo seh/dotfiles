@@ -282,6 +282,14 @@
   #      bundle that implies it—drops it from the exclusions in force
   #      for that user, opting back in.
   #   3. A user's own exclusions always hold, for that user alone.
+  #
+  # This module is the only author of the "dotfiles.host" option in a
+  # managed user's evaluator. The
+  # "modules/_provisioned-host-option.nix" file declares that option
+  # read-only there, so the module system stops the build on a
+  # definition written inside a user's own home configuration,
+  # whatever its priority. That is what keeps the layering above
+  # final.
   multiUserPropagationModule = userDir: {config, ...}: let
     inherit (config.dotfiles) host;
     flakeLib = config.dotfiles._flakeLib;
@@ -340,12 +348,6 @@
         imports = [userCfg.homeManagerConfig];
         dotfiles = {
           inherit (userCfg) identity;
-          # What the machine forbids, written where no module of this
-          # user's can displace it. The "host" record below holds the
-          # same two lists, but a user's own module may rewrite that
-          # record, so the walk reads both and these two hold.
-          _machineForbidFeatures = host.forbiddenFeatures;
-          _machineForbidInterests = host.forbiddenInterests;
           # This user's own four lists, recorded beside the layered
           # ones below so that a diagnostic in the
           # "modules/_activation.nix" file can tell what this user
@@ -386,45 +388,6 @@
           ++ map (describeOverruledEntailment host.name userName)
           (overruledEntailments cost host);
       })
-      config.dotfiles.users;
-
-    # What the machine forbids that a user's own evaluator no longer
-    # prunes. Only a module inside that user's home configuration can
-    # produce this, by defining "dotfiles.host" or the propagated
-    # lists again at a priority displacing what this module wrote.
-    # The test sits here, in the machine's own evaluator, because
-    # nothing a user writes reaches this far: a check inside the
-    # user's evaluator would compare two values that same user can
-    # rewrite together.
-    # Only the users this flake provisions are tested. A home-manager
-    # user some other module declares receives none of the propagated
-    # lists, so its empty copies would read as every forbidden name
-    # gone missing, and the complaint would accuse a person whose
-    # configuration this flake never wrote.
-    assertions =
-      lib.mapAttrsToList (
-        userName: _: let
-          evaluated = config.home-manager.users.${userName}.dotfiles;
-          lost =
-            lib.subtractLists
-            (evaluated.host.forbiddenFeatures ++ evaluated._machineForbidFeatures)
-            host.forbiddenFeatures
-            ++ lib.subtractLists
-            (evaluated.host.forbiddenInterests ++ evaluated._machineForbidInterests)
-            host.forbiddenInterests;
-        in {
-          assertion = lost == [];
-          message = let
-            label =
-              if host.name == null
-              then "an unnamed host"
-              else ''host "${host.name}"'';
-            names = lib.concatMapStringsSep ", " (n: ''"${n}"'') lost;
-          in ''
-            Resolving ${label}: the configuration of the user "${userName}" removed ${names} from what this machine forbids. The "dotfiles.host.forbiddenFeatures" and "dotfiles.host.forbiddenInterests" lists are the machine's, and no user may set them aside. Remove whatever line in that user's own configuration writes them. To decline a name the machine merely excludes, select it instead.
-          '';
-        }
-      )
       config.dotfiles.users;
 
     users.users =
@@ -560,6 +523,7 @@
             modules
             ++ [
               dotfilesFlake.modules.homeManager.default
+              dotfilesFlake.modules.homeManager.hostOption
               homeDefaultsModule
             ];
         }
@@ -617,7 +581,10 @@
     homeManagerSharedModule = {
       home-manager = {
         useGlobalPkgs = true;
-        sharedModules = [dotfilesFlake.modules.homeManager.default];
+        sharedModules = [
+          dotfilesFlake.modules.homeManager.default
+          dotfilesFlake.modules.homeManager.provisionedHostOption
+        ];
       };
     };
     machineDefaultsModule = {config, ...}: {
@@ -702,7 +669,10 @@
       home-manager = {
         useGlobalPkgs = true;
         useUserPackages = true;
-        sharedModules = [dotfilesFlake.modules.homeManager.default];
+        sharedModules = [
+          dotfilesFlake.modules.homeManager.default
+          dotfilesFlake.modules.homeManager.provisionedHostOption
+        ];
       };
     };
     machineDefaultsModule = {

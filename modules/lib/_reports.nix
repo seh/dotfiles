@@ -362,10 +362,10 @@
         }
     ) (builtins.attrNames config.dotfiles.users);
 
-  # The sole evaluator a standalone home configuration holds: that
-  # user's own, whose selections are written at the "dotfiles.host"
-  # record because the "dotfiles.users" registry must stay empty
-  # there.
+  # The sole evaluator a home configuration serving one person has:
+  # that user's own, whose selections are written at the
+  # "dotfiles.host" record because such a configuration has no
+  # "dotfiles.users" registry.
   homeEvaluators = configuration: let
     inherit (configuration) config;
   in [
