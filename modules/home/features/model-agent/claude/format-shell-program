@@ -2,8 +2,8 @@
 
 # A "PostToolUse" hook for "Claude Code": once the model has written
 # or edited a file, "Claude Code" runs this program and hands it a
-# JSON record on standard input. Reformat that file if it holds a
-# shell program, and leave every other file untouched.
+# JSON record on standard input. Reformat that file if it is a shell
+# program, and leave every other file untouched.
 #
 # The "shfmt" tool returns exit code 0 whether or not it rewrote the
 # file, and a non-zero exit code when it fails, most often because it
@@ -11,15 +11,15 @@
 # than with the "shfmt" tool's own exit code: for a "PostToolUse"
 # event, exit code 2 passes this program's stderr to the model, while
 # any other non-zero exit code shows the user a hook error notice
-# holding only the first line of stderr. The model wrote the file that
-# will not parse, so the model is the party to tell. Exit code 0,
+# containing only the first line of stderr. The model wrote the file
+# that will not parse, so the model is the party to tell. Exit code 0,
 # whether after formatting or for a file this program leaves alone,
 # shows nothing to the model or the user.
 
 # The "jq" tool reads the hook's JSON record from standard input. The
-# "select" filter yields nothing when the record holds no file path or
-# an empty string, and the "--exit-status" flag turns that empty
-# result into a non-zero exit code.
+# "select" filter yields nothing when the record has no file path, or
+# the path is an empty string, and the "--exit-status" flag turns that
+# empty result into a non-zero exit code.
 if ! file_path="$(jq --exit-status --raw-output '.tool_input.file_path | select(length > 0)')"; then
   printf 'format-shell-program: hook input lacks .tool_input.file_path\n' >&2
   exit 1
