@@ -20,7 +20,7 @@
 # as well, to check contingent features' precondition edges and their
 # possible misuse in a host's selections and in the implication graph.
 # The per-class module record ("dotfiles._featureClasses") is
-# consulted too, to hold each feature to one side of the home/system
+# consulted too, to keep each feature on one side of the home/system
 # divide and to catch a user selecting a name that configures the
 # machine alone.
 {
@@ -140,7 +140,7 @@
     )
     roles;
 
-  # The three lists each role holds: the names a machine or user
+  # The three lists each role declares: the names a machine or user
   # selects, the names it prunes from its own walk, and the names a
   # machine forbids outright. Each entry reads its list off a role and
   # spells that list's bare name, so the kind-mismatch check covers
@@ -174,10 +174,10 @@
   # A contingent feature misfiled into an exclusion list draws advice
   # of its own. A machine-level entry in the "excludeFeatures" list is
   # a default an affected user overrides by selecting the same name,
-  # and selecting a contingent feature is refused, so no user could
-  # ever countermand that entry. A user excludes one in that user's
-  # own list; a machine that wants one never to activate forbids it
-  # instead.
+  # and selecting a contingent feature fails the build, so no user
+  # could ever countermand that entry. A user excludes one in that
+  # user's own list; a machine that wants one never to activate
+  # forbids it instead.
   mismatchAssertion = family: {
     here,
     there,
@@ -363,7 +363,7 @@
     message = ''
       Resolving ${hostLabel}: the feature(s)
       ${quoteNames (lib.unique (map (e: e.feature) contingentAnyOfMembers))}
-      list an "anyOf" precondition group that holds the contingent
+      list an "anyOf" precondition group that contains the contingent
       feature(s)
       ${quoteNames (lib.unique (map (e: e.member) contingentAnyOfMembers))},
       but a group's alternatives must be ordinary features or
@@ -463,11 +463,11 @@
       Resolving ${hostLabel}:
       ${lib.concatMapStringsSep " " describeSelectedContingent selectedContingent}
       A contingent feature activates on its own exactly when every one
-      of its preconditions holds. You may not select one directly: not
-      in "dotfiles.host.features", not in "dotfiles.host.interests",
-      and not, on a multi-user host, in the matching
-      "dotfiles.users.<name>" list. Remove each such selection and
-      select the missing preconditions in its place.
+      of its preconditions is satisfied. You may not select one
+      directly: not in "dotfiles.host.features", not in
+      "dotfiles.host.interests", and not, on a multi-user host, in
+      the matching "dotfiles.users.<name>" list. Remove each such
+      selection and select the missing preconditions in its place.
     '';
   };
 
@@ -477,18 +477,19 @@
   # name—selecting it directly, or selecting a bundle that entails
   # it—and that chance to opt back in is the whole of what separates
   # it from the "forbidFeatures" list; selecting a contingent feature
-  # is refused and no implied edge may target one, so every way in is
-  # closed and the exclusion holds absolutely while sitting in the
-  # list that promises otherwise. A machine that wants a contingent
-  # feature never to activate writes it in "forbidFeatures", the list
-  # whose entries already hold absolutely.
+  # fails the build and no implied edge may target one, so every way
+  # in is closed and the exclusion applies absolutely while sitting in
+  # the list that promises otherwise. A machine that wants a
+  # contingent feature never to activate writes it in
+  # "forbidFeatures", the list whose entries already apply absolutely.
   #
   # Only the machine's "excludeFeatures" list is judged: the walk
-  # holds each exclusion list to its own kind, so a contingent
-  # feature's name in the "excludeInterests" list withholds nothing,
-  # and the role-mismatch assertion alone objects to that misfiling.
+  # consults each exclusion list for its own kind alone, so a
+  # contingent feature's name in the "excludeInterests" list withholds
+  # nothing, and the role-mismatch assertion alone objects to that
+  # misfiling.
   #
-  # A user's own exclusion is legitimate: it always holds, for that
+  # A user's own exclusion is legitimate: it always applies, for that
   # user alone, and nothing needs to countermand it. The check
   # therefore runs only where the "config.dotfiles.users" registry is
   # non-empty—the evaluator that provisions other people. A managed
@@ -505,10 +506,10 @@
   # needs a way for a user to relax a machine-level exclusion that is
   # not selection—an un-exclusion. Removing a suppression adds no way
   # for a name to come into effect, so the guarantee that a contingent
-  # feature is active exactly when its preconditions hold would stand.
-  # The cost is a second mechanism for relaxing an exclusion, used
-  # only by contingent features, beside the existing one in which
-  # selecting a name relaxes it.
+  # feature is active exactly when its preconditions are satisfied
+  # would stand. The cost is a second mechanism for relaxing an
+  # exclusion, used only by contingent features, beside the existing
+  # one in which selecting a name relaxes it.
   excludedContingent =
     lib.optionals ((config.dotfiles.users or {}) != {})
     (lib.unique (builtins.filter (n: builtins.elem n contingentNames) host.excludeFeatures));
@@ -756,13 +757,14 @@
       config.dotfiles._host.activeFeatures;
   describeUnsupported = name: ''the feature "${name}" (supports only ${lib.concatStringsSep ", " supportedPlatforms.${name}})'';
   # A platform constraint belongs to a feature, never to an interest.
-  # An interest is a want, and a want holds wherever a person holds
+  # An interest is a want, and a want applies wherever a person has
   # it; what runs on some platforms and not others is the feature that
   # satisfies the want, which declares its own platforms. The
-  # "mkInterest" function refuses the key already, so this rejects the
-  # remaining way in: a hand-written entry in the flake-level
-  # registry, whose keys are bare names. Without it the constraint
-  # would sit in two places at once and could disagree with itself.
+  # "mkInterest" function fails the build for the key already, so this
+  # check closes the remaining way in: a hand-written entry in the
+  # flake-level registry, whose keys are bare names. Without it the
+  # constraint would sit in two places at once and could disagree with
+  # itself.
   platformConstrainedInterests =
     builtins.filter (name: builtins.elem name knownInterests)
     (builtins.attrNames supportedPlatforms);
@@ -772,7 +774,7 @@
       Resolving ${hostLabel}: "dotfiles.supportedPlatforms" has
       entries for the interest(s)
       ${quoteNames platformConstrainedInterests}, but an interest
-      holds on every platform: a platform limits the feature that
+      applies on every platform: a platform limits the feature that
       satisfies a want, never the want itself. Declare
       "supportedPlatforms" on each such feature instead, and remove
       these entries from "dotfiles.supportedPlatforms".

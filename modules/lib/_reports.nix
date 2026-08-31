@@ -21,10 +21,10 @@
   #
   # The verdict on each precondition entry comes from the "missing"
   # list that the evaluator's own "dotfiles._host.latentFeatures"
-  # record already holds, so this report and the activation walk agree
-  # by construction. Each candidate's "inEffect" flag reads that same
-  # evaluator's own predicate, which is what tells the reader of a
-  # satisfied group which alternative satisfied it.
+  # record already contains, so this report and the activation walk
+  # agree by construction. Each candidate's "inEffect" flag reads that
+  # same evaluator's own predicate, which is what tells the reader of
+  # a satisfied group which alternative satisfied it.
   findingsFor = {
     class,
     contingentFeatures,
@@ -66,8 +66,8 @@
       # and reads "excluded".
       declaredPlatforms = supportedPlatforms.${name} or null;
       # A managed user may not act on a candidate whose every
-      # registered body configures the machine: that selection is
-      # refused, and only the machine's own applies it. A standalone
+      # registered body configures the machine: that selection fails
+      # the build, and only the machine's own applies it. A standalone
       # home configuration writes the machine's own selection list,
       # where the same selection is accepted, so the mark belongs to
       # managed users alone.
@@ -76,11 +76,12 @@
         managed
         && bodyClasses != []
         && !(builtins.elem "homeManager" bodyClasses);
-      # The list of an obstruction pair that can hold this candidate.
-      # The walk holds each authoring list to its own kind, so only
-      # the kind-matching list is consulted: a candidate's name in the
-      # other kind's list prunes nothing and so stands over nothing. A
-      # name no registry advertises sits in neither.
+      # The list of an obstruction pair that can withhold this
+      # candidate. The walk consults each authoring list for its own
+      # kind alone, so only the kind-matching list is consulted: a
+      # candidate's name in the other kind's list prunes nothing and
+      # so stands over nothing. A name no registry advertises sits in
+      # neither.
       listFor = pair: pair.${kind} or [];
       obstruction =
         if
@@ -101,11 +102,12 @@
         else null;
       contingent = contingentFeatures ? ${name};
       # A contingent name may not sit in a group—the
-      # "anyOfMemberContingentAssertion" assertion refuses it—so a
-      # group member that is one marks the defect. The verdict still
-      # follows the member's own record, because either fixed answer
-      # reads wrong: an open claim when every way to bring the member
-      # into effect is closed, or a closed one when a way stays open.
+      # "anyOfMemberContingentAssertion" assertion fails the build for
+      # it—so a group member that is one marks the defect. The verdict
+      # still follows the member's own record, because either fixed
+      # answer reads wrong: an open claim when every way to bring the
+      # member into effect is closed, or a closed one when a way stays
+      # open.
       misplaced = contingent && inGroup;
     in {
       inherit contingent kind misplaced name obstruction;
@@ -123,9 +125,9 @@
     # citing it. An obstruction closes it, except "machine-only",
     # which awaits a selection the machine may still make. A name
     # nothing registers closes it, since no selection list accepts it
-    # and the "preconditionUnknownAssertion" assertion refuses it. A
-    # contingent candidate closes it when its own record leaves it
-    # unreachable.
+    # and the "preconditionUnknownAssertion" assertion fails the build
+    # for it. A contingent candidate closes it when its own record
+    # leaves it unreachable.
     candidateOpen = candidate:
       (candidate.obstruction == null || candidate.obstruction == "machine-only")
       && candidate.kind != "unknown"
@@ -163,9 +165,9 @@
     # call-depth limit bounds every case: a cycle, or a legal chain
     # deep enough to exhaust that limit, ends evaluation with its
     # error rather than an answer. Every constructor-built
-    # configuration refuses a cycle of bare edges earlier, in the
-    # activation walk these records force. A group may not cite a
-    # contingent name, so a cycle closed through a group marks an
+    # configuration fails the build for a cycle of bare edges earlier,
+    # in the activation walk these records force. A group may not cite
+    # a contingent name, so a cycle closed through a group marks an
     # invalid configuration; it enters this recursion from a system
     # configuration or a bare instantiation, while a standalone home
     # configuration forces its assertions on any read and the
@@ -200,10 +202,10 @@
     # means at most N-1 met and at least "min (N - 1) 1" met.
     #
     # The upper bound keeps out a feature every precondition of which
-    # holds, because its preconditions have nothing left to say about
-    # it. Such a feature is inactive for some other standing obstacle,
-    # which this record states in a field of its own and the filter
-    # beside this test admits on its own account.
+    # is satisfied, because its preconditions have nothing left to say
+    # about it. Such a feature is inactive for some other standing
+    # obstacle, which this record states in a field of its own and the
+    # filter beside this test admits on its own account.
     #
     # The lower bound is the signal of an effort under way: one
     # precondition already met. It relaxes to zero at N of one, where
@@ -276,8 +278,8 @@
       inherit managed;
       supportedPlatforms = evaluated.dotfiles._supportedPlatforms;
       # Each obstruction set keeps the two kinds' lists apart, since
-      # the walk holds each list to its own kind and a candidate
-      # consults only the list matching its own.
+      # the walk consults each list for its own kind alone and a
+      # candidate consults only the list matching its own.
       obstructedNames = {
         forbidden = {
           feature = evaluated.dotfiles.host.forbidFeatures;
@@ -332,7 +334,7 @@
     then collect configuration
     else [];
 
-  # The evaluators a system configuration holds: the machine's own,
+  # The evaluators a system configuration contains: the machine's own,
   # followed by one for each managed user's nested home evaluator, in
   # username order. The machine resolves its own class's bodies while
   # every user resolves home-manager bodies, so the class travels with
@@ -387,8 +389,8 @@
   # The column each stanza's field values begin at: the widest label
   # that kind of stanza allows, plus two spaces. The width belongs to
   # the stanza kind rather than to the fields one instance happens to
-  # hold, so a field appearing or disappearing never shifts the values
-  # beside it.
+  # contain, so a field appearing or disappearing never shifts the
+  # values beside it.
   configurationWidth = 11;
   evaluatorWidth = 13;
   # The widest label under a withheld feature, "arrives only through",
@@ -409,7 +411,7 @@
   # the name is an identifier, quoted otherwise, since a home
   # configuration commonly answers to "<user>@<host>". A quoted name
   # has its backslashes, quotation marks, and dollar signs escaped, so
-  # that a name holding any of them still pastes back as the one
+  # that a name containing any of them still pastes back as the one
   # attribute it came from.
   pathSegment = name:
     if builtins.match "[A-Za-z_][A-Za-z0-9_'-]*" name == null
@@ -494,9 +496,9 @@
   # forbidden name renders under the "dotfiles.host" option path for
   # every evaluator, since forbidding is the machine's alone, and an
   # exclusion under the option path of whoever wrote it. The walk
-  # holds each list to its own kind, so the list holding a feature
-  # back is always "forbidFeatures" or "excludeFeatures", and each
-  # line cites it under the right owner. An unreachable feature
+  # consults each list for its own kind alone, so the list withholding
+  # a feature is always "forbidFeatures" or "excludeFeatures", and
+  # each line cites it under the right owner. An unreachable feature
   # states that verdict and, beneath it, only the entries no selection
   # can satisfy: their candidates' qualifiers justify the verdict, and
   # the open entries stay unlisted so nothing beneath the heading
@@ -545,9 +547,9 @@
   # One evaluator as lines, headed by which one it is: the machine's
   # own, or the named user's. An evaluator with no finding states its
   # selection path and class alone, since an empty "features" block
-  # would say nothing a reader could act on.
-  # The withheld features one loss lies beyond, as a reader could scan
-  # them: quoted and comma-separated, in the order the record holds.
+  # would say nothing a reader could act on. The withheld features one
+  # loss lies beyond, as a reader could scan them: quoted and
+  # comma-separated, in the record's own order.
   enumerate = names: lib.concatMapStringsSep ", " (n: ''"${n}"'') names;
 
   evaluatorLines = evaluator: let
@@ -636,8 +638,8 @@
   ];
 
   # The whole report as text, read from the evaluator records alone,
-  # so that a value holding rendered text already renders no
-  # differently from one holding records and nothing else. A
+  # so that a value containing rendered text already renders no
+  # differently from one containing records and nothing else. A
   # configuration yielding no lines contributes no block, and a report
   # with no block at all is empty text.
   # The entries one output publishes, with those that describe the
@@ -687,11 +689,11 @@ in {
   # by configuration name, so that asking after one configuration
   # forces that one alone.
   #
-  # Each configuration's entry holds its name, its output, and the
+  # Each configuration's entry contains its name, its output, and the
   # evaluators it resolves for. The flake module in the
   # "modules/_latent-feature-report.nix" file grafts a "report"
   # rendering onto each entry and publishes a whole-flake rendering
-  # beside them; this value holds no rendered text of its own.
+  # beside them; this value contains no rendered text of its own.
   collectLatentFeatures = {
     darwinConfigurations ? {},
     homeConfigurations ? {},

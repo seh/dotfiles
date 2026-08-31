@@ -2,7 +2,7 @@
   # Assemble the per-host implication graph from the co-located
   # "implies" declarations that each feature and interest makes. An
   # implied edge is a property of its source, so it lives in the
-  # source's own file; the "impliedEdges" argument holds those
+  # source's own file; the "impliedEdges" argument contains those
   # declarations, keyed by source name, and this function turns them
   # into the graph that the "expandClosure" function consumes: a map
   # from each source name to the names it implies.
@@ -74,10 +74,10 @@
     # missing here never arrives at a host through "all".
     knownFeatures ? [],
     # The module classes that register a body for each feature, keyed
-    # by feature name and holding only the names that have one. Read
-    # here only to recognize which features configure something, since
-    # the "all" feature targets the body-less bundles alone; a name
-    # absent from this record has no body and so qualifies.
+    # by feature name and containing only the names that have one.
+    # Read here only to recognize which features configure something,
+    # since the "all" feature targets the body-less bundles alone; a
+    # name absent from this record has no body and so qualifies.
     featureClasses ? {},
     # Per-feature preconditions, keyed by contingent feature name.
     # Read here only to recognize which names are contingent, since
@@ -132,7 +132,7 @@
     # declarations keeps membership the same on every platform, since
     # a target that only a record-form edge for another platform
     # implies still counts, so a host's platform decides which of the
-    # aggregate's targets survive, never which names it holds.
+    # aggregate's targets survive, never which names it contains.
     impliedByBundle = lib.unique (
       lib.concatMap (source: map edgeName impliedEdges.${source}) (
         builtins.filter isBundle (builtins.attrNames impliedEdges)
@@ -154,15 +154,15 @@
       )
       knownFeatures;
     # A name that implies itself. The "lib.lists.toposort" call in the
-    # "expandClosure" function cannot see this one: it asks whether one
-    # name precedes another, and never asks that of a name against
+    # "expandClosure" function cannot see this one: it asks whether
+    # one name precedes another, and never asks that of a name against
     # itself. This test reads the raw declarations rather than the
     # graph below for the reason the dangling-edge comment gives—a
     # name implying itself is illegal on every platform, so an edge
     # hidden behind a "supportedPlatforms" record for a platform this
     # host does not run must not escape it. The kind stays out of the
-    # sentence because this function holds no interest registry, and
-    # an interest may imply itself just as a feature may.
+    # sentence because this function receives no interest registry,
+    # and an interest may imply itself just as a feature may.
     selfImplying =
       builtins.filter (
         source: builtins.elem source (map edgeName impliedEdges.${source})
@@ -365,7 +365,7 @@
       builtins.filter (name: preconditions ? ${name}) (builtins.attrNames implications);
     _contingentSourceCheck =
       if contingentSources != []
-      then throw ''expandActivation: the contingent feature(s) ${enumerateNames contingentSources} declare outgoing "implies" edges, but a contingent feature activates on its own exactly when every one of its preconditions holds, and it may not activate other features. Express each relationship as a precondition instead.''
+      then throw ''expandActivation: the contingent feature(s) ${enumerateNames contingentSources} declare outgoing "implies" edges, but a contingent feature activates on its own exactly when every one of its preconditions is satisfied, and it may not activate other features. Express each relationship as a precondition instead.''
       else null;
     # A contingent feature activates only where the host's platform
     # supports it. Support is tested here as well as on implied edges,

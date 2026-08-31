@@ -132,8 +132,8 @@
     # A feature whose body serves a system class alone never reaches a
     # user's home environment, so naming it as this user's loss would
     # name something they were never going to receive. The
-    # "userSystemOnlyFeatureAssertion" assertion refuses a user who
-    # selects one directly, for that same reason.
+    # "userSystemOnlyFeatureAssertion" assertion fails the build for a
+    # user who selects one directly, for that same reason.
     reachesUser = name: let
       classes = featureClasses.${name} or [];
     in
@@ -199,7 +199,7 @@
   # withheld name deserves one warning; a name the user's own
   # exclusions prune never enters the closure, so a user who declines
   # such a name hears nothing. Each entry lists the written selections
-  # whose own closures hold the name, for the warning to cite.
+  # whose own closures contain the name, for the warning to cite.
   overruledEntailments = cost: host:
     lib.concatMap (
       option:
@@ -244,8 +244,8 @@
   # operating-system account its home directory, spawns the user's
   # nested home-manager evaluator, and mirrors the user's identity, a
   # layered host record, that user's own four lists, and the option
-  # path holding those four lists into that evaluator. It serves both
-  # system classes, so it assigns only what nix-darwin and NixOS
+  # path declaring those four lists into that evaluator. It serves
+  # both system classes, so it assigns only what nix-darwin and NixOS
   # share; what NixOS alone insists upon lives in the
   # "modules/_nixos-user-accounts.nix" file, which the NixOS class
   # aggregator imports by itself. It assigns nothing into the
@@ -259,7 +259,7 @@
   #   dotfiles._ownInterests = <user>.interests
   #   dotfiles._ownExcludeFeatures = <user>.excludeFeatures
   #   dotfiles._ownExcludeInterests = <user>.excludeInterests
-  #   dotfiles._ownListPrefix = the option path holding those four
+  #   dotfiles._ownListPrefix = the option path declaring those four
   #   dotfiles.host = the machine's record, its selections and
   #                   exclusions layered with that user's own
   # so the "dotfiles._host" record in the "modules/_activation.nix"
@@ -267,7 +267,7 @@
   # machine's selections and the user's together: the machine
   # provisions every user it manages, and each user adds to that.
   #
-  # Layering lets an exclusion hold in three ways, applied alike to
+  # Layering lets an exclusion apply in three ways, applied alike to
   # the machine's features and interests:
   #   1. The machine's "forbidFeatures" and "forbidInterests" lists
   #      pass through untouched—the "//" operator below leaves them
@@ -281,7 +281,7 @@
   #      for that same name—selecting it directly, or selecting a
   #      bundle that implies it—drops it from the exclusions in
   #      force for that user, opting back in.
-  #   3. A user's own exclusions always hold, for that user alone.
+  #   3. A user's own exclusions always apply, for that user alone.
   #
   # This module is the only author of the "dotfiles.host" option in a
   # managed user's evaluator. The
@@ -353,7 +353,7 @@
           # "modules/_activation.nix" file can tell what this user
           # wrote from what the machine passed down. A user
           # countermands the machine's exclusion by selecting the
-          # name; their own exclusion always holds. The path lets a
+          # name; their own exclusion always applies. The path lets a
           # message cite the line its reader would edit, and comes
           # from here because a user may set an identity name
           # differing from the attribute key their lists live under.
@@ -397,14 +397,14 @@
   };
 
   # Argument validation shared by the three constructors below,
-  # holding each to its contract in this flake's vocabulary. Each
-  # constructor forwards every argument it does not consume itself, so
-  # an unrecognized name passes through to home-manager, nix-darwin,
-  # or NixOS, where the complaint speaks that evaluator's vocabulary
-  # and specifies neither the constructor called nor what it would
-  # have accepted. A required name is held here too, rather than by
-  # the constructor's own function pattern, whose complaint specifies
-  # an anonymous lambda.
+  # checking each against its contract in this flake's vocabulary.
+  # Each constructor forwards every argument it does not consume
+  # itself, so an unrecognized name passes through to home-manager,
+  # nix-darwin, or NixOS, where the complaint speaks that evaluator's
+  # vocabulary and specifies neither the constructor called nor what
+  # it would have accepted. A required name is checked here too,
+  # rather than by the constructor's own function pattern, whose
+  # complaint specifies an anonymous lambda.
   #
   # The check wraps the configuration a constructor returns, so
   # forcing that configuration raises the complaint first and every
