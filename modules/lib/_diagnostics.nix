@@ -1,6 +1,6 @@
 # Rendering shared by the diagnostic messages that the modules in this
-# flake emit, so that one phrasing decision holds across every module
-# class.
+# flake emit, so that one phrasing decision applies across every
+# module class.
 #
 # The leading underscore in the filename excludes this file from the
 # "import-tree" call in the "../../flake.nix" file; each module that
@@ -24,9 +24,9 @@
   #
   # Pass the "forbidOption" argument when the machine also forbids the
   # name; only a machine ever passes it, since forbidding belongs to
-  # the machine alone. Three lines then hold one name and two of them
-  # keep it off independently, so the message states both and says
-  # that acting on the selection means removing both rather than
+  # the machine alone. Three lines then contain one name and two of
+  # them keep it off independently, so the message states both and
+  # says that acting on the selection means removing both rather than
   # either.
   describeContradiction = {
     hostLabel,

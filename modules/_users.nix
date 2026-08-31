@@ -195,8 +195,8 @@
             before that user's activation walk. Withholding an
             interest withholds every contingent feature that has no
             other way to satisfy its preconditions. These entries
-            always hold for this user, and they prune what the machine
-            provides as well as what this user asked for; the
+            always apply for this user, and they prune what the
+            machine provides as well as what this user asked for; the
             machine's own exclusions yield to a user who selects the
             same name.
           '';
