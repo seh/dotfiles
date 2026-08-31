@@ -25,7 +25,7 @@ in
         default = [];
         description = ''
           The features this machine or user selects, from the finest
-          single concern to a bundle that only brings others along.
+          single concern to a bundle that only implies others.
           Expansion starts from these selected names together with the
           "interests" list.
         '';

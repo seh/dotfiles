@@ -88,18 +88,18 @@ in {
       default = {};
       description = ''
         Per-source implied edges, keyed by the name of the source
-        feature or interest that brings the targets along. Each value
-        is that source's "implies" list. An entry is either a bare
-        target name or a record "{ name = "<target>";
-        supportedPlatforms = [<systems>]; }" for an edge present only
-        when the host's platform is one of the listed systems. An
-        interest source lists only bare interest names. The
-        "mkFeature" and "mkInterest" functions fill it from their
-        "implies" argument. Definitions accumulate, so several modules
-        may extend one source's edges. The "implicationsFor" function
-        in the "modules/lib/_implications.nix" file assembles these
-        into the implication graph. Each class aggregator mirrors it
-        into the "dotfiles._impliedEdges" option.
+        feature or interest that implies the targets. Each value is
+        that source's "implies" list. An entry is either a bare target
+        name or a record "{ name = "<target>"; supportedPlatforms =
+        [<systems>]; }" for an edge present only when the host's
+        platform is one of the listed systems. An interest source
+        lists only bare interest names. The "mkFeature" and
+        "mkInterest" functions fill it from their "implies" argument.
+        Definitions accumulate, so several modules may extend one
+        source's edges. The "implicationsFor" function in the
+        "modules/lib/_implications.nix" file assembles these into the
+        implication graph. Each class aggregator mirrors it into the
+        "dotfiles._impliedEdges" option.
       '';
     };
     interestDescriptions = lib.mkOption {
@@ -110,7 +110,7 @@ in {
         "mkInterest" function fills it from its optional "description"
         argument. Nothing consumes this registry yet: it waits for a
         diagnostic or documentation surface that wants the prose, and
-        until one arrives this registry alone contains it.
+        until one exists this registry alone contains it.
       '';
     };
     knownFeatures = lib.mkOption {
