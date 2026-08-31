@@ -1,4 +1,4 @@
-# Helpers that build feature modules with their activation gating
+# Helpers that build feature modules with their activation condition
 # wired in.
 #
 # A "feature" file using these helpers takes the form:
@@ -29,10 +29,9 @@
 #   2. A structured attrset "{options? = ...; config? = ...;}" for
 #      features that declare their own options. The "options" half is
 #      a normal module function (e.g. "{lib, ...}: {options = ...;}")
-#      passed through verbatim — option declarations cannot be
-#      conditional. The "config" half follows the same contract as
-#      form 1 and gets the same activation gate. Either key may be
-#      omitted.
+#      emitted verbatim — option declarations cannot be conditional.
+#      The "config" half follows the same contract as form 1 and gets
+#      the same activation condition. Either key may be omitted.
 #
 # Conditional sub-contributions inside a config body should use the
 # "lib.mkMerge" / "lib.mkIf" functions at the value level, not at the
@@ -44,8 +43,8 @@
 # cross-feature reference, as a bundle whose whole substance is its
 # "implies" list does.
 {lib}: let
-  # Build a deferred module that gates the "body" argument on
-  # "host.inEffect name", where "host" is the resolved
+  # Build a deferred module that applies the "body" argument only when
+  # "host.inEffect name" is true, where "host" is the resolved
   # "config.dotfiles._host" record.
   #
   # The wrapper's outer function destructures every module argument
@@ -72,15 +71,16 @@
   };
 
   # Build the per-class deferred module for one body, dispatching on
-  # its form. A function body is the plain form (config-only, gated).
-  # An attrset with at least one of the "options"/"config" keys is the
-  # structured form (options pass through, config gated); its parts
-  # combine through a single "imports"-bearing module. The module
-  # system expands a merge-valued definition into multiple definition
-  # values before the option type's merge runs, so the
-  # single-imports-module form keeps one registration counting as one
-  # definition under the "uniq"-wrapped registry options in the
-  # "modules/module-schema.nix" file.
+  # its form. A function body is the plain form (config-only, applies
+  # only when in effect). An attrset with at least one of the
+  # "options"/"config" keys is the structured form (options emitted
+  # verbatim, config applies only when in effect); its parts combine
+  # through a single "imports"-bearing module. The module system
+  # expands a merge-valued definition into multiple definition values
+  # before the option type's merge runs, so the single-imports-module
+  # form keeps one registration counting as one definition under the
+  # "uniq"-wrapped registry options in the "modules/module-schema.nix"
+  # file.
   buildClassModule = name: body:
     if lib.isFunction body
     then wrap name body
@@ -93,7 +93,8 @@
     else throw "mkFeature: the body for \"${name}\" must be a function or an attrset with \"options\" and/or \"config\"";
 
   # Register a name under "knownFeatures" and, for each class body it
-  # declares, a gated deferred module under "featureModules".
+  # declares, a deferred module under "featureModules" that applies
+  # only when the feature is in effect.
   mkFeatureRegistration = name: bodies: {
     dotfiles =
       {
@@ -404,9 +405,9 @@ in {
   # The closed pattern lets Nix itself reject any unexpected attribute
   # — a "homeManager" body, say — with its precise unexpected-argument
   # error, keeping configuration out of interests by construction. The
-  # name enters the "knownInterests" registry, which the activation
-  # machinery folds in beside the feature names; a non-null
-  # description enters the "interestDescriptions" registry.
+  # name is added to the "knownInterests" registry, which the
+  # activation machinery folds in beside the feature names; a non-null
+  # description is added to the "interestDescriptions" registry.
   #
   # The optional "implies" key lists other interests expressed
   # whenever this one is — a bundle. Selecting the bundle activates its
@@ -445,7 +446,7 @@ in {
 
   # Value-level combinator for a fragment INSIDE a feature body that
   # applies only when some further features or interests are active,
-  # beyond the file's own activation gate. Intended use:
+  # beyond the file's own activation condition. Intended use:
   #
   #   flakeLib.mkFeature "shell/zsh" {
   #     homeManager = {config, ...}: {
@@ -457,8 +458,8 @@ in {
   #   }
   #
   # The result is a "lib.mkIf"-wrapped value, so it composes with the
-  # "inEffect" gate that the "mkFeature" function already wraps around
-  # the whole body: the fragment takes effect exactly when the
+  # "inEffect" condition that the "mkFeature" function already wraps
+  # around the whole body: the fragment takes effect exactly when the
   # enclosing feature AND every named feature or interest are active.
   # Declare a contingent feature (via the "preconditions" argument of
   # the "mkFeature" function) instead when the pairing deserves its
@@ -469,8 +470,9 @@ in {
   # caller's "config" argument: a name registered nowhere throws —
   # with the same wording as the precondition-hygiene assertions in
   # the "modules/_assertions.nix" file — rather than leaving a
-  # fragment that never applies. The validation runs whenever the gate
-  # is consulted, so it does not stop at the first inactive name.
+  # fragment that never applies. The validation runs whenever the
+  # condition is consulted, so it does not stop at the first inactive
+  # name.
   onlyWhen = config: names: fragment: let
     checkOne = name:
       if builtins.elem name config.dotfiles._knownNames

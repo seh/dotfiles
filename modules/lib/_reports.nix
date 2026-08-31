@@ -1,6 +1,6 @@
 # The latent-feature report: which contingent features are inactive
-# for each evaluator — the machine's own, or one managed or standalone
-# user's — and why.
+# for each evaluator — the machine's own, a managed user's, or one
+# built on its own — and why.
 #
 # The leading underscore in the filename excludes this file from the
 # "import-tree" call in the "../../flake.nix" file; the
@@ -16,7 +16,7 @@
   # The findings for one evaluator, in feature-name order: one per
   # contingent feature that the "partlyMet" predicate below admits,
   # plus one per feature something no selection moves stands over,
-  # which enters the report on that obstacle alone whatever the
+  # which appears in the report on that obstacle alone whatever the
   # predicate makes of its preconditions.
   #
   # The verdict on each precondition entry comes from the "missing"
@@ -67,10 +67,10 @@
       declaredPlatforms = supportedPlatforms.${name} or null;
       # A managed user may not act on a candidate whose every
       # registered body configures the machine: that selection fails
-      # the build, and only the machine's own applies it. A standalone
-      # home configuration writes the machine's own selection list,
-      # where the same selection is accepted, so the mark belongs to
-      # managed users alone.
+      # the build, and only the machine's own applies it. A home
+      # configuration built on its own writes the machine's own
+      # selection list, where the same selection is accepted, so the
+      # mark belongs to managed users alone.
       bodyClasses = featureClasses.${name} or [];
       machineOnly =
         managed
@@ -138,7 +138,7 @@
     contingentReachable = name:
       !(latentFeatures ? ${name}) || reachableByName.${name};
     # One precondition entry beside the verdict on it and the
-    # candidates that would satisfy it. The entry arrives already
+    # candidates that would satisfy it. The entry is already
     # normalized by the "preconditionSet" type, so a group's members
     # stand—and render—sorted, not in declaration order. A group
     # yields one candidate per alternative and a bare name exactly
@@ -168,10 +168,10 @@
     # configuration fails the build for a cycle of bare edges earlier,
     # in the activation walk these records force. A group may not cite
     # a contingent name, so a cycle closed through a group marks an
-    # invalid configuration; it enters this recursion from a system
-    # configuration or a bare instantiation, while a standalone home
-    # configuration forces its assertions on any read and the
-    # group-member assertion fires first.
+    # invalid configuration; this recursion starts from a system
+    # configuration or a bare instantiation, while a home
+    # configuration built on its own forces its assertions on any read
+    # and the group-member assertion fires first.
     reachableByName =
       lib.mapAttrs (
         _name: record:
@@ -220,10 +220,10 @@
       atLeast = lib.min atMost 1;
     in
       finding.metCount <= atMost && finding.metCount >= atLeast;
-    # A feature enters the report when a further selection could still
-    # advance it—some precondition it declares is unsatisfied—or when
-    # something no selection moves stands over it. The standing
-    # obstacles are separate reasons, so such a feature enters the
+    # A feature appears in the report when a further selection could
+    # still advance it—some precondition it declares is unsatisfied—or
+    # when something no selection moves stands over it. The standing
+    # obstacles are separate reasons, so such a feature appears in the
     # report whatever the predicate makes of its preconditions, and
     # reports that obstacle alone.
     # A feature this evaluator could never activate, whatever anyone
@@ -315,16 +315,16 @@
   # them, and yields an empty list rather than halting the report with
   # a missing-attribute error. Reading the "config" attribute costs
   # nothing for a system configuration, whose assertions live in the
-  # system it builds; home-manager instead gates its own "config"
+  # system it builds; home-manager instead puts its own "config"
   # behind an assertion check, so a foreign home configuration whose
   # assertions fail halts the report with that flake's own complaint
-  # before the probe can answer. The probe looks for the computed
-  # record that this flake's activation module alone declares, because
-  # a bare "dotfiles" namespace is a name any flake might use for its
-  # own options. The test sits inside the per-configuration
-  # computation, not in a filter over the output set, so that reading
-  # one configuration's entry leaves every other configuration in that
-  # set unforced.
+  # before the test can answer. The test looks for the computed record
+  # that this flake's activation module alone declares, because a bare
+  # "dotfiles" namespace is a name any flake might use for its own
+  # options. The test sits inside the per-configuration computation,
+  # not in a filter over the output set, so that reading one
+  # configuration's entry leaves every other configuration in that set
+  # unforced.
   evaluatorsWhenBuiltHere = collect: configuration:
     if
       configuration
@@ -337,8 +337,8 @@
   # The evaluators a system configuration contains: the machine's own,
   # followed by one for each managed user's nested home evaluator, in
   # username order. The machine resolves its own class's bodies while
-  # every user resolves home-manager bodies, so the class travels with
-  # each record rather than with the configuration.
+  # every user resolves home-manager bodies, so the class belongs to
+  # each record rather than to the configuration.
   systemEvaluators = class: configuration: let
     inherit (configuration) config;
   in
@@ -393,9 +393,11 @@
   # values beside it.
   configurationWidth = 11;
   evaluatorWidth = 13;
-  # The widest label under a withheld feature, "arrives only through",
-  # plus its colon.
-  withheldWidth = 21;
+  # The widest label under a withheld feature, "active only through",
+  # plus its colon and the two spaces the other stanzas leave. It read
+  # 21 while the longest label with its colon measured 21, so that one
+  # value sat a column right of the other two.
+  withheldWidth = 22;
   findingWidth = 15;
 
   # One field: its label, the padding that sets its value at the
@@ -571,7 +573,7 @@
       entry = evaluator.withheld.${name};
       cause =
         if entry.beyond != []
-        then field withheldWidth "arrives only through" (enumerate entry.beyond)
+        then field withheldWidth "active only through" (enumerate entry.beyond)
         else if entry.forbidden
         # Forbidding is the machine's alone, whichever evaluator reads
         # this, so the path cites the machine. A user has no option of
