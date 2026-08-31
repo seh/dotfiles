@@ -123,7 +123,7 @@
   # selected and forbidden together stays with the machine that
   # authored both lines.
   managedUser = config.dotfiles._ownFeatures != null;
-  # A machine that provisions users, gated the same way as the
+  # A machine that provisions users, behind the same condition as the
   # "contingentExclusionAssertion" assertion in the
   # "modules/_assertions.nix" file. Only the two system class
   # aggregators import the declaration of the "dotfiles.users"
@@ -316,8 +316,8 @@ in {
                       where none does. "own" means the
                       "excludeFeatures" list this evaluator writes for
                       itself; "machine" means the machine's own
-                      "excludeFeatures" list, arriving at a managed
-                      user through the propagation module. Only the
+                      "excludeFeatures" list, which the propagation
+                      module supplies to a managed user. Only the
                       feature list of either author counts: the walk
                       consults each exclusion list for its own kind
                       alone, so a feature's name written into an
@@ -366,9 +366,9 @@ in {
                       "forbidInterests" list is a kind mismatch that
                       fails the build, and one the walk ignores rather
                       than treating as a prohibition. The machine's
-                      forbidding passes through to every managed user
-                      untouched, so a user inherits everything it
-                      forbids. The field can still differ between two
+                      forbidding applies unchanged to every managed
+                      user, so a user inherits everything it forbids.
+                      The field can still differ between two
                       evaluators of one configuration: the
                       "forbidFeatures" option merges its definitions
                       as their union, so a module inside one user's
@@ -432,7 +432,7 @@ in {
                       The withheld features this one lies beyond,
                       empty where the author withheld this feature
                       itself. A feature with entries here is one
-                      nobody wrote down: the walk arrives at it only
+                      nobody wrote down: it becomes active only
                       through a feature some list contains, so
                       removing that entry is what brings this one
                       back.
@@ -515,9 +515,9 @@ in {
               config.dotfiles._featurePreconditions);
           withheldFeatures = let
             # Features the selections asked for that the walk removed.
-            # Contingent features stay out: they arrive from their
-            # preconditions rather than from a selection, and the
-            # "latentFeatures" field accounts for them.
+            # Contingent features stay out: they become active through
+            # their preconditions rather than through a selection, and
+            # the "latentFeatures" field accounts for them.
             names =
               builtins.filter (
                 n: !(isInterest n) && !(builtins.elem n contingentNames)
@@ -531,8 +531,8 @@ in {
               else null;
             isForbidden = name: builtins.elem name host.forbidFeatures;
             # The withheld features an author's own lists contain.
-            # Each of the rest arrives only through one of these, so
-            # citing them says which entry to edit.
+            # Each of the rest becomes active only through one of
+            # these, so citing them says which entry to edit.
             written =
               builtins.filter (n: heldBy n != null || isForbidden n) names;
           in
@@ -801,20 +801,20 @@ in {
   # it also forbids: its other exclusions exist to withhold names from
   # what it provisions, yielding to a user who asks, so judging them
   # by the machine's own activation would call a line doing exactly
-  # its job useless. For a standalone home configuration and for a
-  # managed user, whose exclusion lists bind their author alone, each
-  # candidate name "n" among the exclusions its author wrote is judged
-  # by what dropping that author's own line would change. Where an
-  # entry the machine wrote survives beside it, the answer is nothing,
-  # with no walk needed: the same set prunes either way. Elsewhere
-  # every copy of "n" in force here is the author's own, so the
-  # activation is recomputed with them dropped, every other exclusion
-  # still pruning and everything the machine forbids still folded in;
-  # "n" absent from the result means it would not have been active
-  # anyway. An idle line may be removed, and the warning says so. A
-  # name already reported under the first diagnostic is left out of
-  # this one, since that message already asks its author to drop one
-  # of two lines.
+  # its job useless. For a home configuration built on its own and for
+  # a managed user, whose exclusion lists bind their author alone,
+  # each candidate name "n" among the exclusions its author wrote is
+  # judged by what dropping that author's own line would change. Where
+  # an entry the machine wrote survives beside it, the answer is
+  # nothing, with no walk needed: the same set prunes either way.
+  # Elsewhere every copy of "n" in force here is the author's own, so
+  # the activation is recomputed with them dropped, every other
+  # exclusion still pruning and everything the machine forbids still
+  # folded in; "n" absent from the result means it would not have been
+  # active anyway. An idle line may be removed, and the warning says
+  # so. A name already reported under the first diagnostic is left out
+  # of this one, since that message already asks its author to drop
+  # one of two lines.
   config = let
     hostLabel = describeHost host.name;
     # The unpruned walk also forces the dangling-edge check inside the

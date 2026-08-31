@@ -8,9 +8,9 @@
   # from each source name to the names it implies.
   #
   # Features and interests share this one graph. A feature declares
-  # configuration and an interest is a payload-free want, yet both
-  # enter one activation walk, so an edge here targets a name without
-  # regard to which kind it denotes. The rules that do turn on
+  # configuration and an interest is a payload-free want, yet both are
+  # read by one activation walk, so an edge here targets a name
+  # without regard to which kind it denotes. The rules that do turn on
   # kind—that a feature may not imply an interest, nor an interest a
   # feature—are the business of the assertions in the
   # "modules/_assertions.nix" file, which judge the raw edge registry.
@@ -20,27 +20,27 @@
   #
   # This function filters every target list against the target's
   # declared "supportedPlatforms" list (see the "mkFeature" function):
-  # a name the host's platform does not support never arrives through
-  # the graph, whether via the "all" feature or via a narrower source
-  # such as "desktop". A name with no declaration is available
+  # a name the host's platform does not support never becomes active
+  # through the graph, whether via the "all" feature or via a narrower
+  # source such as "desktop". A name with no declaration is available
   # everywhere. The assertion in the "modules/_assertions.nix" file
   # rejects a host whose activation includes an unsupported name
   # anyway (e.g. by selecting it directly).
   #
   # This function includes a record-form edge ("{ name = "<target>";
   # supportedPlatforms = [<systems>]; }") only when the host's
-  # platform is one of the listed systems; this is how a source brings
-  # along a target on some platforms and not others.
+  # platform is one of the listed systems; this is how a source
+  # implies a target on some platforms and not others.
   #
   # This function computes the "all" feature's targets rather than
   # reading a declared edge: the "all" feature targets every feature
   # that has no class body, is not contingent, and no other feature
   # implies. A body-less bundle therefore folds into the "all" feature
   # the moment it is registered, while a feature some bundle already
-  # implies stays out, arriving through that bundle instead. A feature
-  # that configures something of its own stays out as well, so that
-  # the "all" feature covers the body-less bundles alone and a feature
-  # with a body is one a host asks for deliberately; the
+  # implies stays out, becoming active through that bundle instead. A
+  # feature that configures something of its own stays out as well, so
+  # that the "all" feature covers the body-less bundles alone and a
+  # feature with a body is one a host asks for deliberately; the
   # "featureClasses" argument reports which names have a body. A
   # contingent feature stays out because its preconditions are its
   # only way in, and an interest stays out because a feature's edges
@@ -71,7 +71,7 @@
     impliedEdges ? {},
     # Every registered feature name, interests excluded. The full set
     # the "all" feature draws its computed targets from, so a name
-    # missing here never arrives at a host through "all".
+    # missing here never becomes active on a host through "all".
     knownFeatures ? [],
     # The module classes that register a body for each feature, keyed
     # by feature name and containing only the names that have one.
@@ -125,14 +125,15 @@
       && !(preconditions ? ${name});
     # Every name another bundle implies, read from the raw
     # declarations before platform filtering. Only bundle sources
-    # count. A feature with a body of its own never arrives through
-    # the aggregate, so counting it as a source would leave its target
-    # with no way to arrive at all: the aggregate would drop the
-    # target, and nothing would stand in its place. Reading the raw
-    # declarations keeps membership the same on every platform, since
-    # a target that only a record-form edge for another platform
-    # implies still counts, so a host's platform decides which of the
-    # aggregate's targets survive, never which names it contains.
+    # count. A feature with a body of its own never becomes active
+    # through the aggregate, so counting it as a source would leave
+    # its target with no way to become active at all: the aggregate
+    # would drop the target, and nothing would stand in its place.
+    # Reading the raw declarations keeps membership the same on every
+    # platform, since a target that only a record-form edge for
+    # another platform implies still counts, so a host's platform
+    # decides which of the aggregate's targets survive, never which
+    # names it contains.
     impliedByBundle = lib.unique (
       lib.concatMap (source: map edgeName impliedEdges.${source}) (
         builtins.filter isBundle (builtins.attrNames impliedEdges)
@@ -141,13 +142,14 @@
     # The aggregate's computed targets, in the registration order of
     # the "knownFeatures" list: the bundles no other bundle implies,
     # which are the roots of the graph induced on the bundles. Every
-    # other bundle arrives through one of those roots, since following
-    # the chain of sources upward ends at one in an acyclic graph, so
-    # every bundle can arrive. A contingent feature stays out because
-    # nobody may select one; it activates from its preconditions
-    # instead. Any "implies" list the aggregate itself declares is
-    # discarded by the override below, since this computation is the
-    # sole authority on what the "all" feature implies.
+    # other bundle becomes active through one of those roots, since
+    # following the chain of sources upward ends at one in an acyclic
+    # graph, so every bundle can become active. A contingent feature
+    # stays out because nobody may select one; it activates from its
+    # preconditions instead. Any "implies" list the aggregate itself
+    # declares is discarded by the override below, since this
+    # computation is the sole authority on what the "all" feature
+    # implies.
     aggregateTargets =
       builtins.filter (
         name: isBundle name && !(builtins.elem name impliedByBundle)

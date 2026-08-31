@@ -152,9 +152,9 @@
           default = [];
           description = ''
             The features this user selects, from the finest single
-            concern to a bundle that only brings others along.
-            Expansion starts from these selected names together with
-            the "interests" list.
+            concern to a bundle that only implies others. Expansion
+            starts from these selected names together with the
+            "interests" list.
           '';
         };
 

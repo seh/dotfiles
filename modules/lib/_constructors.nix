@@ -27,7 +27,7 @@
 # evaluator. All identity and behavior assignments (e.g. the
 # "dotfiles.users.<name>.identity.email",
 # "dotfiles.users.<name>.features", and "dotfiles.knownFeatures"
-# options) happen inside the modules the consumer passes through the
+# options) happen inside the modules the consumer supplies to the
 # "modules = [...]" argument, flowing through the target evaluator's
 # module-system merge where those fields are actually read. That keeps
 # assignments close to the evaluator that reads them, with no
@@ -109,12 +109,11 @@
   # The selections a user writes that "forbidFeatures" or
   # "forbidInterests" overrules, one entry per pair of a selected name
   # and whichever option forbids it. Both of the user's own lists are
-  # read together, since a name written under either enters the same
-  # activation walk.
-  # What forbidding costs one user. Both warnings below draw on this:
-  # a user who writes a forbidden name and a user whose bundle entails
-  # one lose the same names, so they deserve the same account of the
-  # loss.
+  # read together, since a name written under either is read by the
+  # same activation walk. What forbidding costs one user. Both
+  # warnings below draw on this: a user who writes a forbidden name
+  # and a user whose bundle entails one lose the same names, so they
+  # deserve the same account of the loss.
   forbidCost = {
     closureOf,
     featureClasses,
@@ -129,12 +128,12 @@
     # Everything forbidding costs: the walk without it, less the walk
     # with it.
     withheld = lib.subtractLists (closureOf written (ownExclusions ++ forbidden)) entailed;
-    # A feature whose body serves a system class alone never reaches a
-    # user's home environment, so naming it as this user's loss would
-    # name something they were never going to receive. The
+    # A feature whose body serves a system class alone never applies
+    # in a user's home environment, so naming it as this user's loss
+    # would name something they were never going to receive. The
     # "userSystemOnlyFeatureAssertion" assertion fails the build for a
     # user who selects one directly, for that same reason.
-    reachesUser = name: let
+    servesUser = name: let
       classes = featureClasses.${name} or [];
     in
       classes == [] || builtins.elem "homeManager" classes;
@@ -143,10 +142,10 @@
     # The withheld names lying beyond one forbidden name: what goes
     # with it. A name the machine forbids outright draws its own
     # warning and stays out, which also keeps the closing advice
-    # true—every name left arrives once nothing forbidden lies on the
-    # way to it. A name leaves the walk only when each way to it
-    # crosses a forbidden vertex, so every withheld name lies beyond
-    # at least one of them and some warning names it.
+    # true—every name left becomes active once nothing forbidden lies
+    # on the way to it. A name leaves the walk only when each way to
+    # it crosses a forbidden vertex, so every withheld name lies
+    # beyond at least one of them and some warning names it.
     beyond = name:
       builtins.filter (
         n:
@@ -154,7 +153,7 @@
           != name
           && builtins.elem n withheld
           && !(builtins.elem n forbidden)
-          && reachesUser n
+          && servesUser n
       )
       (closureFrom [name]);
   };
@@ -176,7 +175,7 @@
   describeCollateral = alsoWithheld:
     if alsoWithheld == []
     then ""
-    else " Withholding it withholds ${enumerateNames alsoWithheld} as well, which this user's selections activate only through a forbidden name, and each of those arrives once nothing forbidden lies on the way to it.";
+    else " Withholding it withholds ${enumerateNames alsoWithheld} as well, which this user's selections activate only through a forbidden name, and each of those becomes active once nothing forbidden lies on the way to it.";
 
   # Report one overruled selection to the user who wrote it.
   # Forbidding is absolute and the machine's owner is entitled to it,
@@ -197,7 +196,7 @@
   # the user wrote directly is left out, since the
   # "overruledSelections" function above already covers it and one
   # withheld name deserves one warning; a name the user's own
-  # exclusions prune never enters the closure, so a user who declines
+  # exclusions prune is never in the closure, so a user who declines
   # such a name hears nothing. Each entry lists the written selections
   # whose own closures contain the name, for the warning to cite.
   overruledEntailments = cost: host:
@@ -223,7 +222,7 @@
   # identifies the written selections that entail it instead—the name
   # is reachable from at least one of them by construction, so the
   # "through" list is never empty—and says that the rest of what those
-  # selections entail still arrives.
+  # selections entail is still active.
   describeOverruledEntailment = hostName: userName: {
     alsoWithheld,
     name,
@@ -270,10 +269,10 @@
   # Layering lets an exclusion apply in three ways, applied alike to
   # the machine's features and interests:
   #   1. The machine's "forbidFeatures" and "forbidInterests" lists
-  #      pass through untouched—the "//" operator below leaves them
-  #      alone—and prune every walk, so a user who asks for a
-  #      forbidden thing—selecting it directly, or selecting a bundle
-  #      that entails it—still does not receive it. That user's own
+  #      apply unchanged—the "//" operator below leaves them alone—and
+  #      prune every walk, so a user who asks for a forbidden
+  #      thing—selecting it directly, or selecting a bundle that
+  #      entails it—still does not receive it. That user's own
   #      evaluator emits a warning saying so, since forbidding is the
   #      one place where this flake sets aside what a person wrote.
   #   2. The machine's "excludeFeatures" and "excludeInterests" lists
@@ -399,7 +398,7 @@
   # Argument validation shared by the three constructors below,
   # checking each against its contract in this flake's vocabulary.
   # Each constructor forwards every argument it does not consume
-  # itself, so an unrecognized name passes through to home-manager,
+  # itself, so an unrecognized name goes on to home-manager,
   # nix-darwin, or NixOS, where the complaint speaks that evaluator's
   # vocabulary and specifies neither the constructor called nor what
   # it would have accepted. A required name is checked here too,

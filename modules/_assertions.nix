@@ -94,7 +94,7 @@
   # record at the machine level; each one but "forbidFeatures" and
   # "forbidInterests" also has a per-user counterpart under the
   # "dotfiles.users.<name>" record. The messages below build both
-  # paths from a list's bare name, since a name arriving at a managed
+  # paths from a list's bare name, since a name read in a managed
   # user's nested evaluator may have been written at either surface.
   hostOption = attr: "dotfiles.host.${attr}";
   userOption = attr: "dotfiles.users.<name>.${attr}";
@@ -399,18 +399,18 @@
   # selecting one would activate it in an inconsistent state, without
   # the guarantee its body is written against. Both selection lists
   # that feed the walk are checked, since a contingent name written
-  # under the "interests" list would enter the walk just the same; the
-  # role-mismatch assertion above objects to the misfiling, and this
-  # one to the selection. Every selection is authored, so the check
-  # applies uniformly, with nothing suppressing it: the machine's own
-  # lists in a system evaluator, and the machine's layered with that
-  # user's inside a managed user's evaluator. The message specifies
-  # both surfaces because a name arriving at a nested per-user
-  # evaluator may have been written at either.
+  # under the "interests" list would be read by the walk just the
+  # same; the role-mismatch assertion above objects to the misfiling,
+  # and this one to the selection. Every selection is authored, so the
+  # check applies uniformly, with nothing suppressing it: the
+  # machine's own lists in a system evaluator, and the machine's
+  # layered with that user's inside a managed user's evaluator. The
+  # message specifies both surfaces because a name read in a nested
+  # per-user evaluator may have been written at either.
   #
   # The message states the preconditions this evaluator leaves unmet,
   # since those are what a reader selects in the rejected feature's
-  # place. Each one arrives with its kind, because a feature and an
+  # place. Each one is stated with its kind, because a feature and an
   # interest are selected under different lists, and a member of an
   # "anyOf" group stands apart from a plain conjunct, because
   # activating any one member of a group satisfies it.
@@ -495,10 +495,10 @@
   # non-empty—the evaluator that provisions other people. A managed
   # user's nested evaluator never receives that registry's
   # declaration, and neither does a home configuration serving one
-  # person alone, so a user's own exclusion stands. Gating on it also
-  # surfaces one machine-level mistake once rather than once per
-  # managed user, and lets the message point at the machine's own list
-  # exactly.
+  # person alone, so a user's own exclusion stands. Conditioning the
+  # check on it also surfaces one machine-level mistake once rather
+  # than once per managed user, and lets the message point at the
+  # machine's own list exactly.
   #
   # Deferred alternative: an administrator may legitimately want
   # features A and B but not C, where C activates automatically from
@@ -684,9 +684,9 @@
     then classes
     else [];
   # Both lists that a user writes into the walk are judged, since a
-  # system-only feature name written under the "interests" list enters
-  # the walk just the same; the role-mismatch assertion above objects
-  # to the misfiling, and this one to the selection.
+  # system-only feature name written under the "interests" list is
+  # read by the walk just the same; the role-mismatch assertion above
+  # objects to the misfiling, and this one to the selection.
   userSystemOnlyFeatures =
     lib.concatMap (
       user:

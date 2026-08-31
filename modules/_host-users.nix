@@ -33,11 +33,11 @@ in {
       default = null;
       description = ''
         The primary user for this host. On nix-darwin, this is
-        propagated to "system.primaryUser" and is required: when
-        more than one user is defined, it must be set explicitly;
-        when exactly one user is defined and this option is unset,
-        it defaults to that user's name. On NixOS and standalone
-        home-manager, this option is not enforced.
+        propagated to "system.primaryUser" and is required: when more
+        than one user is defined, it must be set explicitly; when
+        exactly one user is defined and this option is unset, it
+        defaults to that user's name. On NixOS and for a home
+        configuration built on its own, this option is not enforced.
       '';
     };
 
@@ -62,7 +62,7 @@ in {
     # withholds every system-class feature, since a system body
     # follows the machine's own selections alone. A consumer who
     # writes all the selections under the "dotfiles.users" registry
-    # arrives there without noticing, so this warning states it. Such
+    # ends up there without noticing, so this warning states it. Such
     # a machine is legitimate—one that exists only to provision its
     # users' homes—which is why this is a warning rather than an
     # error.
