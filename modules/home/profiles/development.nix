@@ -59,6 +59,10 @@ flakeLib.mkProfile "development" {
 
       go = {
         enable = true;
+        # Home Manager's "programs.go" module selects the "go"
+        # package, which nixpkgs binds to whichever release it treats
+        # as current. Take the newest release it packages instead.
+        package = lib.mkDefault pkgs.go_latest;
       };
 
       ripgrep = {
