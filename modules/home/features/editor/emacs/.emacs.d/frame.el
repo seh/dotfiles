@@ -5,7 +5,7 @@
   (let ((pos (frame-parameter (or frame (selected-frame)) 'left)))
     (if (consp pos)
         ;; Assume the car is '+.
-        (- (second pos))
+        (- (cadr pos))
       pos)))
 
 
