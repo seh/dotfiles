@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* calendar.el
 ;:*=======================
 (eval-after-load "calendar"

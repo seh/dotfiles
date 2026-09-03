@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* lisp.el
 ;:*=======================
 (defmacro make-key-inserter (def)
@@ -44,12 +45,6 @@
    (setq slime-lisp-implementations
          ;; Usually this is "/usr/local/bin/sbcl".
          '((sbcl ("~/.nix-profile/bin/sbcl"))))))
-
-
-(defun translate-native-to-cygwin-filename (filename)
-  ;; Force interpretation here:
-  (let ((running-on-cygwin-p t))
-    (translate-path-canonical filename)))
 
 
 (eval-after-load "hyperspec"

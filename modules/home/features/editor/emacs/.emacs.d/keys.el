@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* keys.el
 ;:*=======================
 (define-key global-map [(control x) (c)] 'copy-current-line)
