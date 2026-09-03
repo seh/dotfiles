@@ -7,7 +7,7 @@
   :mode (("\\.org\\'" . org-mode))
   :config
   (setq org-directory "~/Documents"
-        org-catch-invisible-edits 'smart
+        org-fold-catch-invisible-edits 'smart
         org-special-ctrl-a/e t
         org-agenda-skip-deadline-if-done t
         org-agenda-skip-scheduled-if-done t
@@ -51,7 +51,7 @@
 (use-package org-roam
   :config
   (setq org-roam-directory (expand-file-name "org-roam" org-directory))
-  (org-roam-setup)
+  (org-roam-db-autosync-mode)
   :bind
   (("C-c n f" . org-roam-node-find)
    ("C-c n i" . org-roam-node-insert)

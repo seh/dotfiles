@@ -21,12 +21,7 @@
 
 
 (when running-on-mswindows-p
-  (setq w32-pass-alt-to-system t)
-  (let ((domain-name-suffix ".sehlabs.com"))
-    (unless (or running-on-cygwin-p
-                (string-match (regexp-quote domain-name-suffix) system-name))
-      (setq system-name
-            (concat (downcase system-name) domain-name-suffix)))))
+  (setq w32-pass-alt-to-system t))
 
 
 (eval-after-load "nnheader"

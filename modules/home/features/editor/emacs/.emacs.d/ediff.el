@@ -18,7 +18,7 @@
 (defvar *jj-ediff-merge-quit-sentinel-file* nil)
 
 (defun seh-jj-resolve-ediff-quit-merge-hook ()
-  (when-let ((f *jj-ediff-merge-quit-sentinel-file*))
+  (when-let* ((f *jj-ediff-merge-quit-sentinel-file*))
     (delete-file f)))
 
 (add-hook 'ediff-quit-merge-hook #'seh-jj-resolve-ediff-quit-merge-hook 99)
