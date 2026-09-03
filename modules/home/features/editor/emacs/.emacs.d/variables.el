@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* variables.el
 ;:*=======================
 (defconst SEH-tab-width 4)

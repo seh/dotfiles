@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* paths.el
 ;:*=======================
 (defconst SEH-install-prefix

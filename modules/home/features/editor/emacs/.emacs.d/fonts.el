@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* fonts.el
 ;:*
 ;:* Much of this file is borrowed from Robin S. Socha <robin@socha.net>:

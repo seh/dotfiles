@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* markdown.el
 ;:*=======================
 (add-to-list 'auto-mode-alist '("\\.text\\'" . markdown-mode))

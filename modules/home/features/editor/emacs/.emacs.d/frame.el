@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* frame.el
 ;:*=======================
 (defun frame-x-offset (&optional frame)

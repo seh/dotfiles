@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* server.el
 ;:*=======================
 ;; See http://www.emacswiki.org/cgi-bin/wiki/EmacsClient#toc24.

@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* aquamacs.el
 ;:*=======================
 (cua-mode 0)
