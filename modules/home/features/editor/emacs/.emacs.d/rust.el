@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* rust.el
 ;:*=======================
 (eval-after-load "rust-mode"

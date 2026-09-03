@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* sgml.el
 ;:*=======================
 ;:* the PSGML package

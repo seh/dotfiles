@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* ediff.el
 ;:*=======================
 ;; See the `ediff-toggle-show-clashes-only' function, bound to `$$' in

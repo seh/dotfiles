@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* mail-news.el
 ;:*=======================
 ;; Use local MTA configuration to handle external identity.

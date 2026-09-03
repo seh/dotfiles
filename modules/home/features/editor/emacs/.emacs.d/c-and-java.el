@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* c-and-java.el
 ;:*=======================
 ;;;** 'c++-mode' package

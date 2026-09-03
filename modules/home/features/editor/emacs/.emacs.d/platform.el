@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* platform.el
 ;:*=======================
 (defvar running-on-cygwin-p (memq system-type '(cygwin cygwin32)))

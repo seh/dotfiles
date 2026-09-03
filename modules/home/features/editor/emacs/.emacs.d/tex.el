@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* tex.el
 ;:*=======================
 ;:* Initialize AUC Tex - not the "default" TeX modes

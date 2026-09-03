@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* personal.el
 ;:*=======================
 ;; If it's not initialized from the system:

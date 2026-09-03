@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* go.el
 ;:*=======================
 ;;;** 'go-mode' package

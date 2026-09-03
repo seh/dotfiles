@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* misc-funcs.el
 ;:*=======================
 (defun copy-current-line ()
@@ -102,7 +103,7 @@ With a prefix argument, prompt for the underline string."
                       ((= 1 slen)
                        (insert-char (aref str 0) len))
                       (t
-                       (dotimes (i (/ len slen))
+                       (dotimes (_ (/ len slen))
                          (insert str))
                        (nonzero-bind rem (mod len slen)
                                      (insert-string (substring str 0 rem)))))))))
@@ -110,7 +111,7 @@ With a prefix argument, prompt for the underline string."
 
 (defun replace-env-var-substr (var-name old-str new-str)
   "Replace old-str with new-str in environment variable var-name"
-  (interactive (let (var from to)
+  (interactive (let (var from)
 		 (setq var (read-string "Variable name: "))
 		 (setq from (read-string "Substring to replace: "))
 		 (list var from (read-string (format "Replace %s with: " from)))))

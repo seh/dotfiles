@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 ;:* packages.el
 ;:*=======================
 ;; * The `package' system itself
