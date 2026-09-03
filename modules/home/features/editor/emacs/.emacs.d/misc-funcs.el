@@ -4,7 +4,7 @@
 (defun copy-current-line ()
   "Copy the current line into the kill buffer."
   (interactive)
-  (copy-region-as-kill (point-at-bol) (point-at-eol)))
+  (copy-region-as-kill (line-beginning-position) (line-end-position)))
 
 (defun vi-open-line-above ()
   "Insert a newline above the current line and put point at beginning."
@@ -35,34 +35,24 @@ With a prefix argument, insert a newline above the current line."
   (interactive)
   (recenter 0))
 
-(defun other-window-backward (&optional n)
-  "Select Nth previous window"
-  (interactive "p")
-  (other-window (- n)))
-
 (defun forward-line-skipping-blanks (&optional n)
-  "Move ARG lines forward (backward if ARG is negative), skipping blank lines along the way."
+  "Move N lines forward, or backward if N is negative.
+Blank lines passed along the way do not count toward N."
   (interactive "p")
   (let ((cn 0))
     (while (< cn n)
       (forward-line)
-      (while (string-match "^\\s-*$" (buffer-string (point-at-bol)
-                                                    (point-at-eol)))
+      (while (and (not (eobp))
+                  (looking-at-p "[[:space:]]*$"))
         (forward-line))
       (incf cn))))
 
 (defun font-lock-and-fontify ()
-  "Turn on font-lock mode, or call font-lock-fontify-buffer"
+  "Turn on Font Lock mode, or refontify the buffer if it is already on."
   (interactive)
   (if (null font-lock-mode)
       (font-lock-mode t)
-    (font-lock-fontify-buffer)))
-
-(defun toggle-truncate-lines ()
-  "Toggle word-wrap mode"
-  (interactive)
-  (setq truncate-lines (not truncate-lines))
-  (recenter))
+    (font-lock-ensure)))
 
 (defun remove-trailing-spaces ()
   "Remove trailing spaces in the whole buffer."
@@ -106,25 +96,19 @@ With a prefix argument, prompt for the underline string."
                        (dotimes (_ (/ len slen))
                          (insert str))
                        (nonzero-bind rem (mod len slen)
-                                     (insert-string (substring str 0 rem)))))))))
+                                     (insert (substring str 0 rem)))))))))
 
 
 (defun replace-env-var-substr (var-name old-str new-str)
-  "Replace old-str with new-str in environment variable var-name"
-  (interactive (let (var from)
-		 (setq var (read-string "Variable name: "))
-		 (setq from (read-string "Substring to replace: "))
-		 (list var from (read-string (format "Replace %s with: " from)))))
+  "Replace OLD-STR with NEW-STR in the environment variable VAR-NAME."
+  (interactive (let* ((var (read-string "Variable name: "))
+                      (from (read-string "Substring to replace: ")))
+                 (list var from
+                       (read-string (format "Replace %s with: " from)))))
   (let ((var-val (getenv var-name)))
-    (if (not var-val)
-	(message (format "Variable %s's value is nil." var-name))
-      (set-buffer (get-buffer-create " *pathbuf*"))
-      (insert-string var-val)
-      (goto-char (point-min))
-      (while (search-forward old-str nil t)
-	(replace-match new-str))
-      (setenv var-name (buffer-string (point-min) (point-max)))
-      (kill-buffer nil))))
+    (if var-val
+        (setenv var-name (string-replace old-str new-str var-val))
+      (message "Variable %s's value is nil." var-name))))
 
 
 ;(defconst resolve-rev-var "RESOLVE_REV")
@@ -147,9 +131,9 @@ With a prefix argument, prompt for the underline string."
   (insert "TODO(" (user-login-name) "): "))
 
 (defun make-include-guard-name (basename)
-  (replace-in-string (upcase (replace-in-string basename "[-.]" "_"))
-                     "^\\(_+\\)\\(.+\\)"
-                     "\\2\\1"))
+  (replace-regexp-in-string
+   "^\\(_+\\)\\(.+\\)" "\\2\\1"
+   (upcase (replace-regexp-in-string "[-.]" "_" basename))))
 
 (defun default-include-guard-name ()
   (make-include-guard-name (buffer-name)))
@@ -170,11 +154,11 @@ With a prefix argument, prompt for the guard name."
       (error "Guard name cannot be nil."))
   (save-excursion
     (goto-char (point-min))
-    (while (forward-comment))
-    (insert-string (format "#ifndef %s\n#define %s\n\n" guardname guardname))
+    (forward-comment (buffer-size))
+    (insert (format "#ifndef %s\n#define %s\n\n" guardname guardname))
     (goto-char (point-max))
     (delete-blank-lines)
-    (insert-string (concat "\n\n#endif	// " guardname))))
+    (insert (concat "\n\n#endif	// " guardname))))
 
 
 (defun insert-matching-conditional-comment (&optional quiet)
@@ -190,8 +174,8 @@ If the optional argument QUIET is non-nil, no messages will be printed."
           (c-forward-conditional 1 -1)
           (backward-char)
           (indent-for-comment)
-          (insert-string guardname)
+          (insert guardname)
           (unless quiet
-            (message "Matched at line %d." (line-number)))))))
+            (message "Matched at line %d." (line-number-at-pos)))))))
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "miscellaneous functions initialized")

@@ -10,9 +10,10 @@
 ;; Adapted from https://github.com/pkkm/.emacs.d/blob/94b49aae2e48d1a54bac05f2285629a49e1a4e7d/conf/view/color-theme.el#L3-L9:
 (defvar after-enable-theme-hook nil
   "Hook run after a color theme is enabled using `enable-theme'.")
-(defadvice enable-theme (after run-after-enable-theme-hook activate)
+(defun run-after-enable-theme-hook (&rest _)
   "Run `after-enable-theme-hook'."
   (run-hooks 'after-enable-theme-hook))
+(advice-add 'enable-theme :after #'run-after-enable-theme-hook)
 
 (eval-after-load "font-lock"
   '(progn

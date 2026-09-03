@@ -292,8 +292,7 @@
 ;:* sh-mode
 (use-package sh-script
   :config
-  (setq sh-basic-offset 2
-        sh-indentation 2))
+  (setq sh-basic-offset 2))
 
 
 ;:*=======================
