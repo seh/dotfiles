@@ -25,6 +25,10 @@
   (load-file (expand-file-name file user-init-dir)))
 
 ;:*=======================
+(load-user-file "activation-names.el")
+(load-user-file "activation.el")
+
+;:*=======================
 (load-user-file "packages.el")
 
 ;:*=======================
@@ -66,10 +70,19 @@
 (load-user-file "c-and-java.el")
 
 ;:*=======================
-(load-user-file "go.el")
+(when (seh-activation-name-in-effect-p "lang/go")
+  (load-user-file "go.el"))
+
+;:*=======================
+(when (seh-activation-name-in-effect-p "lang/javascript")
+  (load-user-file "javascript.el"))
 
 ;:*=======================
 (load-user-file "lisp.el")
+
+;:*=======================
+(when (seh-activation-name-in-effect-p "lang/lua")
+  (load-user-file "lua.el"))
 
 ;:*=======================
 ;(load-user-file "clojure.el")
@@ -78,10 +91,12 @@
 ;(load-user-file "sgml-xml.el")
 
 ;:*=======================
-(load-user-file "markdown.el")
+(when (seh-activation-name-in-effect-p "lang/markdown")
+  (load-user-file "markdown.el"))
 
 ;:*=======================
-(load-user-file "rust.el")
+(when (seh-activation-name-in-effect-p "lang/rust")
+  (load-user-file "rust.el"))
 
 ;:*=======================
 (load-user-file "tex.el")
