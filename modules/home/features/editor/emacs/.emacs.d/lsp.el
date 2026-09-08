@@ -64,15 +64,12 @@
              ;; This is 4 by default.
              lua-ts-indent-offset 2)
             (with-eval-after-load 'lsp-lua
-              (let ((program-path (file-name-concat (expand-file-name "~/.nix-profile")
-                                                    "bin"
-                                                    "emmylua_ls")))
-                (setq lsp-clients-emmy-lua-command program-path)
-                ;; NB: The registered LSP client's connection's test
-                ;; command assumes that it's launching the program by
-                ;; way of a hosting JRE.
-                (defun lsp-clients-emmy-lua-test ()
-                  (executable-find program-path))))
+              (setq lsp-clients-emmy-lua-command "emmylua_ls")
+              ;; NB: The registered LSP client's connection's test
+              ;; command assumes that it's launching the program by
+              ;; way of a hosting JRE.
+              (defun lsp-clients-emmy-lua-test ()
+                (executable-find lsp-clients-emmy-lua-command)))
             ;; Markdown
             (add-to-list 'lsp-language-id-configuration '(markdown-mode . "markdown"))
             (lsp-register-client (make-lsp-client
