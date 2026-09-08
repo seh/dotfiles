@@ -207,6 +207,12 @@ flakeLib.mkFeature "editor/emacs" {
               rust-mode
               rustic
             ]
+            ++ lib.optionals (inEffect "lang/zig") [
+              zig-ts-mode
+            ]
+            ++ lib.optionals (inEffect "lang/zig" && !(inEffect "lang/zig/ls")) [
+              reformatter
+            ]
             ++ lib.optionals (lib.any inEffect [
               "model-agent/claude"
               "model-agent/copilot"

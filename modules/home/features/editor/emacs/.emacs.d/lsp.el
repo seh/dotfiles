@@ -163,7 +163,8 @@ Each NAME is a literal, so the compiler checks it."
                                     lua-ts-mode))
    ("lang/markdown/tools"          (markdown-mode))
    ("lang/rust/tools"              (rustic-mode) t)
-   ("lang/shell/ls"                (bash-ts-mode))))
+   ("lang/shell/ls"                (bash-ts-mode))
+   ("lang/zig/ls"                  (zig-ts-mode))))
 
 (use-package lsp-ivy
   :if (seh-activation-name-in-effect-p "dev/language-servers")
