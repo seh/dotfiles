@@ -21,7 +21,8 @@
   (when-let* ((f *jj-ediff-merge-quit-sentinel-file*))
     (delete-file f)))
 
-(add-hook 'ediff-quit-merge-hook #'seh-jj-resolve-ediff-quit-merge-hook 99)
+(when (seh-activation-name-in-effect-p "vcs/jujutsu")
+  (add-hook 'ediff-quit-merge-hook #'seh-jj-resolve-ediff-quit-merge-hook 99))
 ;; TODO(seh): Is this one not already registered by default?
 (add-hook 'ediff-quit-merge-hook #'ediff-maybe-save-and-delete-merge)
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
