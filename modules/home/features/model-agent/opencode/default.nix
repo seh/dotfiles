@@ -27,6 +27,17 @@ flakeLib.mkFeature "model-agent/opencode" {
             ];
             extensions = [".go"];
           };
+          zig = {
+            command = [
+              (lib.getExe pkgs.zig)
+              "fmt"
+              "$FILE"
+            ];
+            extensions = [
+              ".zig"
+              ".zon"
+            ];
+          };
         };
       };
       skills = lib.genAttrs [
