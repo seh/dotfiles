@@ -20,11 +20,9 @@ flakeLib.mkFeature "model-agent/claude" {
     };
 
     enabledPluginIDs =
-      lib.optionals (config.dotfiles._host.inEffect "dev/language-servers") [
-        "gopls-lsp@claude-plugins-official"
-        "typescript-lsp@claude-plugins-official"
-      ]
-      ++ lib.optional (config.dotfiles._host.inEffect "lang/rust") "rust-analyzer-lsp@claude-plugins-official";
+      lib.optional (config.dotfiles._host.inEffect "lang/go/ls") "gopls-lsp@claude-plugins-official"
+      ++ lib.optional (config.dotfiles._host.inEffect "lang/javascript/ls") "typescript-lsp@claude-plugins-official"
+      ++ lib.optional (config.dotfiles._host.inEffect "lang/rust/tools") "rust-analyzer-lsp@claude-plugins-official";
   in {
     programs.claude-code = {
       enable = lib.mkDefault true;
@@ -33,8 +31,8 @@ flakeLib.mkFeature "model-agent/claude" {
         # NB: We configure Lua via "lspServers" rather than enabling
         # "lua-lsp@claude-plugins-official" because that marketplace
         # plugin invokes "lua-language-server" (the LuaLS project),
-        # while our "lang/lua" feature installs "emmylua-ls" instead.
-        (flakeLib.onlyWhen config ["lang/lua"] {
+        # while our "lang/lua/ls" feature installs "emmylua-ls" instead.
+        (flakeLib.onlyWhen config ["lang/lua/ls"] {
           lua = {
             command = lib.getExe pkgs.emmylua-ls;
             extensionToLanguage = {
@@ -42,36 +40,17 @@ flakeLib.mkFeature "model-agent/claude" {
             };
           };
         })
-        (flakeLib.onlyWhen config ["dev/language-servers"] {
-          bash = {
-            command = lib.getExe pkgs.bash-language-server;
-            args = ["start"];
+        (flakeLib.onlyWhen config ["cloud/terraform/ls"] {
+          terraform = {
+            command = lib.getExe pkgs.terraform-ls;
+            args = ["serve"];
             extensionToLanguage = {
-              ".bash" = "shellscript";
-              ".sh" = "shellscript";
+              ".tf" = "terraform";
+              ".tfvars" = "terraform";
             };
           };
-          json = {
-            command = lib.getExe pkgs.vscode-json-languageserver;
-            args = ["--stdio"];
-            extensionToLanguage = {
-              ".json" = "json";
-              ".jsonc" = "jsonc";
-            };
-          };
-          jsonnet = {
-            command = lib.getExe pkgs.jsonnet-language-server;
-            extensionToLanguage = {
-              ".jsonnet" = "jsonnet";
-              ".libsonnet" = "jsonnet";
-            };
-          };
-          nix = {
-            command = lib.getExe pkgs.nixd;
-            extensionToLanguage = {
-              ".nix" = "nix";
-            };
-          };
+        })
+        (flakeLib.onlyWhen config ["dev/bazel/ls"] {
           starlark = {
             command = lib.getExe pkgs.starpls;
             args = ["server"];
@@ -81,12 +60,20 @@ flakeLib.mkFeature "model-agent/claude" {
               ".star" = "starlark";
             };
           };
-          terraform = {
-            command = lib.getExe pkgs.terraform-ls;
-            args = ["serve"];
+        })
+        (flakeLib.onlyWhen config ["dev/language-servers/formats"] {
+          json = {
+            command = lib.getExe pkgs.vscode-json-languageserver;
+            args = ["--stdio"];
             extensionToLanguage = {
-              ".tf" = "terraform";
-              ".tfvars" = "terraform";
+              ".json" = "json";
+              ".jsonc" = "jsonc";
+            };
+          };
+          nix = {
+            command = lib.getExe pkgs.nixd;
+            extensionToLanguage = {
+              ".nix" = "nix";
             };
           };
           toml = {
@@ -102,6 +89,25 @@ flakeLib.mkFeature "model-agent/claude" {
             extensionToLanguage = {
               ".yaml" = "yaml";
               ".yml" = "yaml";
+            };
+          };
+        })
+        (flakeLib.onlyWhen config ["lang/jsonnet/ls"] {
+          jsonnet = {
+            command = lib.getExe pkgs.jsonnet-language-server;
+            extensionToLanguage = {
+              ".jsonnet" = "jsonnet";
+              ".libsonnet" = "jsonnet";
+            };
+          };
+        })
+        (flakeLib.onlyWhen config ["lang/shell/ls"] {
+          bash = {
+            command = lib.getExe pkgs.bash-language-server;
+            args = ["start"];
+            extensionToLanguage = {
+              ".bash" = "shellscript";
+              ".sh" = "shellscript";
             };
           };
         })
@@ -126,32 +132,30 @@ flakeLib.mkFeature "model-agent/claude" {
               ];
               receiveInputFilePath = ''"$(${jq} --raw-output '.tool_input.file_path')"'';
               languages =
-                [
-                  {
-                    # Bazel files
-                    patterns = [
-                      "*.bazel"
-                      "*.bzl"
-                    ];
-                    command = ''${lib.getExe' pkgs.buildifier "buildifier"} ${receiveInputFilePath}'';
-                  }
-                  {
-                    # CUE files
-                    patterns = ["*.cue"];
-                    command = ''${lib.getExe pkgs.cue} fmt --files -- ${receiveInputFilePath}'';
-                  }
-                  {
-                    # Go files
-                    patterns = ["*.go"];
-                    command = ''${lib.getExe pkgs.gofumpt} -w ${receiveInputFilePath}'';
-                  }
-                ]
-                ++ lib.optional (config.dotfiles._host.inEffect "lang/lua") {
+                lib.optional (config.dotfiles._host.inEffect "dev/bazel") {
+                  # Bazel files
+                  patterns = [
+                    "*.bazel"
+                    "*.bzl"
+                  ];
+                  command = ''${lib.getExe' pkgs.buildifier "buildifier"} ${receiveInputFilePath}'';
+                }
+                ++ lib.optional (config.dotfiles._host.inEffect "lang/cue/tools") {
+                  # CUE files
+                  patterns = ["*.cue"];
+                  command = ''${lib.getExe pkgs.cue} fmt --files -- ${receiveInputFilePath}'';
+                }
+                ++ lib.optional (config.dotfiles._host.inEffect "lang/go/tools") {
+                  # Go files
+                  patterns = ["*.go"];
+                  command = ''${lib.getExe pkgs.gofumpt} -w ${receiveInputFilePath}'';
+                }
+                ++ lib.optional (config.dotfiles._host.inEffect "lang/lua/tools") {
                   # Lua files
                   patterns = ["*.lua"];
                   command = ''${lib.getExe pkgs.stylua} --config-path ${config.dotfiles.lang.lua.tools.styluaConfigFile} -- ${receiveInputFilePath}'';
                 }
-                ++ lib.optional (config.dotfiles._host.inEffect "lang/markdown") {
+                ++ lib.optional (config.dotfiles._host.inEffect "lang/markdown/tools") {
                   # Markdown files
                   patterns = ["*.md"];
                   # Specify the configuration file path explicitly, as
@@ -167,15 +171,15 @@ flakeLib.mkFeature "model-agent/claude" {
                     patterns = ["*.nix"];
                     command = ''${lib.getExe pkgs.alejandra} --quiet ${receiveInputFilePath}'';
                   }
-                  {
-                    # Terraform files
-                    patterns = [
-                      "*.tf"
-                      "*.tfvars"
-                    ];
-                    command = ''${lib.getExe' pkgs.tenv "terraform"} fmt ${receiveInputFilePath}'';
-                  }
-                ];
+                ]
+                ++ lib.optional (config.dotfiles._host.inEffect "cloud/terraform") {
+                  # Terraform files
+                  patterns = [
+                    "*.tf"
+                    "*.tfvars"
+                  ];
+                  command = ''${lib.getExe' pkgs.tenv "terraform"} fmt ${receiveInputFilePath}'';
+                };
               mkEventHandlers = event:
                 lib.concatMap (
                   lang:
