@@ -102,6 +102,10 @@ The `load' function prefers a compiled file beside the source."
   (load-user-file "rust"))
 
 ;:*=======================
+(when (seh-activation-name-in-effect-p "lang/zig")
+  (load-user-file "zig"))
+
+;:*=======================
 (load-user-file "tex")
 
 ;:*=======================
