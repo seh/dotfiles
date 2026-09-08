@@ -180,6 +180,14 @@ flakeLib.mkFeature "model-agent/claude" {
                     "*.tfvars"
                   ];
                   command = ''${lib.getExe' pkgs.tenv "terraform"} fmt ${receiveInputFilePath}'';
+                }
+                ++ lib.optional (config.dotfiles._resolved.inEffect "lang/zig/tools") {
+                  # Zig files
+                  patterns = [
+                    "*.zig"
+                    "*.zon"
+                  ];
+                  command = ''${lib.getExe pkgs.zig} fmt ${receiveInputFilePath}'';
                 };
               mkEventHandlers = event:
                 lib.concatMap (
