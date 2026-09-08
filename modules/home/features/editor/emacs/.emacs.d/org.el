@@ -49,13 +49,13 @@
   (global-org-modern-mode))
 
 (use-package org-roam
-  :config
-  (setq org-roam-directory (expand-file-name "org-roam" org-directory))
-  (org-roam-db-autosync-mode)
   :bind
   (("C-c n f" . org-roam-node-find)
    ("C-c n i" . org-roam-node-insert)
-   ("C-c n l" . org-roam-buffer-toggle)))
+   ("C-c n l" . org-roam-buffer-toggle))
+  :config
+  (setq org-roam-directory (expand-file-name "org-roam" org-directory))
+  (org-roam-db-autosync-mode))
 
 (use-package org-roam-timestamps
   :after org-roam

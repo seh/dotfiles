@@ -17,8 +17,9 @@
                                    tab-width SEH-tab-width
                                    fill-column 100)
                                   (electric-pair-local-mode)
-                                  (dolist (h '(lsp-format-buffer
-                                               lsp-organize-imports))
-                                    (add-hook 'before-save-hook h nil t)))))
+                                  (when (seh-activation-name-in-effect-p "lang/go/ls")
+                                    (dolist (h '(lsp-format-buffer
+                                                 lsp-organize-imports))
+                                      (add-hook 'before-save-hook h nil t))))))
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "Go settings initialized")

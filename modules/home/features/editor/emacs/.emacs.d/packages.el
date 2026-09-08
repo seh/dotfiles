@@ -28,11 +28,6 @@
 
 
 ;:*=======================
-;:* agent-shell
-(use-package agent-shell)
-
-
-;:*=======================
 ;:* beacon
 (use-package beacon
   :config
@@ -57,14 +52,10 @@
 
 
 ;:*=======================
-;:* cue
-(use-package cue-mode)
-
-
-;:*=======================
 ;:* difftastic
 (use-package difftastic-bindings
   :ensure difftastic
+  :if (seh-activation-name-in-effect-p "dev/difftastic")
   :config
   (difftastic-bindings-mode))
 
@@ -92,15 +83,15 @@
 
 ;; Basis of inspiration: https://config.daviwil.com/emacs#doom-modeline
 (use-package doom-modeline
-  :init
-  (doom-modeline-mode 1)
   :custom
   (doom-modeline-height 15)
   (doom-modeline-bar-width 6)
   (doom-modeline-buffer-file-name-style 'truncate-upto-project)
   (doom-modeline-minor-modes t)
   (doom-modeline-major-mode-icon nil)
-  (doom-modeline-lsp t))
+  (doom-modeline-lsp t)
+  :init
+  (doom-modeline-mode 1))
 
 
 ;:*=======================
@@ -127,6 +118,7 @@
 ;:*=======================
 ;:* footnote
 (use-package footnote
+  :hook (message-mode . footnote-mode)
   :config
   (setq footnote-body-tag-spacing 1
       footnote-spaced-footnotes nil
@@ -135,8 +127,7 @@
       ;; drop use of the start and end tags.
       footnote-style 'latin
       footnote-start-tag ""
-      footnote-end-tag "")
-  :hook (message-mode . footnote-mode))
+      footnote-end-tag ""))
 
 
 ;:*=======================
@@ -196,6 +187,7 @@
 ;:*=======================
 ;:* magit
 (use-package magit
+  :if (seh-activation-name-in-effect-p "vcs/git")
   :config
   (setq magit-completing-read-function #'ivy-completing-read
         ;; Edit jj commit messages using "git-commit-mode":
@@ -210,7 +202,8 @@
   :hook
   (nix-mode . (lambda ()
                 (electric-pair-mode)
-                (add-hook 'before-save-hook #'nix-format-before-save 0 t)))
+                (when (seh-activation-name-in-effect-p "essential/tools")
+                  (add-hook 'before-save-hook #'nix-format-before-save 0 t))))
   :config
   ;; By default, this formatting program is "nixfmt".
   ;;
@@ -219,10 +212,11 @@
   ;; `lsp-format-buffer' supply any arguments to the programs that
   ;; they invoke. Work around this problem by using a small trampoline
   ;; program to supply the necessary arguments.
-  (let ((formatter-command "alejandra-quiet"))
-    (setq
-     nix-nixfmt-bin formatter-command
-     lsp-nix-nixd-formatting-command (vector formatter-command))))
+  (when (seh-activation-name-in-effect-p "essential/tools")
+    (let ((formatter-command "alejandra-quiet"))
+      (setq
+       nix-nixfmt-bin formatter-command
+       lsp-nix-nixd-formatting-command (vector formatter-command)))))
 
 
 ;:*=======================
@@ -234,12 +228,12 @@
 ;:*=======================
 ;:* persistent-scratch
 (use-package persistent-scratch
-  :demand t
   :hook (after-init . (lambda ()
                         (when (file-exists-p persistent-scratch-save-file)
                           (persistent-scratch-restore))
                         (with-current-buffer "*scratch*"
-                          (persistent-scratch-mode)))))
+                          (persistent-scratch-mode))))
+  :demand t)
 
 
 ;:*=======================
@@ -247,17 +241,6 @@
 (use-package prescient
   :config
   (prescient-persist-mode))
-
-
-;:*=======================
-;:* prettier
-(use-package prettier
-  :init
-  ;; Without this, prettier-mode has trouble finding the "prettier"
-  ;; program, even though it's already available on the path.
-  (setenv "NODE_PATH" (expand-file-name "~/.nix-profile/lib/node_modules"))
-  :hook ((js-base-mode . prettier-mode)
-         (typescript-ts-base-mode . prettier-mode)))
 
 
 ;:*=======================
@@ -278,13 +261,6 @@
 (use-package rg
   :config
   (rg-enable-menu))
-
-
-;:*=======================
-;:* rustic
-(use-package rustic
-  :config
-  (setq rustic-format-trigger 'on-save))
 
 
 ;:*=======================
@@ -338,15 +314,6 @@
 
 
 ;:*=======================
-;:* terraform
-(use-package terraform-mode
-  :config
-  (setq
-   terraform-format-on-save t)
-  :hook (terraform-mode . outline-minor-mode))
-
-
-;:*=======================
 ;:* text
 (use-package text-mode
   :ensure nil
@@ -362,17 +329,6 @@
   (dolist (m '(yaml))
     (delete m treesit-auto-langs))
   (global-treesit-auto-mode))
-
-
-;:*=======================
-;:* typescript-ts-mode
-(use-package typescript-ts-mode
-  :hook (typescript-ts-base-mode . (lambda ()
-                                     (setq js-indent-level 2)
-                                     (electric-pair-local-mode)
-                                     (dolist (h '(lsp-format-buffer
-                                                  lsp-organize-imports))
-                                       (add-hook 'before-save-hook h nil t)))))
 
 
 ;:*=======================
