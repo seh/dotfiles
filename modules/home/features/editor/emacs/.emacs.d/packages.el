@@ -28,11 +28,6 @@
 
 
 ;:*=======================
-;:* agent-shell
-(use-package agent-shell)
-
-
-;:*=======================
 ;:* beacon
 (use-package beacon
   :config
@@ -57,13 +52,9 @@
 
 
 ;:*=======================
-;:* cue
-(use-package cue-mode)
-
-
-;:*=======================
 ;:* difftastic
 (use-package difftastic-bindings
+  :if (seh-activation-name-in-effect-p "dev/difftastic")
   :ensure difftastic
   :config
   (difftastic-bindings-mode))
@@ -196,6 +187,7 @@
 ;:*=======================
 ;:* magit
 (use-package magit
+  :if (seh-activation-name-in-effect-p "vcs/git")
   :config
   (setq magit-completing-read-function #'ivy-completing-read
         ;; Edit jj commit messages using "git-commit-mode":
@@ -210,7 +202,8 @@
   :hook
   (nix-mode . (lambda ()
                 (electric-pair-mode)
-                (add-hook 'before-save-hook #'nix-format-before-save 0 t)))
+                (when (seh-activation-name-in-effect-p "essential/tools")
+                  (add-hook 'before-save-hook #'nix-format-before-save 0 t))))
   :config
   ;; By default, this formatting program is "nixfmt".
   ;;
@@ -219,10 +212,11 @@
   ;; `lsp-format-buffer' supply any arguments to the programs that
   ;; they invoke. Work around this problem by using a small trampoline
   ;; program to supply the necessary arguments.
-  (let ((formatter-command "alejandra-quiet"))
-    (setq
-     nix-nixfmt-bin formatter-command
-     lsp-nix-nixd-formatting-command (vector formatter-command))))
+  (when (seh-activation-name-in-effect-p "essential/tools")
+    (let ((formatter-command "alejandra-quiet"))
+      (setq
+       nix-nixfmt-bin formatter-command
+       lsp-nix-nixd-formatting-command (vector formatter-command)))))
 
 
 ;:*=======================
@@ -250,17 +244,6 @@
 
 
 ;:*=======================
-;:* prettier
-(use-package prettier
-  :init
-  ;; Without this, prettier-mode has trouble finding the "prettier"
-  ;; program, even though it's already available on the path.
-  (setenv "NODE_PATH" (expand-file-name "~/.nix-profile/lib/node_modules"))
-  :hook ((js-base-mode . prettier-mode)
-         (typescript-ts-base-mode . prettier-mode)))
-
-
-;:*=======================
 ;:* project
 (use-package project
   :config
@@ -278,13 +261,6 @@
 (use-package rg
   :config
   (rg-enable-menu))
-
-
-;:*=======================
-;:* rustic
-(use-package rustic
-  :config
-  (setq rustic-format-trigger 'on-save))
 
 
 ;:*=======================
@@ -340,6 +316,7 @@
 ;:*=======================
 ;:* terraform
 (use-package terraform-mode
+  :if (seh-activation-name-in-effect-p "cloud/terraform")
   :config
   (setq
    terraform-format-on-save t)
@@ -362,17 +339,6 @@
   (dolist (m '(yaml))
     (delete m treesit-auto-langs))
   (global-treesit-auto-mode))
-
-
-;:*=======================
-;:* typescript-ts-mode
-(use-package typescript-ts-mode
-  :hook (typescript-ts-base-mode . (lambda ()
-                                     (setq js-indent-level 2)
-                                     (electric-pair-local-mode)
-                                     (dolist (h '(lsp-format-buffer
-                                                  lsp-organize-imports))
-                                       (add-hook 'before-save-hook h nil t)))))
 
 
 ;:*=======================

@@ -12,6 +12,7 @@
 ;; See a much more complete example here:
 ;; https://gist.github.com/psanford/b5d2689ff1565ec7e46867245e3d2c76
 (use-package lsp-mode
+  :if (seh-activation-name-in-effect-p "dev/language-servers")
   :commands (lsp lsp-deferred)
   :config (progn
             (setq ;; Go-specific
@@ -54,66 +55,107 @@
             ;; (See https://github.com/emacs-lsp/lsp-mode/blob/master/docs/lsp-clients.json.)
             ;;
             ;; CUE
-            (add-to-list 'lsp-language-id-configuration '(cue-mode . "cue"))
-            (lsp-register-client (make-lsp-client
-                                  :new-connection (lsp-stdio-connection (list "cue" "lsp"))
-                                  :activation-fn (lsp-activate-on "cue")
-                                  :server-id 'cue-lsp))
+            (when (seh-activation-name-in-effect-p "lang/cue/tools")
+              (add-to-list 'lsp-language-id-configuration '(cue-mode . "cue"))
+              (lsp-register-client (make-lsp-client
+                                    :new-connection (lsp-stdio-connection (list "cue" "lsp"))
+                                    :activation-fn (lsp-activate-on "cue")
+                                    :server-id 'cue-lsp)))
             ;; Lua
-            (setq
-             ;; This is 4 by default.
-             lua-ts-indent-offset 2)
-            (with-eval-after-load 'lsp-lua
-              (setq lsp-clients-emmy-lua-command "emmylua_ls")
-              ;; NB: The registered LSP client's connection's test
-              ;; command assumes that it's launching the program by
-              ;; way of a hosting JRE.
-              (defun lsp-clients-emmy-lua-test ()
-                (executable-find lsp-clients-emmy-lua-command)))
+            (when (seh-activation-name-in-effect-p "lang/lua/ls")
+              (with-eval-after-load 'lsp-lua
+                (setq lsp-clients-emmy-lua-command "emmylua_ls")
+                ;; NB: The registered LSP client's connection's test
+                ;; command assumes that it's launching the program by
+                ;; way of a hosting JRE.
+                (defun lsp-clients-emmy-lua-test ()
+                  (executable-find lsp-clients-emmy-lua-command))))
             ;; Markdown
-            (add-to-list 'lsp-language-id-configuration '(markdown-mode . "markdown"))
-            (lsp-register-client (make-lsp-client
-                                  :new-connection (lsp-stdio-connection '("rumdl" "server"))
-                                  :major-modes '(markdown-mode)
-                                  :server-id 'rumdl))
+            (when (seh-activation-name-in-effect-p "lang/markdown/tools")
+              (add-to-list 'lsp-language-id-configuration '(markdown-mode . "markdown"))
+              (lsp-register-client (make-lsp-client
+                                    :new-connection (lsp-stdio-connection '("rumdl" "server"))
+                                    :major-modes '(markdown-mode)
+                                    :server-id 'rumdl)))
             ;; Starlark
-            (dolist (mode '(bazel-build-mode
-                            bazel-mode
-                            bazel-starlark-mode))
-              (add-to-list 'lsp-language-id-configuration (cons mode "starlark")))
-            (lsp-register-client (make-lsp-client
-                                  :new-connection (lsp-stdio-connection "starpls")
-                                  :activation-fn (lsp-activate-on "starlark")
-                                  :server-id 'starpls))
+            (when (seh-activation-name-in-effect-p "dev/bazel/ls")
+              (dolist (mode '(bazel-build-mode
+                              bazel-mode
+                              bazel-starlark-mode))
+                (add-to-list 'lsp-language-id-configuration (cons mode "starlark")))
+              (lsp-register-client (make-lsp-client
+                                    :new-connection (lsp-stdio-connection "starpls")
+                                    :activation-fn (lsp-activate-on "starlark")
+                                    :server-id 'starpls)))
             ;; Typst
-            (add-to-list 'lsp-language-id-configuration '(typst-ts-mode . "typ"))
-            (lsp-register-client (make-lsp-client
-                                  :new-connection (lsp-stdio-connection "tinymist")
-                                  :activation-fn (lsp-activate-on "typ")
-                                  :server-id 'typst))
+            (when (seh-activation-name-in-effect-p "dev/language-servers/formats")
+              (add-to-list 'lsp-language-id-configuration '(typst-ts-mode . "typ"))
+              (lsp-register-client (make-lsp-client
+                                    :new-connection (lsp-stdio-connection "tinymist")
+                                    :activation-fn (lsp-activate-on "typ")
+                                    :server-id 'typst)))
             ;; YAML
             (add-to-list 'lsp--formatting-indent-alist
-                         '(yaml-ts-mode . yaml-basic-offset))            
+                         '(yaml-ts-mode . yaml-basic-offset))
             ;; Omissions
-            (add-to-list 'lsp-disabled-clients 'trunk-lsp))
-  :hook (((bash-ts-mode
-           bazel-starlark-mode
-           cue-mode
-           nix-mode
-           typst-ts-mode) . (lambda ()
-                              (seh-lsp-mode-common-hook)))
-         ((go-mode
-           go-ts-mode
-           rustic-mode
-           typescript-ts-base-mode) . (lambda ()
-                                        (seh-lsp-mode-common-hook)
-                                        (lsp-lens-mode)))))
+            (add-to-list 'lsp-disabled-clients 'trunk-lsp)))
+
+(defun seh-start-language-server-in (modes &optional enable-lens-mode)
+  "Start the language server in buffers of MODES.
+With ENABLE-LENS-MODE, enable `lsp-lens-mode' in them as well."
+  (dolist (mode modes)
+    (add-hook (intern (format "%s-hook" mode))
+              (if enable-lens-mode
+                  (lambda ()
+                    (seh-lsp-mode-common-hook)
+                    (lsp-lens-mode))
+                #'seh-lsp-mode-common-hook))))
+
+(defmacro seh-start-language-servers (&rest rows)
+  "Start the language server in the modes of each of ROWS.
+Each row is (NAME MODES [ENABLE-LENS-MODE]): the activation name of
+the feature installing the server, the major modes whose buffers
+start it, and whether to enable `lsp-lens-mode' in them as well.
+Each NAME is a literal, so the compiler checks it."
+  `(progn
+     ,@(mapcar (pcase-lambda (`(,name ,modes ,enable-lens-mode))
+                 `(when (seh-activation-name-in-effect-p ,name)
+                    (seh-start-language-server-in ',modes ,enable-lens-mode)))
+               rows)))
+
+;; Start the language server in these modes, but only where the
+;; feature that installs the server is in effect; without the server
+;; on the PATH, lsp-mode offers to download one.
+(when (seh-activation-name-in-effect-p "dev/language-servers")
+  (seh-start-language-servers
+   ("dev/bazel/ls"                 (bazel-starlark-mode))
+   ("dev/language-servers/formats" (conf-toml-mode
+                                    json-mode
+                                    json-ts-mode
+                                    jq-ts-mode
+                                    nix-mode
+                                    toml-ts-mode
+                                    typst-ts-mode
+                                    yaml-mode
+                                    yaml-ts-mode))
+   ("lang/cue/tools"               (cue-mode))
+   ("lang/go/ls"                   (go-mode
+                                    go-ts-mode) t)
+   ("lang/javascript/ls"           (typescript-ts-base-mode) t)
+   ("lang/jsonnet/ls"              (jsonnet-mode))
+   ("lang/lua/ls"                  (lua-mode
+                                    lua-ts-mode))
+   ("lang/markdown/tools"          (markdown-mode))
+   ("lang/rust/tools"              (rustic-mode) t)
+   ("lang/shell/ls"                (bash-ts-mode))))
 
 (use-package lsp-ivy
+  :if (seh-activation-name-in-effect-p "dev/language-servers")
   :commands (lsp-ivy-workspace-symbol
              lsp-ivy-global-workspace-symbol))
 
 (use-package lsp-ui
+  :if (seh-activation-name-in-effect-p "dev/language-servers")
   :commands lsp-ui-mode
   :config (setq lsp-ui-doc-delay 1.0 ; Default is 0.2.
                 lsp-ui-doc-header t
