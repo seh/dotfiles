@@ -14,7 +14,6 @@
       message-directory "~/doc/mail"
       mail-source-directory message-directory
       mail-user-agent 'gnus-user-agent
-      message-from-style 'angles
       message-cite-function 'message-cite-original-without-signature
       ;message-kill-buffer-on-exit t
       ;mail-host-address "Spindle.sehlabs.com"
@@ -31,9 +30,6 @@
 
 
 (defun SEH-message-mode-hook ()
-  ;; TODO: Verify that this information is built-in to `fill'.
-  (require 'filladapt)
-  (turn-on-filladapt-mode)
   (turn-on-auto-fill))
 
 (add-hook 'message-mode-hook 'SEH-message-mode-hook t)

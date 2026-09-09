@@ -198,7 +198,6 @@
 (use-package magit
   :config
   (setq magit-completing-read-function #'ivy-completing-read
-        magit-popup-use-prefix-argument 'default
         ;; Edit jj commit messages using "git-commit-mode":
         ;; Default value: "/\\(\\(\\(COMMIT\\|NOTES\\|PULLREQ\\|MERGEREQ\\|TAG\\)_EDIT\\|MERGE_\\|\\)MSG\\|\\(BRANCH\\|EDIT\\)_DESCRIPTION\\)\\'"
         git-commit-filename-regexp "/\\(\\(\\(COMMIT\\|NOTES\\|PULLREQ\\|MERGEREQ\\|TAG\\)_EDIT\\|MERGE_\\|\\)MSG\\|\\(BRANCH\\|EDIT\\)_DESCRIPTION\\)\\|\\.jjdescription\\'"

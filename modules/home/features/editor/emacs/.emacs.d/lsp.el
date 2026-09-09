@@ -132,6 +132,7 @@
   :config (setq company-idle-delay 0
                 company-minimum-prefix-length 1
                 company-tooltip-align-annotations t)
-  :hook (org-mode
+  :hook (c-mode-common
+         org-mode
          markdown-mode
          text-mode))
