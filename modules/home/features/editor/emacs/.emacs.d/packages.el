@@ -176,6 +176,19 @@
 ;:* magit
 (use-package magit
   :if (seh-activation-name-in-effect-p "vcs/git")
+  :preface
+  (defun seh-git-commit-skip-jujutsu-diff ()
+    "Stop Magit from diffing the working tree for a Jujutsu description.
+Magit shows a diff of the working tree whenever it recognizes a commit
+message; for a Jujutsu description, that diff is Git's view of a
+Jujutsu working tree, which need not resemble the change being
+described and can be huge."
+    (when (and buffer-file-name
+               (string-suffix-p ".jjdescription" buffer-file-name))
+      (setq-local magit-commit-show-diff nil)))
+  :init
+  (when (seh-activation-name-in-effect-p "vcs/jujutsu")
+    (add-hook 'git-commit-setup-hook #'seh-git-commit-skip-jujutsu-diff))
   :config
   (setq magit-completing-read-function #'ivy-completing-read
         ;; Edit jj commit messages using "git-commit-mode":
