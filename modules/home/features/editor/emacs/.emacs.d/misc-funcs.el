@@ -130,52 +130,5 @@ With a prefix argument, prompt for the underline string."
   (comment-dwim arg)
   (insert "TODO(" (user-login-name) "): "))
 
-(defun make-include-guard-name (basename)
-  (replace-regexp-in-string
-   "^\\(_+\\)\\(.+\\)" "\\2\\1"
-   (upcase (replace-regexp-in-string "[-.]" "_" basename))))
-
-(defun default-include-guard-name ()
-  (make-include-guard-name (buffer-name)))
-
-(defun insert-include-guards (&optional guardname)
-  "Add #include preprocessor guard GUARDNAME to the current buffer.
-
-The default guardname is the current buffer's name, upcased with
-hyphens and periods replaced with underscores.
-
-With a prefix argument, prompt for the guard name."
-  (interactive (list (if current-prefix-arg
-                         (read-string "Guard name: "
-                                      (default-include-guard-name)))))
-  (if (null guardname)
-      (setq guardname (default-include-guard-name)))
-  (if (string= guardname "")
-      (error "Guard name cannot be nil."))
-  (save-excursion
-    (goto-char (point-min))
-    (forward-comment (buffer-size))
-    (insert (format "#ifndef %s\n#define %s\n\n" guardname guardname))
-    (goto-char (point-max))
-    (delete-blank-lines)
-    (insert (concat "\n\n#endif	// " guardname))))
-
-
-(defun insert-matching-conditional-comment (&optional quiet)
-  "Add symmetric comment to preprocessor guard on or after point.
-
-If the optional argument QUIET is non-nil, no messages will be printed."
-  (interactive)
-  (save-excursion
-    (beginning-of-line)
-    (if (re-search-forward "^#if\\(\\(n\\)?def\\)?\\s-+\\([A-Za-z0-9_-]+\\)\\s-*$" nil t)
-        (let ((guardname
-               (buffer-substring (match-beginning 3) (match-end 3))))
-          (c-forward-conditional 1 -1)
-          (backward-char)
-          (indent-for-comment)
-          (insert guardname)
-          (unless quiet
-            (message "Matched at line %d." (line-number-at-pos)))))))
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "miscellaneous functions initialized")

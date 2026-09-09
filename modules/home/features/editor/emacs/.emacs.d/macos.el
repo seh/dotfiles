@@ -2,6 +2,11 @@
 ;:* macos.el
 ;:*=======================
 
+;; Declared, not defined: only an Emacs built with NS support
+;; defines these.
+(defvar ns-command-modifier)
+(defvar ns-option-modifier)
+
 (setq ns-command-modifier 'meta  ;; Aliased by `mac-command-modifier'
       ns-option-modifier 'super) ;; Aliased by `mac-option-modifier', for `ns-alternate-modifier'
 
