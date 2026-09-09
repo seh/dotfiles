@@ -3,6 +3,8 @@
 ;:*=======================
 ;;;** 'go-mode' package
 
+(defvar SEH-tab-width)
+
 (use-package go-mode
   :bind (
          ;; If you want to switch existing go-mode bindings to use lsp-mode/gopls instead

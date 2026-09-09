@@ -6,11 +6,23 @@ flakeLib.mkFeature "editor/emacs" {
     ...
   }: let
     inherit (pkgs.stdenv.hostPlatform) isDarwin;
+    diaryFile = "~/.diary";
   in {
     home.file.".emacs.d" = {
       source = ./.emacs.d;
       recursive = true;
     };
+
+    # The "packages.el" file assigns this path to the "diary-file"
+    # variable. With the "calendar-mark-diary-entries-flag" variable
+    # set, displaying a calendar reads that file, and Emacs signals an
+    # error when it is absent. Create an empty one, and leave an
+    # existing file alone.
+    home.activation.createDiaryFile = lib.hm.dag.entryAfter ["writeBoundary"] ''
+      if [ ! -e ${diaryFile} ]; then
+        touch ${diaryFile}
+      fi
+    '';
 
     programs.emacs = {
       enable = lib.mkDefault true;
