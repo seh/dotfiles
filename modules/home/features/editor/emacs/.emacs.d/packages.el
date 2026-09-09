@@ -1,6 +1,8 @@
 ;;; -*- lexical-binding: t -*-
 ;:* packages.el
 ;:*=======================
+(declare-function seh-activation-name-in-effect-p "activation")
+
 ;; * The `package' system itself
 (require 'package)
 
@@ -13,39 +15,24 @@
 ;; Basis of inspiration:
 ;;   https://github.com/bdd/.emacs.d/blob/master/packages.el
 
-;; If never connected to repositories before, download package
-;; descriptions so `use-package' can trigger installation of missing
-;; packages.
-(unless package-archive-contents
-  (message "Refreshing ELPA package archives...")
-  (package-refresh-contents))
-
-(unless (package-installed-p 'use-package)
-  (message "`use-package' not found. Installing...")
-  (package-install 'use-package))
-
 (require 'use-package)
 
 
 ;:*=======================
 ;:* beacon
 (use-package beacon
+  :hook (after-init . beacon-mode)
   :config
   (setq
    ;; This is 0.3 by default. Values lower than 0.2 don't appear to
    ;; make a difference.
-   beacon-blink-duration 0.2)
-  (beacon-mode 1))
-
-
-;:*=======================
-;:* boxquote
-(use-package boxquote)
+   beacon-blink-duration 0.2))
 
 
 ;:*=======================
 ;:* counsel
 (use-package counsel
+  :functions (counsel-mode)
   :after ivy
   :config
   (counsel-mode))
@@ -56,6 +43,7 @@
 (use-package difftastic-bindings
   :if (seh-activation-name-in-effect-p "dev/difftastic")
   :ensure difftastic
+  :functions (difftastic-bindings-mode)
   :config
   (difftastic-bindings-mode))
 
@@ -66,15 +54,19 @@
 
 ;; This per http://pragmaticemacs.com/emacs/tree-style-directory-views-in-dired-with-dired-subtree/:
 (use-package dired-subtree
-  :config
-  (bind-keys :map dired-mode-map
-             ("i" . dired-subtree-insert)
-             (";" . dired-subtree-remove)))
+  :after dired
+  :bind (:map dired-mode-map
+              ("i" . dired-subtree-insert)
+              (";" . dired-subtree-remove)))
 
 
 ;:*=======================
 ;:* diary
-(setq diary-file "~/.diary")
+(use-package diary-lib
+  :defer t
+  :defines (diary-file)
+  :init
+  (setq diary-file "~/.diary"))
 
 
 ;:*=======================
@@ -83,15 +75,14 @@
 
 ;; Basis of inspiration: https://config.daviwil.com/emacs#doom-modeline
 (use-package doom-modeline
-  :init
-  (doom-modeline-mode 1)
-  :custom
-  (doom-modeline-height 15)
-  (doom-modeline-bar-width 6)
-  (doom-modeline-buffer-file-name-style 'truncate-upto-project)
-  (doom-modeline-minor-modes t)
-  (doom-modeline-major-mode-icon nil)
-  (doom-modeline-lsp t))
+  :hook (after-init . doom-modeline-mode)
+  :config
+  (setq doom-modeline-height 15
+        doom-modeline-bar-width 6
+        doom-modeline-buffer-file-name-style 'truncate-upto-project
+        doom-modeline-minor-modes t
+        doom-modeline-major-mode-icon nil
+        doom-modeline-lsp t))
 
 
 ;:*=======================
@@ -106,6 +97,7 @@
 ;:* exec-path-from-shell
 (use-package exec-path-from-shell
   :if window-system
+  :functions (exec-path-from-shell-initialize)
   :config
   (dolist (var '("GOPATH"
                  "XDG_CONFIG_DIRS"
@@ -138,32 +130,27 @@
 
 ;:*=======================
 ;:* gnus
-;; Unless we use `custom-set-variables' here, we can't wait until
-;; the package is loaded to set these, as other custom-based variables
-;; depend upon them.
-(setq gnus-directory "~/doc/news"
-      message-directory gnus-directory)
-(eval-after-load "gnus"
-  '(progn
-     (setq gnus-kill-files-directory gnus-directory)
-    (require 'gnus-dired)
-    (add-hook 'dired-mode-hook 'turn-on-gnus-dired-mode)))
+(use-package gnus
+  :defer t
+  :defines (gnus-directory gnus-kill-files-directory message-directory)
+  :functions (turn-on-gnus-dired-mode)
+  ;; Unless we use `custom-set-variables' here, we can't wait until
+  ;; the package is loaded to set these, as other custom-based variables
+  ;; depend upon them.
+  :init
+  (setq gnus-directory "~/doc/news"
+        message-directory gnus-directory)
+  :config
+  (setq gnus-kill-files-directory gnus-directory)
+  (require 'gnus-dired)
+  (add-hook 'dired-mode-hook #'turn-on-gnus-dired-mode))
 ;; the rest of the configuration is in ~/.gnus
-
-
-;:*=======================
-;:* iedit
-(use-package iedit)
-
-
-;:*=======================
-;:* ispell
-(use-package ispell)
 
 
 ;:*=======================
 ;:* ivy
 (use-package ivy
+  :functions (ivy-completing-read ivy-immediate-done ivy-mode)
   :config
   ;; This same function is available via "C-M-j" as well, but that's
   ;; harder to type. By default, "M-RET" is bound to "ivy-call", which
@@ -179,6 +166,7 @@
 ;:*=======================
 ;:* ivy-prescient
 (use-package ivy-prescient
+  :functions (ivy-prescient-mode)
   :after counsel
   :config
   (ivy-prescient-mode))
@@ -199,6 +187,8 @@
 ;:*=======================
 ;:* nix
 (use-package nix
+  :defines (lsp-nix-nixd-formatting-command nix-nixfmt-bin)
+  :functions (nix-format-before-save)
   :hook
   (nix-mode . (lambda ()
                 (electric-pair-mode)
@@ -228,6 +218,7 @@
 ;:*=======================
 ;:* persistent-scratch
 (use-package persistent-scratch
+  :functions (persistent-scratch-mode persistent-scratch-restore)
   :demand t
   :hook (after-init . (lambda ()
                         (when (file-exists-p persistent-scratch-save-file)
@@ -239,6 +230,7 @@
 ;:*=======================
 ;:* prescient
 (use-package prescient
+  :functions (prescient-persist-mode)
   :config
   (prescient-persist-mode))
 
@@ -246,6 +238,7 @@
 ;:*=======================
 ;:* project
 (use-package project
+  :defer t
   :config
   (add-to-list 'project-vc-extra-root-markers ".jj"))
 
@@ -259,6 +252,7 @@
 ;:*=======================
 ;:* rg
 (use-package rg
+  :functions (rg-enable-menu)
   :config
   (rg-enable-menu))
 
@@ -266,6 +260,7 @@
 ;:*=======================
 ;:* sh-mode
 (use-package sh-script
+  :defer t
   :config
   (setq sh-basic-offset 2))
 
@@ -273,6 +268,7 @@
 ;:*=======================
 ;:* shell
 (use-package shell
+  :functions (flycheck-mode)
   :hook (shell-mode . (lambda ()
                         (setq shell-prompt-pattern "^\\[[^\n]+\\]\n[#$%>] *")
                         (custom-set-faces
@@ -334,16 +330,18 @@
 ;:*=======================
 ;:* treesit-auto
 (use-package treesit-auto
+  :hook (after-init . global-treesit-auto-mode)
   :config
   ;; See https://github.com/renzmann/treesit-auto/pull/63/files#diff-ecbc1aa90e9ff97a00b0b2aab1551bceee0c4d21993146bdcb1af4de31c9cac6R144-R151.
   (dolist (m '(yaml))
-    (delete m treesit-auto-langs))
-  (global-treesit-auto-mode))
+    (delete m treesit-auto-langs)))
 
 
 ;:*=======================
 ;:* typst-ts-mode
 (use-package typst-ts-mode
+  :defer t
+  :functions (typst-ts-tmenu)
   :config
   (define-key typst-ts-mode-map (kbd "C-c C-c") #'typst-ts-tmenu))
 
@@ -351,7 +349,8 @@
 ;:*=======================
 ;:* yaml
 (use-package yaml-mode
-  :mode "K\\(?:pt\\|rm\\)file\\'")
+  :mode "K\\(?:pt\\|rm\\)file\\'"
+  :commands (yaml-indent-line))
 
 
 ;:*=======================

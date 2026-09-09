@@ -5,6 +5,13 @@
 
 (use-package org
   :mode (("\\.org\\'" . org-mode))
+  :defines (org-agenda-include-diary
+            org-agenda-skip-deadline-if-done
+            org-agenda-skip-scheduled-if-done
+            org-agenda-start-on-weekday
+            org-capture-templates)
+  :bind (("C-c a" . org-agenda)
+         ("C-c c" . org-capture))
   :config
   (setq org-directory "~/Documents"
         org-fold-catch-invisible-edits 'smart
@@ -36,19 +43,15 @@
           ("j" "Journal" entry (file+olp+datetree "journal.org")
            "* %?\nEntered on %U\n%a\n#+BEGIN_QUOTE\n%i\n#+END_QUOTE\n"))))
 
-;; TODO(seh): Can we integrate these into the "use-package" form
-;; above?
-(define-key mode-specific-map [?a] 'org-agenda)
-(define-key global-map "\C-cc" 'org-capture)
-
 (use-package org-edit-indirect
   :hook (org-mode . org-edit-indirect-mode))
 
 (use-package org-modern
-  :config
-  (global-org-modern-mode))
+  :hook ((org-mode . org-modern-mode)
+         (org-agenda-finalize . org-modern-agenda)))
 
 (use-package org-roam
+  :functions (org-roam-db-autosync-mode)
   :config
   (setq org-roam-directory (expand-file-name "org-roam" org-directory))
   (org-roam-db-autosync-mode)
@@ -58,6 +61,7 @@
    ("C-c n l" . org-roam-buffer-toggle)))
 
 (use-package org-roam-timestamps
+  :functions (org-roam-timestamps-mode)
   :after org-roam
   :config
   (org-roam-timestamps-mode))

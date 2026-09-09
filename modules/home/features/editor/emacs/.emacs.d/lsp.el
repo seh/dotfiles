@@ -3,9 +3,7 @@
 ;:*=======================
 ;;;** Language Server Protocol-related packages
 
-(defun seh-lsp-mode-common-hook ()
-  (setq lsp-format-buffer-on-save t)
-  (lsp-deferred))
+(declare-function seh-activation-name-in-effect-p "activation")
 
 ;; LSP configuration for use with Go and other languages
 ;;
@@ -13,6 +11,24 @@
 ;; https://gist.github.com/psanford/b5d2689ff1565ec7e46867245e3d2c76
 (use-package lsp-mode
   :if (seh-activation-name-in-effect-p "dev/language-servers")
+  :defines (lsp-clients-emmy-lua-command
+            lsp-format-buffer-on-save
+            lsp-go-use-gofumpt
+            lsp-rust-analyzer-cargo-watch-command
+            lsp-rust-analyzer-display-chaining-hints
+            lsp-rust-analyzer-display-closure-return-type-hints
+            lsp-rust-analyzer-display-lifetime-elision-hints-enable
+            lsp-rust-analyzer-display-reborrow-hints)
+  :functions (lsp-activate-on
+              lsp-lens-mode
+              lsp-register-client
+              lsp-register-custom-settings
+              lsp-stdio-connection
+              make-lsp-client)
+  :preface
+  (defun seh-lsp-mode-common-hook ()
+    (setq lsp-format-buffer-on-save t)
+    (lsp-deferred))
   :commands (lsp lsp-deferred)
   :config (progn
             (setq ;; Go-specific

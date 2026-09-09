@@ -1,16 +1,22 @@
 ;;; -*- lexical-binding: t -*-
 ;:* ediff.el
 ;:*=======================
-;; See the `ediff-toggle-show-clashes-only' function, bound to `$$' in
-;; ediff's "control buffer".
-(setq ediff-show-clashes-only t
-      ediff-keep-variants nil
-      ediff-autostore-merges nil)
+(declare-function seh-activation-name-in-effect-p "activation")
 
-(defun seh-ediff-janitor ()
-  (ediff-janitor nil nil))
-
-(add-hook 'ediff-cleanup-hook #'seh-ediff-janitor)
+(use-package ediff
+  :functions (ediff-janitor)
+  :preface
+  (defun seh-ediff-janitor ()
+    (ediff-janitor nil nil))
+  :hook ((ediff-cleanup . seh-ediff-janitor)
+         ;; TODO(seh): Is this one not already registered by default?
+         (ediff-quit-merge . ediff-maybe-save-and-delete-merge))
+  :config
+  ;; See the `ediff-toggle-show-clashes-only' function, bound to
+  ;; `$$' in ediff's "control buffer".
+  (setq ediff-show-clashes-only t
+        ediff-keep-variants nil
+        ediff-autostore-merges nil))
 
 ;; These new few forms are for using "ediff" as a merge tool in
 ;; concert with the "jujutsu" tool.
@@ -23,7 +29,5 @@
 
 (when (seh-activation-name-in-effect-p "vcs/jujutsu")
   (add-hook 'ediff-quit-merge-hook #'seh-jj-resolve-ediff-quit-merge-hook 99))
-;; TODO(seh): Is this one not already registered by default?
-(add-hook 'ediff-quit-merge-hook #'ediff-maybe-save-and-delete-merge)
 ;:::::::::::::::::::::::::::::::::::::::::::::::::*
 (message "ediff settings initialized")
