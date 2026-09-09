@@ -31,11 +31,13 @@
  (lambda ()
    (add-hook 'inferior-lisp-mode-hook
              (lambda () (inferior-slime-mode t)))
-   ;; Enhance completion.
+   ;; Enhance completion: present fuzzy completions through the
+   ;; standard completion UI so that `completion-at-point' can use
+   ;; the fuzzy command.
    (let ((sym 'slime-fuzzy-complete-symbol))
      (when (fboundp sym)
-       (setq slime-complete-symbol*-fancy t
-             slime-complete-symbol-function sym)))
+       (setq slime-fuzzy-default-completion-ui t)
+       (add-to-list 'slime-completion-at-point-functions sym)))
    (define-key lisp-mode-shared-map "\M-\C-]" 'slime-close-all-parens-in-sexp)
    (add-hook 'slime-mode-hook
              (lambda ()
