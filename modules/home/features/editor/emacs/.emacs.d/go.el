@@ -3,6 +3,8 @@
 ;:*=======================
 ;;;** 'go-mode' package
 
+(declare-function seh-activation-name-in-effect-p "activation")
+
 (defvar SEH-tab-width)
 
 (use-package go-mode

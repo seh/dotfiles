@@ -3,11 +3,6 @@
 ;:*=======================
 
 
-(require 'package)
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/"))
-(package-initialize)
-
 (defconst user-init-dir
   (cond ((and (not (boundp 'aquamacs-version))
 	      ;; Aquamacs uses ~/Library/Preference/Aquamacs Emacs/.
@@ -20,111 +15,115 @@
 	(t "~/.emacs.d/")))
 
 (defun load-user-file (file)
-  (interactive "f")
-  "Load a file in current user's configuration directory"
-  (load-file (expand-file-name file user-init-dir)))
+  "Load FILE, a base name without suffix, from the configuration directory.
+The `load' function prefers a compiled file beside the source."
+  (interactive
+   (list (file-name-sans-extension
+          (file-relative-name
+           (read-file-name "Load user file: " user-init-dir nil t nil
+                           (lambda (name) (string-suffix-p ".el" name)))
+           user-init-dir))))
+  (load (expand-file-name file user-init-dir)))
 
 ;:*=======================
-(load-user-file "activation-names.el")
-(load-user-file "activation.el")
+(load-user-file "activation-names")
+(load-user-file "activation")
+;; The asynchronous native compiler works in a fresh process; give it
+;; the same two files, so compile-time checks see what the build saw.
+(defvar native-comp-async-env-modifier-form)
+(setq native-comp-async-env-modifier-form
+      `(progn (load ,(expand-file-name "activation-names" user-init-dir))
+              (load ,(expand-file-name "activation" user-init-dir))))
+
+(declare-function seh-activation-name-in-effect-p "activation")
 
 ;:*=======================
-(load-user-file "packages.el")
+(load-user-file "packages")
 
 ;:*=======================
-(load-user-file "personal.el")
+(load-user-file "personal")
 
 ;:*=======================
-(load-user-file "platform.el")
+;(load-user-file "cygwin")
 
 ;:*=======================
-;(load-user-file "cygwin.el")
+(load-user-file "variables")
 
 ;:*=======================
-(load-user-file "variables.el")
+(load-user-file "paths")
 
 ;:*=======================
-(load-user-file "paths.el")
+(load-user-file "mail-news")
 
 ;:*=======================
-(load-user-file "mail-news.el")
+(load-user-file "misc-funcs")
 
 ;:*=======================
-(load-user-file "misc-funcs.el")
+(load-user-file "bbdb")
 
 ;:*=======================
-(load-user-file "bbdb.el")
+(load-user-file "calendar")
 
 ;:*=======================
-(load-user-file "calendar.el")
-
-;:*=======================
-(load-user-file "ediff.el")
+(load-user-file "ediff")
 
 ;; TODO: gnus-funcs
 
 ;:*=======================
-(load-user-file "lsp.el")
+(load-user-file "lsp")
 
 ;:*=======================
-(load-user-file "c-and-java.el")
+(load-user-file "c-and-java")
 
 ;:*=======================
 (when (seh-activation-name-in-effect-p "lang/go")
-  (load-user-file "go.el"))
+  (load-user-file "go"))
 
 ;:*=======================
 (when (seh-activation-name-in-effect-p "lang/javascript")
-  (load-user-file "javascript.el"))
+  (load-user-file "javascript"))
 
 ;:*=======================
-(load-user-file "lisp.el")
+(load-user-file "lisp")
 
 ;:*=======================
 (when (seh-activation-name-in-effect-p "lang/lua")
-  (load-user-file "lua.el"))
+  (load-user-file "lua"))
 
 ;:*=======================
-;(load-user-file "clojure.el")
-
-;:*=======================
-;(load-user-file "sgml-xml.el")
+;(load-user-file "clojure")
 
 ;:*=======================
 (when (seh-activation-name-in-effect-p "lang/markdown")
-  (load-user-file "markdown.el"))
+  (load-user-file "markdown"))
 
 ;:*=======================
 (when (seh-activation-name-in-effect-p "lang/rust")
-  (load-user-file "rust.el"))
+  (load-user-file "rust"))
 
 ;:*=======================
-(load-user-file "tex.el")
+(load-user-file "tex")
 
 ;:*=======================
-(load-user-file "org.el")
+(load-user-file "org")
 
 ;:*=======================
-(load-user-file "fonts-basic.el")
+(load-user-file "fonts-basic")
 
 ;:*=======================
-;(load-user-file "fonts.el")
+;(load-user-file "fonts")
 
 ;:*=======================
-;; TODO(seh): Reenable this after we've figured out why the "light" background mode doesn't work.
-;(load-user-file "color-theme.el")
+(load-user-file "frame")
 
 ;:*=======================
-(load-user-file "frame.el")
+(load-user-file "server")
 
 ;:*=======================
-(load-user-file "server.el")
+(load-user-file "keys")
 
 ;:*=======================
-(load-user-file "keys.el")
-
-;:*=======================
-(load-user-file "macos.el")
+(load-user-file "macos")
 
 ;; TODO: Move this out to packaegs.el or something.
 (require 'ehelp)
