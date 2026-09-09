@@ -89,8 +89,6 @@
    compilation-ask-about-save nil)
   (define-key (current-local-map) [f7] 'compile)
 
-  (auto-complete-mode 1)
-
   (require 'whitespace)
   (setq whitespace-style '(face empty tabs lines-tail trailing))
   (whitespace-mode))
