@@ -100,6 +100,13 @@
             # See https://github.com/pre-commit/pre-commit-hooks?tab=readme-ov-file#trailing-whitespace.
             "--markdown-linebreak-ext=md"
           ];
+          # In a patch, a leading space marks a line as unchanged. On a
+          # blank unchanged line that space is also the last character,
+          # which this hook reads as trailing whitespace and deletes.
+          excludes = [
+            "\\.diff$"
+            "\\.patch$"
+          ];
         };
       };
       package = pkgs.prek;
