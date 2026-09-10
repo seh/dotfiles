@@ -1,0 +1,15 @@
+Replace the autoload cookie above a macro call with an explicit
+"autoload" form, so the generated autoloads file does not call
+"define-compilation-mode" before the "compile" library is loaded.
+
+--- a/typst-ts-compile.el
++++ b/typst-ts-compile.el
+@@ -105,7 +105,7 @@
+         '(1 2 3))
+   "Regexp for Error in compilation buffer.")
+ 
+-;;;###autoload
++;;;###autoload (autoload 'typst-ts-compilation-mode "typst-ts-compile" nil t)
+ (define-compilation-mode typst-ts-compilation-mode "Typst Compilation"
+   "Customized major mode for typst watch compilation."
+   (setq-local compilation-error-regexp-alist-alist nil)

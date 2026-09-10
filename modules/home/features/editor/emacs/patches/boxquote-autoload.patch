@@ -1,0 +1,15 @@
+Replace the autoload cookie above a macro call with an explicit
+"autoload" form, so the generated autoloads file does not call
+"transient-define-prefix" before the "transient" library is loaded.
+
+--- a/boxquote.el
++++ b/boxquote.el
+@@ -550,7 +550,7 @@
+   (let ((box (boxquote-points-with-check)))
+     (boxquote-unbox-region (car box) (1+ (cdr box)))))
+ 
+-;;;###autoload
++;;;###autoload (autoload 'boxquote "boxquote" nil t)
+ (transient-define-prefix boxquote ()
+   "Show a transient for boxquote commands."
+   [["Box"
