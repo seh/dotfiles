@@ -91,7 +91,12 @@ flakeLib.mkFeature "editor/emacs" {
               auctex
               bbdb
               beacon
-              boxquote
+              # An autoload cookie above a macro call copies the call into
+              # the generated autoloads file, where Emacs cannot expand it
+              # yet; the patch autoloads the command explicitly instead.
+              (boxquote.overrideAttrs (previous: {
+                patches = (previous.patches or []) ++ [./patches/boxquote-autoload.patch];
+              }))
               color-theme-modern
               color-theme-sanityinc-solarized
               color-theme-sanityinc-tomorrow
@@ -138,7 +143,17 @@ flakeLib.mkFeature "editor/emacs" {
               # easier to accommodate treesitter.
               treesit-auto
               treesit-grammars.with-all-grammars
-              typst-ts-mode
+              # As with "boxquote" above. The ELPA builder installs the
+              # tarball as is, so the patch applies to a copy of its contents,
+              # packed again under the same name.
+              (typst-ts-mode.overrideAttrs (previous: {
+                src = pkgs.runCommand previous.src.name {} ''
+                  tar --extract --file ${previous.src}
+                  patch --directory "${previous.pname}-${previous.version}" --strip=1 \
+                    < ${./patches/typst-ts-mode-autoload.patch}
+                  tar --create --file "$out" "${previous.pname}-${previous.version}"
+                '';
+              }))
               use-package
               yaml-mode
               yaml-pro
