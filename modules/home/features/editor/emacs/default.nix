@@ -143,6 +143,7 @@ flakeLib.mkFeature "editor/emacs" {
               jq-ts-mode
               js2-mode
               json-mode
+              kkp
               monokai-theme
               nerd-icons
               nix-mode
