@@ -173,6 +173,21 @@
 
 
 ;:*=======================
+;:* kkp
+(use-package kkp
+  ;; kitty sends a key pressed with Cmd in its own keyboard protocol,
+  ;; with Cmd as the Super modifier. This package teaches Emacs that
+  ;; protocol, so that Cmd acts as Meta in a terminal frame as
+  ;; "macos.el" makes it act in a graphical one.
+  :defines (kkp-super-modifier)
+  :functions (global-kkp-mode)
+  :if (seh-activation-name-in-effect-p "remote-terminal-host")
+  :config
+  (setq kkp-super-modifier 'meta)
+  (global-kkp-mode))
+
+
+;:*=======================
 ;:* magit
 (use-package magit
   :preface
