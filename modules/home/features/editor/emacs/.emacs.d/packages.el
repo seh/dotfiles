@@ -173,6 +173,28 @@
 
 
 ;:*=======================
+;:* kkp
+(use-package kkp
+  ;; kitty sends a key pressed with Cmd in its own keyboard protocol,
+  ;; with Cmd as the Super modifier. This package teaches Emacs that
+  ;; protocol, so that Cmd acts as Meta in a terminal frame as
+  ;; "macos.el" makes it act in a graphical one.
+  :defines (kkp-super-modifier)
+  :functions (global-kkp-mode
+              kkp-restore-legacy-keys)
+  :config
+  (setq kkp-super-modifier 'meta)
+  ;; This function reads the next key as raw bytes without consulting
+  ;; the translation that kkp installs, so under kitty's protocol it
+  ;; sees the escape sequence for a control key rather than the
+  ;; character itself. The advice asks the terminal for the
+  ;; single-byte encoding, runs the function, then restores kitty's
+  ;; protocol.
+  (advice-add 'read-quoted-char :around #'kkp-restore-legacy-keys)
+  (global-kkp-mode))
+
+
+;:*=======================
 ;:* magit
 (use-package magit
   :preface
