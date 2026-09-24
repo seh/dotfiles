@@ -241,6 +241,9 @@ flakeLib.mkFeature "editor/emacs" {
             ]) [
               agent-shell
             ]
+            ++ lib.optionals (inEffect "remote-terminal-host") [
+              kkp
+            ]
             ++ lib.optionals (inEffect "shell/nushell") [
               nushell-ts-mode
             ]
