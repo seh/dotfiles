@@ -100,6 +100,7 @@
   :if window-system
   :config
   (dolist (var '("GOPATH"
+                 "SSH_AUTH_SOCK"
                  "XDG_CONFIG_DIRS"
                  ;; Within Nix, hunspel needs this variable to find its dictionaries.
                  "XDG_DATA_DIRS"))
@@ -214,8 +215,8 @@ described and can be huge."
   :config
   (setq magit-completing-read-function #'ivy-completing-read
         ;; Edit jj commit messages using "git-commit-mode":
-        ;; Default value: "/\\(\\(\\(COMMIT\\|NOTES\\|PULLREQ\\|MERGEREQ\\|TAG\\)_EDIT\\|MERGE_\\|\\)MSG\\|\\(BRANCH\\|EDIT\\)_DESCRIPTION\\)\\'"
-        git-commit-filename-regexp "/\\(\\(\\(COMMIT\\|NOTES\\|PULLREQ\\|MERGEREQ\\|TAG\\)_EDIT\\|MERGE_\\|\\)MSG\\|\\(BRANCH\\|EDIT\\)_DESCRIPTION\\)\\|\\.jjdescription\\'"
+        git-commit-filename-regexp (rx (or (regexp git-commit-filename-regexp)
+                                           (seq ".jjdescription" eos)))
         git-commit-summary-max-length 50))
 
 
