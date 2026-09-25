@@ -99,18 +99,6 @@ flakeLib.mkFeature "compat/bazel-fhs" {
       # "/bin/bash" program has a sensible default PATH.
       environment.systemPackages = [bashWithDefaultPath];
 
-      # Enable nix-ld to run unpatched binaries (e.g., hermetic Python
-      # from Bazel's rules_python). This provides the dynamic linker
-      # at /lib/ld-linux-aarch64.so.1 (or the equivalent for x86_64).
-      programs.nix-ld = {
-        enable = true;
-        libraries = with pkgs; [
-          libGL
-          stdenv.cc.cc.lib
-          zlib
-        ];
-      };
-
       system.activationScripts = {
         # Install the bash wrapper at /bin/bash for scripts with
         # "#!/bin/bash" shebangs.
