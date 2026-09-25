@@ -25,6 +25,9 @@ flakeLib.mkFeature "vcs/jjui" {
             scope = "revisions.inline_describe";
           }
         ];
+        bookmark = {
+          interactive_bookmark_pane = true;
+        };
         ui = {
           tracer = {
             enabled = true;
