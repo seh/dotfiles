@@ -37,6 +37,7 @@ flakeLib.mkFeature "coder" {
             ConnectTimeout = "0";
             LogLevel = "ERROR";
             ProxyCommand = "${lib.getExe cfg.package} ssh --stdio --ssh-host-prefix 'coder.' %h";
+            StrictHostKeyChecking = "no";
             UserKnownHostsFile = "/dev/null";
           };
         });
