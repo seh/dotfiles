@@ -354,13 +354,15 @@ described and can be huge."
 
 
 ;:*=======================
-;:* treesit-auto
-(use-package treesit-auto
-  :hook (after-init . global-treesit-auto-mode)
-  :config
-  ;; See https://github.com/renzmann/treesit-auto/pull/63/files#diff-ecbc1aa90e9ff97a00b0b2aab1551bceee0c4d21993146bdcb1af4de31c9cac6R144-R151.
-  (dolist (m '(yaml))
-    (delete m treesit-auto-langs)))
+;:* treesit
+(use-package treesit
+  :custom
+  ;; Visit files in each language's tree-sitter mode, except YAML
+  ;; files, which stay in `yaml-mode' because `yaml-ts-mode' cannot
+  ;; indent.
+  (treesit-enabled-modes
+   (delq 'yaml-ts-mode
+         (seq-uniq (mapcar #'cdr treesit-major-mode-remap-alist)))))
 
 
 ;:*=======================
