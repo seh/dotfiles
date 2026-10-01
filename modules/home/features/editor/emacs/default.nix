@@ -160,9 +160,6 @@ flakeLib.mkFeature "editor/emacs" {
               smex
               swiper
               templ-ts-mode
-              # NB: THis is a temporary concession until Emacs 30
-              # makes it easier to accommodate treesitter.
-              treesit-auto
               treesit-grammars.with-all-grammars
               # As with "boxquote" above. The ELPA builder installs
               # the tarball as is, so the patch applies to a copy of
