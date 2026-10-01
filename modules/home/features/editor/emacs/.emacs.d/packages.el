@@ -375,7 +375,77 @@ described and can be huge."
 ;:*=======================
 ;:* yaml-pro
 (use-package yaml-pro
-  :hook (yaml-mode . yaml-pro-ts-mode))
+  :preface
+  ;; TODO(seh): Remove these three functions and the advice that
+  ;; installs them once Emacs no longer kills the buffer behind a
+  ;; `treesit-parse-string' parser during garbage collection, or once
+  ;; yaml-pro no longer calls that function.
+  (defun seh-yaml-pro-ts--text-has-capture-p (text query)
+    "Return non-nil if parsing TEXT as YAML yields a capture for QUERY.
+Parse TEXT in a temporary buffer that this function kills before
+returning. The `treesit-parse-string' function instead leaves its
+buffer for the garbage collector to kill, killing a buffer runs Lisp
+code, and a Lisp error raised during garbage collection aborts Emacs."
+    (with-temp-buffer
+      (insert text)
+      (and (treesit-query-capture
+            (treesit-parser-root-node (treesit-parser-create 'yaml))
+            query)
+           t)))
+  (defun seh-yaml-pro-ts-kill-is-subtree (&optional tree)
+    "Return non-nil if TREE (or the current kill) is a YAML tree.
+This replaces the `yaml-pro-ts--kill-is-subtree' function."
+    (unless tree
+      (setq tree (and kill-ring (current-kill 0))))
+    (when (and tree (> (length (string-split tree "\n")) 1))
+      (seh-yaml-pro-ts--text-has-capture-p
+       tree
+       '((block_mapping_pair) @key))))
+  (defun seh-yaml-pro-ts-kill-is-sequence (&optional tree)
+    "Return non-nil if TREE (or the current kill) is a YAML sequence.
+This replaces the `yaml-pro-ts--kill-is-sequence' function."
+    (unless tree
+      (setq tree (and kill-ring (current-kill 0))))
+    (when (and tree (> (length (string-split tree "\n")) 1))
+      (seh-yaml-pro-ts--text-has-capture-p
+       (car (string-split (string-trim-left tree) "\n"))
+       '((block_sequence) @key))))
+  (defun seh-yaml-pro-ts-defer-to-org-src ()
+    "Restore the C-c \\=' key to `org-edit-src-exit' in an Org source buffer.
+A minor mode's keymap outranks `org-src-mode-map', so `yaml-pro-ts-mode'
+claims that key and `org-edit-src-exit' becomes unreachable. Override
+yaml-pro's keymap in this buffer, so that whichever command it bound to
+C-c \\=' answers to C-c . here."
+    (when (bound-and-true-p yaml-pro-ts-mode)
+      (let* ((map (copy-keymap yaml-pro-ts-mode-map))
+             (command (keymap-lookup map "C-c '"))
+             (occupant (and command (keymap-lookup map "C-c ."))))
+        (cond
+         (occupant
+          (display-warning
+           'yaml-pro
+           (format-message
+            "`yaml-pro-ts-mode' now binds `C-c .' to `%s'; revisit this relocation."
+            occupant)))
+         (command
+          (keymap-unset map "C-c '" t)
+          (keymap-set map "C-c ." command)
+          (setf (alist-get 'yaml-pro-ts-mode minor-mode-overriding-map-alist)
+                map))))))
+  :hook (yaml-mode . yaml-pro-ts-mode)
+  :config
+  (dolist (target '(yaml-pro-ts--kill-is-subtree
+                    yaml-pro-ts--kill-is-sequence))
+    (unless (fboundp target)
+      (display-warning
+       'yaml-pro
+       (format-message
+        "yaml-pro no longer defines `%s'; revisit its replacement." target))))
+  (advice-add 'yaml-pro-ts--kill-is-subtree
+              :override #'seh-yaml-pro-ts-kill-is-subtree)
+  (advice-add 'yaml-pro-ts--kill-is-sequence
+              :override #'seh-yaml-pro-ts-kill-is-sequence)
+  (add-hook 'org-src-mode-hook #'seh-yaml-pro-ts-defer-to-org-src))
 
 
 ;:*=======================
