@@ -1,9 +1,12 @@
 # NixOS module providing FHS compatibility for Bazel sandbox actions.
 #
-# Bazel sanitizes the environment for hermetic builds, setting PATH to
-# "/bin:/usr/bin:/usr/local/bin". On NixOS, these paths don't exist by
-# default, so genrules and external rulesets fail to find standard
-# tools. This module creates the necessary symlinks.
+# Bazel sanitizes the environment for hermetic builds, setting the
+# "PATH" variable to "/bin:/usr/bin:/usr/local/bin". On NixOS those
+# directories contain only the "sh" and "env" programs, so genrules and
+# external rulesets fail to find standard tools. This module serves
+# "/bin" and "/usr/bin" through NixOS's envfs file system, which falls
+# back to the tools below for a program whose own "PATH" variable lacks
+# them.
 {flakeLib, ...}:
 flakeLib.mkFeature "compat/bazel-fhs" {
   nixOS = {
@@ -21,10 +24,10 @@ flakeLib.mkFeature "compat/bazel-fhs" {
             }
           '';
           description = ''
-            Additional tools to symlink into /usr/bin, or null to
-            exclude a tool from the default set. Each attribute name
-            is the symlink name, and the value is the path to the
-            target binary.
+            Additional tools for the envfs fallback directory, or null
+            to exclude a tool from the default set. Each attribute name
+            is the program's name under "/bin" and "/usr/bin", and the
+            value is the path to the target binary.
           '';
         };
       };
@@ -39,10 +42,10 @@ flakeLib.mkFeature "compat/bazel-fhs" {
       cfg = config.dotfiles.compat.bazel-fhs;
 
       # Wrapper script for bash that sets a default "PATH" environment
-      # variable when invoked with an empty or dummy environment
-      # (e.g., via "env -"). NixOS's bash has a compiled-in default
-      # "PATH" value of "/no-such-path", so scripts that expect
-      # standard tools like "mktemp" fail when Bazel runs them with a
+      # variable when invoked with an empty or dummy environment (e.g.,
+      # via the "env -" command). NixOS's bash has a compiled-in default
+      # "PATH" value of "/no-such-path", so scripts that expect standard
+      # tools like the "mktemp" command fail when Bazel runs them with a
       # sanitized environment.
       bashWithDefaultPath = pkgs.writeShellScriptBin "bash" ''
         if [ -z "$PATH" ] || [ "$PATH" = '/no-such-path' ]; then
@@ -94,35 +97,41 @@ flakeLib.mkFeature "compat/bazel-fhs" {
       # Merge defaults with user-provided tools, then filter out null
       # entries (which indicate tools to exclude).
       effectiveTools = lib.filterAttrs (_: v: v != null) (defaultTools // cfg.tools);
+
+      # The fallback directory already contains these programs.
+      reservedNames = [
+        "bash"
+        "env"
+        "sh"
+      ];
     in {
-      # Use our bash wrapper in the system environment so that the
-      # "/bin/bash" program has a sensible default PATH.
-      environment.systemPackages = [bashWithDefaultPath];
+      assertions = [
+        {
+          assertion = lib.all (name: !(effectiveTools ? ${name})) reservedNames;
+          message = ''The "dotfiles.compat.bazel-fhs.tools" option must leave out these names, which the envfs fallback directory already contains: ${lib.concatMapStringsSep ", " (name: "\"${name}\"") reservedNames}.'';
+        }
+      ];
 
-      system.activationScripts = {
-        # Install the bash wrapper at /bin/bash for scripts with
-        # "#!/bin/bash" shebangs.
-        binbash = lib.stringAfter ["usrbinenv"] ''
-          mkdir -p /bin
-          ln -sfn ${bashWithDefaultPath}/bin/bash /bin/bash
-        '';
-
-        # Create /usr/bin symlinks for tools that Bazel actions expect
-        # at standard FHS paths.
-        usrbintools = lib.stringAfter ["usrbinenv"] ''
-          mkdir -p /usr/bin
+      services.envfs = {
+        enable = true;
+        # The bash wrapper serves as "/bin/bash" for a program whose own
+        # "PATH" variable lacks bash, such as one started with an empty
+        # environment.
+        extraFallbackPathCommands = ''
+          ln -s ${bashWithDefaultPath}/bin/bash $out/bash
           ${lib.concatStringsSep "\n" (
-            lib.mapAttrsToList (name: path: "ln -sfn '${path}' '/usr/bin/${name}'") effectiveTools
+            lib.mapAttrsToList (name: path: "ln -s '${path}' $out/${name}") effectiveTools
           )}
         '';
-
-        # Create /usr/share/terminfo symlink for the ncurses Bazel
-        # ruleset.
-        usrshareterminfo = lib.stringAfter ["usrbinenv"] ''
-          mkdir -p /usr/share
-          ln -sfn ${pkgs.ncurses}/share/terminfo /usr/share/terminfo
-        '';
       };
+
+      # envfs serves only "/bin" and "/usr/bin", so this link provides
+      # the "/usr/share/terminfo" directory that the ncurses Bazel
+      # ruleset expects.
+      system.activationScripts.usrshareterminfo = ''
+        mkdir -p /usr/share
+        ln -sfn ${pkgs.ncurses}/share/terminfo /usr/share/terminfo
+      '';
     };
   };
 }
