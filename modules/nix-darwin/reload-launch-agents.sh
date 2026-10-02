@@ -13,34 +13,31 @@
 # the plist sits at "~/Library/LaunchAgents/<Label>.plist":
 # "bootout" targets the Label and "bootstrap" loads that file.
 #
-# Usage: reload-launch-agents --user <name> <label>...
+# Usage: reload-launch-agents [-h] -u user label...
+
+function usage() {
+  printf 'usage: %s [-h] -u user label...\n' "$(basename "${0}")" >&2
+  exit 2
+}
 
 user=
 
-while (($# > 0)); do
-  case "${1}" in
-  --user)
-    if (($# < 2)); then
-      echo 'the --user flag requires a value' >&2
-      exit 2
-    fi
-    user="${2}"
-    shift 2
-    ;;
-  --*)
-    echo "unrecognized flag: ${1}" >&2
+function parse_args() {
+  while getopts hu: name; do
+    case "${name}" in
+    h) usage ;;
+    u) user="${OPTARG}" ;;
+    ?) usage ;;
+    esac
+  done
+  if [ -z "${user}" ]; then
+    printf '%s: user name must not be empty\n' "$(basename "${0}")" >&2
     exit 2
-    ;;
-  *)
-    break
-    ;;
-  esac
-done
+  fi
+}
 
-if [ -z "${user}" ]; then
-  echo 'the --user flag is required' >&2
-  exit 2
-fi
+parse_args "$@"
+shift $((OPTIND - 1))
 
 if ! uid="$(/usr/bin/id -u -- "${user}")"; then
   echo "could not resolve a UID for the \"${user}\" user" >&2

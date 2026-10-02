@@ -15,6 +15,7 @@
   reloadName = "reload-launch-agents";
   reloadLaunchAgents = pkgs.writeShellApplication {
     name = reloadName;
+    runtimeInputs = [pkgs.coreutils];
     text = builtins.readFile ./reload-launch-agents.sh;
   };
   reloadExe = "${reloadLaunchAgents}/bin/${reloadName}";
@@ -46,6 +47,6 @@ in {
     # ineffective reload; that is fine, since this reload reads the
     # plist from disk regardless.
     system.activationScripts.postActivation.text =
-      lib.mkAfter "${reloadExe} --user ${lib.escapeShellArg config.system.primaryUser} ${lib.escapeShellArgs labels}";
+      lib.mkAfter "${reloadExe} -u ${lib.escapeShellArg config.system.primaryUser} ${lib.escapeShellArgs labels}";
   };
 }
