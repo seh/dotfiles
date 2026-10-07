@@ -12,7 +12,7 @@
 
 (use-package typescript-ts-mode
   :hook (typescript-ts-base-mode . (lambda ()
-                                     (setq js-indent-level 2)
+                                     (setq-local js-indent-level 2)
                                      (electric-pair-local-mode)
                                      (when (seh-activation-name-in-effect-p "lang/javascript/ls")
                                        (dolist (h '(lsp-format-buffer
