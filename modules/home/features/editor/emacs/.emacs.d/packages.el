@@ -174,6 +174,14 @@
 
 
 ;:*=======================
+;:* json-mode
+(use-package json-mode
+  ;; Match the indentation that `json-mode-beautify' produces.
+  :hook (json-mode . (lambda ()
+                       (setq-local js-indent-level 2))))
+
+
+;:*=======================
 ;:* kkp
 (use-package kkp
   ;; kitty sends a key pressed with Cmd in its own keyboard protocol,
