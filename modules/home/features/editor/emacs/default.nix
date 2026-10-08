@@ -161,7 +161,26 @@ flakeLib.mkFeature "editor/emacs" {
               smex
               swiper
               templ-ts-mode
-              treesit-grammars.with-all-grammars
+              # The same grammars as "with-all-grammars", except for jq: the
+              # jq-ts-mode package is written for a different jq grammar than
+              # the one nixpkgs builds.
+              (treesit-grammars.with-grammars (
+                grammars:
+                  lib.filter (grammar: !(grammar.meta.broken or false)) (
+                    lib.attrValues (grammars
+                      // {
+                        tree-sitter-jq = grammars.tree-sitter-jq.override {
+                          version = "0-unstable-2025-02-26";
+                          src = pkgs.fetchFromGitHub {
+                            owner = "nverno";
+                            repo = "tree-sitter-jq";
+                            rev = "1e139eba1fd3a9c34a36f0f0f47ed8b73c9b4636";
+                            hash = "sha256-1lKg/mQdjNMdiKvFBf4aAkGBBNKCnJ+OOqRfZJ8ly4M=";
+                          };
+                        };
+                      })
+                  )
+              ))
               # As with "boxquote" above. The ELPA builder installs
               # the tarball as is, so the patch applies to a copy of
               # its contents, packed again under the same name.
