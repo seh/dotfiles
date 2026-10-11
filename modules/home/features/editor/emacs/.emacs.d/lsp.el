@@ -3,6 +3,8 @@
 ;:*=======================
 ;;;** Language Server Protocol-related packages
 
+(require 'cl-lib)
+
 (declare-function seh-activation-name-in-effect-p "activation")
 
 ;; LSP configuration for use with Go and other languages
@@ -24,10 +26,6 @@
               lsp-register-custom-settings
               lsp-stdio-connection
               make-lsp-client)
-  :preface
-  (defun seh-lsp-mode-common-hook ()
-    (setq lsp-format-buffer-on-save t)
-    (lsp-deferred))
   :if (seh-activation-name-in-effect-p "dev/language-servers")
   :commands (lsp lsp-deferred)
   :config (progn
@@ -116,55 +114,56 @@
             ;; Omissions
             (add-to-list 'lsp-disabled-clients 'trunk-lsp)))
 
-(defun seh-start-language-server-in (modes &optional enable-lens-mode)
-  "Start the language server in buffers of MODES.
-With ENABLE-LENS-MODE, enable `lsp-lens-mode' in them as well."
-  (dolist (mode modes)
-    (add-hook (intern (format "%s-hook" mode))
-              (if enable-lens-mode
-                  (lambda ()
-                    (seh-lsp-mode-common-hook)
-                    (lsp-lens-mode))
-                #'seh-lsp-mode-common-hook))))
-
-(defmacro seh-start-language-servers (&rest rows)
-  "Start the language server in the modes of each of ROWS.
-Each row is (NAME MODES [ENABLE-LENS-MODE]): the activation name of
-the feature installing the server, the major modes whose buffers
-start it, and whether to enable `lsp-lens-mode' in them as well.
-Each NAME is a literal, so the compiler checks it."
-  `(progn
-     ,@(mapcar (pcase-lambda (`(,name ,modes ,enable-lens-mode))
-                 `(when (seh-activation-name-in-effect-p ,name)
-                    (seh-start-language-server-in ',modes ,enable-lens-mode)))
-               rows)))
+(defun seh-add-language-server-hooks (modes options)
+  "Arrange for buffers of MODES to start the language server.
+OPTIONS is a property list. With a non-nil `:lens', enable
+`lsp-lens-mode' in those buffers as well. With `:format-on-save' set
+to nil, leave `lsp-format-buffer-on-save' at its default of nil, so
+that saving does not ask the server to format the buffer; the option
+defaults to t."
+  (let ((format-on-save (if (plist-member options :format-on-save)
+                            (plist-get options :format-on-save)
+                          t))
+        (lens (plist-get options :lens)))
+    (dolist (mode modes)
+      (add-hook (intern (format "%s-hook" mode))
+                (lambda ()
+                  (when format-on-save
+                    (setq-local lsp-format-buffer-on-save t))
+                  (lsp-deferred)
+                  (when lens (lsp-lens-mode)))))))
 
 ;; Start the language server in these modes, but only where the
 ;; feature that installs the server is in effect; without the server
 ;; on the PATH, lsp-mode offers to download one.
 (when (seh-activation-name-in-effect-p "dev/language-servers")
-  (seh-start-language-servers
-   ("dev/bazel/ls"                 (bazel-starlark-mode))
-   ("dev/language-servers/formats" (conf-toml-mode
-                                    json-mode
-                                    json-ts-mode
-                                    jq-ts-mode
-                                    nix-mode
-                                    toml-ts-mode
-                                    typst-ts-mode
-                                    yaml-mode
-                                    yaml-ts-mode))
-   ("lang/cue/tools"               (cue-mode))
-   ("lang/go/ls"                   (go-mode
-                                    go-ts-mode) t)
-   ("lang/javascript/ls"           (typescript-ts-base-mode) t)
-   ("lang/jsonnet/ls"              (jsonnet-mode))
-   ("lang/lua/ls"                  (lua-mode
-                                    lua-ts-mode))
-   ("lang/markdown/tools"          (markdown-mode))
-   ("lang/rust/tools"              (rustic-mode) t)
-   ("lang/shell/ls"                (bash-ts-mode))
-   ("lang/zig/ls"                  (zig-ts-mode))))
+  (cl-macrolet ((start (name modes &rest options)
+                  "Start the language server in buffers of MODES when NAME
+is in effect. NAME is a literal, so the compiler checks it, and
+OPTIONS is the property list that `seh-add-language-server-hooks'
+describes."
+                  `(when (seh-activation-name-in-effect-p ,name)
+                     (seh-add-language-server-hooks ',modes ',options))))
+    (start "dev/bazel/ls"        (bazel-starlark-mode))
+    (start "dev/language-servers/formats"
+           (conf-toml-mode
+            json-mode
+            json-ts-mode
+            jq-ts-mode
+            nix-mode
+            toml-ts-mode
+            typst-ts-mode
+            yaml-mode
+            yaml-ts-mode))
+    (start "lang/cue/tools"      (cue-mode))
+    (start "lang/go/ls"          (go-mode go-ts-mode) :lens t)
+    (start "lang/javascript/ls"  (typescript-ts-base-mode) :lens t)
+    (start "lang/jsonnet/ls"     (jsonnet-mode))
+    (start "lang/lua/ls"         (lua-mode lua-ts-mode))
+    (start "lang/markdown/tools" (markdown-mode))
+    (start "lang/rust/tools"     (rustic-mode) :lens t)
+    (start "lang/shell/ls"       (bash-ts-mode))
+    (start "lang/zig/ls"         (zig-ts-mode))))
 
 (use-package lsp-ivy
   :if (seh-activation-name-in-effect-p "dev/language-servers")
