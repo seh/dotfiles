@@ -245,6 +245,9 @@ flakeLib.mkFeature "editor/emacs" {
               rust-mode
               rustic
             ]
+            ++ lib.optionals (inEffect "lang/sql") [
+              sql-indent
+            ]
             ++ lib.optionals (inEffect "lang/zig") [
               zig-ts-mode
             ]

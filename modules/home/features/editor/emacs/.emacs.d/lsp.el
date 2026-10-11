@@ -91,6 +91,12 @@
                                     :new-connection (lsp-stdio-connection '("rumdl" "server"))
                                     :major-modes '(markdown-mode)
                                     :server-id 'rumdl)))
+            ;; SQL
+            (when (seh-activation-name-in-effect-p "lang/sql/ls")
+              (lsp-register-client (make-lsp-client
+                                    :new-connection (lsp-stdio-connection (list "syntaqlite" "lsp"))
+                                    :activation-fn (lsp-activate-on "sql")
+                                    :server-id 'syntaqlite)))
             ;; Starlark
             (when (seh-activation-name-in-effect-p "dev/bazel/ls")
               (dolist (mode '(bazel-build-mode
@@ -163,6 +169,7 @@ describes."
     (start "lang/markdown/tools" (markdown-mode))
     (start "lang/rust/tools"     (rustic-mode) :lens t)
     (start "lang/shell/ls"       (bash-ts-mode))
+    (start "lang/sql/ls"         (sql-mode) :format-on-save nil)
     (start "lang/zig/ls"         (zig-ts-mode))))
 
 (use-package lsp-ivy
