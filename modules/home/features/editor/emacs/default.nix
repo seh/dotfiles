@@ -109,6 +109,7 @@ flakeLib.mkFeature "editor/emacs" {
             [
               abyss-theme
               auctex
+              batppuccin
               bbdb
               beacon
               # An autoload cookie above a macro call copies the call
