@@ -52,6 +52,7 @@ in {
               features = [
                 "essential"
                 # "compat/fhs"
+                # "compat/posix-utilities"
               ];
             };
             # A user's own selections add to the machine's, for that
