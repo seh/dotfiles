@@ -51,7 +51,7 @@ in {
               name = hostName;
               features = [
                 "essential"
-                # "compat/bazel-fhs"
+                # "compat/fhs"
               ];
             };
             # A user's own selections add to the machine's, for that
