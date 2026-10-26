@@ -6,7 +6,13 @@ flakeLib.mkFeature "model-agent/opencode" {
     ...
   }: {
     programs.opencode = {
+      cli = {
+        scroll = {
+          acceleration = true;
+        };
+      };
       enable = lib.mkDefault true;
+      mutableSettings = lib.mkDefault true;
       package = lib.mkDefault pkgs.opencode;
       settings = {
         autoupdate = false;
@@ -44,11 +50,6 @@ flakeLib.mkFeature "model-agent/opencode" {
         "catch-up-on-recent-jj-changes"
         "close-bazel-drift"
       ] (name: ./skills/${name});
-      tui = {
-        scroll_acceleration = {
-          enabled = true;
-        };
-      };
     };
   };
 }
