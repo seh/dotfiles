@@ -17,11 +17,6 @@ flakeLib.mkFeature "macos" {
     };
 
     targets.darwin = {
-      # TODO(seh): Remove these once all machines are using Home
-      # Manager's state version 25.11 or newer.
-      copyApps.enable = mkDefault true;
-      linkApps.enable = mkDefault false;
-
       defaults = {
         "com.apple.dock" = {
           # "System Settings"
