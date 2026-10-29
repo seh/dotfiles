@@ -172,16 +172,16 @@ in {
         argument. Definitions accumulate and the "apply" function
         drops duplicates, so every feature declares its own beside the
         packages it installs rather than in one central list. The
-        "modules/nixpkgs-config.nix" module publishes the union as the
-        "flake.allowUnfreePackages" output, which both nixpkgs
-        instantiation sites hand to nixpkgs' own "allowUnfreePackages"
-        option: the flake-parts evaluator's "perSystem" package set
-        and the "pkgsFor" function in the
-        "modules/lib/_constructors.nix" file. One flat set serves
-        every instantiation, whatever platform it targets and whatever
-        features the host activates, since tolerating a package that
-        nothing installs costs nothing while installing one without
-        toleration halts evaluation.
+        "modules/nixpkgs-config.nix" module publishes the union as
+        the "flake.allowUnfreePackages" output, which every nixpkgs
+        instantiation site hands to nixpkgs' own "allowUnfreePackages"
+        option: the flake-parts evaluator's "perSystem" package set,
+        the "pkgsFor" function, and the "mkDarwin" and "mkNixOS"
+        functions in the "modules/lib/_constructors.nix" file. One
+        flat set serves every instantiation, whatever platform it
+        targets and whatever features the host activates, since
+        tolerating a package that nothing installs costs nothing while
+        installing one without toleration halts evaluation.
       '';
     };
   };
