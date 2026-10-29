@@ -66,13 +66,12 @@
   #
   # Pass the "applyOverlays = false" argument to omit that overlay.
   #
-  # Road not taken: accept flake-parts' "getSystem" as a function
-  # argument and read "(getSystem system).allModuleArgs.pkgs" instead.
-  # That would reuse the consumer's already-instantiated nixpkgs
-  # (potentially saving eval time and memory) but would tie these
-  # constructors back to flake-parts, defeating the point of the
-  # relocation. Revisit only if repeated nixpkgs instantiation becomes
-  # a measurable cost.
+  # The "mkDarwin" and "mkNixOS" functions do not call this function:
+  # they let the configuration's own nixpkgs module instantiate
+  # nixpkgs, so that any module may add to the "nixpkgs.config"
+  # option. This function remains for a consumer that needs a package
+  # set outside a configuration, such as the "mkHome" function's
+  # callers.
   pkgsFor = {
     system,
     applyOverlays ? true,
@@ -542,8 +541,8 @@
   # function takes as an older way to specify the platform, turning it
   # into the "nixpkgs.system" option. The nixpkgs module ignores that
   # option once the "nixpkgs.hostPlatform" or "nixpkgs.pkgs" option is
-  # set, and this constructor sets both, so a "system" argument that
-  # nominated another platform would pass the agreement check
+  # set, and this constructor sets the first, so a "system" argument
+  # that nominated another platform would pass the agreement check
   # above—which reads only the "pkgs" argument—and stand in the
   # configuration as a third opinion nothing builds for. The
   # "hostPlatform" argument is the only way to specify the platform.
@@ -566,18 +565,25 @@
     ...
   } @ args: let
     inherit (args) hostPlatform;
-    pkgs =
-      args.pkgs
-      or (pkgsFor {
-        system = hostPlatform;
-        applyOverlays = false;
-      });
-    finalPkgs = pkgs.extend (
-      lib.composeManyExtensions ([dotfilesFlake.overlays.nixpkgs] ++ overlays)
-    );
-    nixpkgsModule = {
-      nixpkgs.pkgs = finalPkgs;
-    };
+    # A caller that supplies "pkgs" has instantiated nixpkgs already,
+    # so this function extends that set with the overlays. Otherwise
+    # the configuration's own nixpkgs module instantiates nixpkgs from
+    # the options set here, which lets any module add to the
+    # "nixpkgs.config" option, a definition that the module system
+    # rejects beside "nixpkgs.pkgs".
+    nixpkgsModule =
+      if args ? pkgs
+      then {
+        nixpkgs.pkgs = args.pkgs.extend (
+          lib.composeManyExtensions ([dotfilesFlake.overlays.nixpkgs] ++ overlays)
+        );
+      }
+      else {
+        nixpkgs = {
+          overlays = [dotfilesFlake.overlays.nixpkgs] ++ overlays;
+          config.allowUnfreePackages = dotfilesFlake.allowUnfreePackages;
+        };
+      };
     homeManagerSharedModule = {
       home-manager = {
         useGlobalPkgs = true;
@@ -653,18 +659,25 @@
     ...
   } @ args: let
     inherit (args) hostPlatform;
-    pkgs =
-      args.pkgs
-      or (pkgsFor {
-        system = hostPlatform;
-        applyOverlays = false;
-      });
-    finalPkgs = pkgs.extend (
-      lib.composeManyExtensions ([dotfilesFlake.overlays.nixpkgs] ++ overlays)
-    );
-    nixpkgsModule = {
-      nixpkgs.pkgs = finalPkgs;
-    };
+    # A caller that supplies "pkgs" has instantiated nixpkgs already,
+    # so this function extends that set with the overlays. Otherwise
+    # the configuration's own nixpkgs module instantiates nixpkgs from
+    # the options set here, which lets any module add to the
+    # "nixpkgs.config" option, a definition that the module system
+    # rejects beside "nixpkgs.pkgs".
+    nixpkgsModule =
+      if args ? pkgs
+      then {
+        nixpkgs.pkgs = args.pkgs.extend (
+          lib.composeManyExtensions ([dotfilesFlake.overlays.nixpkgs] ++ overlays)
+        );
+      }
+      else {
+        nixpkgs = {
+          overlays = [dotfilesFlake.overlays.nixpkgs] ++ overlays;
+          config.allowUnfreePackages = dotfilesFlake.allowUnfreePackages;
+        };
+      };
     homeManagerSharedModule = {
       home-manager = {
         useGlobalPkgs = true;

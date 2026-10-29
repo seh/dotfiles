@@ -1,22 +1,23 @@
 # Assemble the unfree-package toleration set that this flake's
-# features declare, publish it for the constructors, and apply it to
-# the flake-parts evaluator's own package set. Each feature lists the
-# unfree packages it installs through the "unfreePackages" argument of
-# the "mkFeature" function, beside the packages themselves; the
+# features declare, publish it, and apply it to the flake-parts
+# evaluator's own package set. Each feature lists the unfree packages
+# it installs through the "unfreePackages" argument of the "mkFeature"
+# function, beside the packages themselves; the
 # "dotfiles.unfreePackages" registry (see "./module-schema.nix")
 # unions those contributions. Publishing the union as
 # "flake.allowUnfreePackages" makes it available to the "pkgsFor"
-# function used by "lib.mkHome"/"lib.mkDarwin"/"lib.mkNixOS" (see
-# "./lib/_constructors.nix"), which reads this flake's outputs rather
-# than its flake-parts configuration. Both instantiation sites then
-# hand nixpkgs the same set.
+# function and to the "mkDarwin" and "mkNixOS" functions (see
+# "./lib/_constructors.nix"), which read this flake's outputs rather
+# than its flake-parts configuration, so every package set starts from
+# the same toleration set.
 #
-# The union is here rather than from inside the class evaluator where
-# a feature installs its packages because nixpkgs' own
-# "allowUnfreePackages" option, which merges additively across modules
-# for exactly that purpose, is unavailable: these constructors assign
-# the "nixpkgs.pkgs" option, and NixOS rejects any "nixpkgs.config"
-# assignment beside it.
+# This module assembles the union at the flake level because the
+# flake-parts evaluator and the "pkgsFor" function instantiate nixpkgs
+# outside any class evaluator, where nixpkgs' own
+# "allowUnfreePackages" option is unavailable. Within a configuration,
+# the constructors hand the union to that option, which merges
+# additively, so a module there may add the unfree packages it
+# installs.
 {
   config,
   inputs,
