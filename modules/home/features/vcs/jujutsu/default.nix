@@ -28,7 +28,9 @@ flakeLib.mkFeature "vcs/jujutsu" {
       commitSigning = config.dotfiles.vcs.commit-signing;
       userConfig = config.dotfiles.identity;
       cfg = config.dotfiles.vcs.jujutsu;
-      difftasticMergeToolName = "difftastic-split-view";
+      # Jujutsu builds in a definition for a merge tool with this
+      # name, including the basic arguments for invoking the program.
+      difftasticMergeToolName = "difft";
     in {
       programs = {
         jujutsu = {
@@ -153,12 +155,14 @@ flakeLib.mkFeature "vcs/jujutsu" {
               in {
                 merge-tools = {
                   ${difftasticMergeToolName} = flakeLib.onlyWhen config ["dev/difftastic"] {
+                    # Ensure that the Nix package supplying this
+                    # tool's program is installed, and that we use the
+                    # specific program it installs, regardless of what
+                    # else is discoverable via the "PATH" environment
+                    # variable.
                     program = lib.getExe config.programs.difftastic.package;
-                    diff-args = [
-                      "--color=always"
-                      "$left"
-                      "$right"
-                    ];
+                    # For now, we accept the default set of arguments
+                    # that Jujutsu defines for this merge tool.
                   };
                   ${emacsMergeToolName} = let
                     programName = "emacs-ediff-alt";
