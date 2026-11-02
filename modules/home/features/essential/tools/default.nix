@@ -44,7 +44,7 @@ flakeLib.mkFeature "essential/tools" {
           nixfmt
           openssl
           sops
-          sqlite
+          sqlite-interactive
           statix
           tailscale
           tmux
