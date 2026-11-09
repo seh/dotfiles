@@ -129,10 +129,10 @@ flakeLib.mkFeature "vcs/jujutsu" {
               };
             }
             (lib.optionalAttrs commitSigning.hasKey {
-              git = {
+              revsets = {
                 # NB: Opt for this instead of enabling
                 # "signing.sign-all".
-                sign-on-push = true;
+                git-sign-on-push = "~signed() & mine()";
               };
               signing = {
                 inherit (commitSigning) backend key;
