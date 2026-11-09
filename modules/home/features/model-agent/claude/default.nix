@@ -20,7 +20,8 @@ flakeLib.mkFeature "model-agent/claude" {
     };
 
     enabledPluginIDs =
-      lib.optional (config.dotfiles._resolved.inEffect "lang/go/ls") "gopls-lsp@claude-plugins-official"
+      lib.optional (config.dotfiles._resolved.inEffect "cloud/fly") "fly@sprites"
+      ++ lib.optional (config.dotfiles._resolved.inEffect "lang/go/ls") "gopls-lsp@claude-plugins-official"
       ++ lib.optional (config.dotfiles._resolved.inEffect "lang/javascript/ls") "typescript-lsp@claude-plugins-official"
       ++ lib.optional (config.dotfiles._resolved.inEffect "lang/rust/tools") "rust-analyzer-lsp@claude-plugins-official";
   in {
@@ -113,6 +114,17 @@ flakeLib.mkFeature "model-agent/claude" {
           };
         })
       ];
+      marketplaces = flakeLib.onlyWhen config ["cloud/fly"] {
+        # The attribute name must match the "name" field in the
+        # marketplace's own manifest, which is how Claude Code
+        # registers it.
+        sprites = pkgs.fetchFromGitHub {
+          owner = "superfly";
+          repo = "sprites-claude-plugin";
+          rev = "3804615b1881b871e106305f6599d9f8e608918d";
+          hash = "sha256-bllGGElnziUOK+IFLdT1K/4lMzBztxo0jtX3WAYTtKk=";
+        };
+      };
       settings =
         {
           # Write no attribution text of any kind into commit messages
