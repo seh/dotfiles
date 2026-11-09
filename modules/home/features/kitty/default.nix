@@ -55,6 +55,7 @@ flakeLib.mkFeature "kitty" {
         editor = "emacsclient";
         macos_option_as_alt = "left";
         remember_window_position = true;
+        restore_session_after_logout = true;
         scrollback_lines = 15000;
         scrollback_pager_history_size = 10;
         startup_session = "sessions/startup.kitty-session";
