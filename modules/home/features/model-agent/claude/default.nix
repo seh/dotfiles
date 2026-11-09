@@ -125,6 +125,7 @@ flakeLib.mkFeature "model-agent/claude" {
           hash = "sha256-bllGGElnziUOK+IFLdT1K/4lMzBztxo0jtX3WAYTtKk=";
         };
       };
+      mutableSettings = true;
       settings =
         {
           # Write no attribution text of any kind into commit messages
