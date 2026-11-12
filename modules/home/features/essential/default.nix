@@ -15,6 +15,7 @@ flakeLib.mkFeature "essential" {
     "gnupg"
     "nh"
     "nix"
+    "shell/atuin"
     "shell/bash"
     "shell/nushell"
     "shell/zsh"
